@@ -1,0 +1,10 @@
+with "gnatcoll";
+
+project Powerjoular is
+    package Binder is
+        for Switches ("Ada") use ("-static");
+    end Binder;
+    for Source_Dirs use ("src");
+    for Object_Dir use "obj";
+    for Main use ("powerjoular.adb");
+end Powerjoular;
