@@ -28,11 +28,31 @@ with GNAT.Ctrl_C; use GNAT.Ctrl_C;
 
 procedure Powerjoular is
     -- Power variables
+    --
+    -- CPU Power
     CPU_Power : Float; -- Entire CPU power consumption
-    Previous_CPU_Power : Float := 0.0; -- Previous entire CPU power consumption (t - 1)
+    Previous_CPU_Power : Float := 0.0; -- Previous CPU power consumption (t - 1)
     PID_CPU_Power : Float; -- CPU power consumption of monitored PID
     Previous_PID_CPU_Power : Float := 0.0; -- Previous CPU power consumption of monitored PID (t - 1)
+    CPU_Energy : Float := 0.0;
+    --
+    -- GPU Power
+    GPU_Power : Float := 0.0;
+    Previous_GPU_Power : Float := 0.0; -- Previous GPU power consumption (t - 1)
+    GPU_Energy : Float := 0.0;
+    --
+    -- Total Power and Energy
+    Previous_Total_Power : Float := 0.0; -- Previous entire total power consumption (t - 1)
+    Total_Power : Float := 0.0; -- Total power consumption of all hardware components
     Total_Energy : Float := 0.0; -- Total energy consumed since start of PowerJoular until exit
+
+    -- Data types for Intel RAPL energy monitoring
+    RAPL_Before : Intel_RAPL_Data; -- Intel RAPL data
+    RAPL_After : Intel_RAPL_Data; -- Intel RAPL data
+    RAPL_Energy : Float; -- Intel RAPL energy difference for monitoring cycle
+
+    -- Data types for Nvidia energy monitoring
+    Nvidia_Supported : Boolean; -- If nvidia card, drivers and smi tool are available
 
     -- Data types to monitor CPU cycles
     CPU_CCI_Before : CPU_Cycles_Data; -- Entire CPU cycles
@@ -47,17 +67,9 @@ procedure Powerjoular is
     PID_Time : Long_Integer; -- Monitored PID CPU time
     PID_Number : Integer; -- PID number to monitor
 
-    -- Data types for Intel RAPL energy monitoring
-    RAPL_Before : Intel_RAPL_Data; -- Intel RAPL data
-    RAPL_After : Intel_RAPL_Data; -- Intel RAPL data
-    RAPL_Energy : Float; -- Intel RAPL energy difference for monitoring cycle
-
-    -- Data types for Nvidia energy monitoring
-    Nvidia_Supported : Boolean; -- If nvidia card, drivers and smi tool are available
-    Nvidia_Power : Float; -- Nvidia power consumption
-
     -- Platform name
     Platform_Name : String := Get_Platform_Name;
+
     -- CSV filenames
     CSV_Filename : Unbounded_String; -- CSV filename for entire CPU power data
     PID_CSV_Filename : Unbounded_String; -- CSV filename for monitored PID CPU power data
@@ -72,9 +84,17 @@ procedure Powerjoular is
     procedure CtrlCHandler is
     begin
         New_Line;
+        Put_Line ("--------------------------");
         Put ("Total energy: ");
         Put (Total_Energy, Exp => 0, Fore => 0, Aft => 2);
+        Put_Line (" Joules, including:");
+        Put (HT & "CPU energy: ");
+        Put (CPU_Energy, Exp => 0, Fore => 0, Aft => 2);
         Put_Line (" Joules");
+        Put (HT & "GPU energy: ");
+        Put (GPU_Energy, Exp => 0, Fore => 0, Aft => 2);
+        Put_Line (" Joules");
+        Put_Line ("--------------------------");
         OS_Exit (0);
     end CtrlCHandler;
 
@@ -188,14 +208,15 @@ begin
             -- Calculate Intel RAPL energy consumption
             RAPL_Energy := RAPL_After.total_energy - RAPL_Before.total_energy;
             CPU_Power := RAPL_Energy;
+            Total_Power := CPU_Power;
         end if;
 
         if Nvidia_Supported then
-            -- Calculate Nvidia GPU power consumption
-            Nvidia_Power := Get_Nvidia_SMI_Power;
-            -- Add Nvidia power to CPU power
+            -- Calculate GPU power consumption
+            GPU_Power := Get_Nvidia_SMI_Power;
+            -- Add GPU power to total power
             -- The total power displayed by PowerJoular is therefore : CPU + GPU power
-            CPU_Power := CPU_Power + Nvidia_Power;
+            Total_Power := Total_Power + GPU_Power;
         end if;
 
         -- If a particular PID is monitored, calculate its CPU time, CPU utilization and CPU power
@@ -204,33 +225,37 @@ begin
             PID_CPU_Utilization := (Float (PID_Time)) / (Float (CPU_CCI_After.ctotal) - Float (CPU_CCI_Before.ctotal));
             PID_CPU_Power := (PID_CPU_Utilization * CPU_Power) / CPU_Utilization;
 
-            -- Show power data on terminal of monitored PID
+            -- Show CPU power data on terminal of monitored PID
             if Show_Terminal then
                 Show_On_Terminal_PID (PID_CPU_Utilization, PID_CPU_Power, CPU_Utilization, CPU_Power);
             end if;
 
-            -- Save power data to CSV file of monitored PID
+            -- Save CPU power data to CSV file of monitored PID
             if Print_File then
-                Save_To_CSV_File (To_String (PID_CSV_Filename), PID_CPU_Utilization, PID_CPU_Power, Overwrite_Data);
+                Save_PID_To_CSV_File (To_String (PID_CSV_Filename), PID_CPU_Utilization, PID_CPU_Power, Overwrite_Data);
             end if;
 
             Previous_PID_CPU_Power := PID_CPU_Power;
         end if;
 
-        -- Show power data on terminal of entire CPU
+        -- Show total power data on terminal
         if Show_Terminal and (not Monitor_PID) then
-            Show_On_Terminal (CPU_Utilization, CPU_Power, Previous_CPU_Power);
+            Show_On_Terminal (CPU_Utilization, Total_Power, Previous_Total_Power);
         end if;
 
         Previous_CPU_Power := CPU_Power;
+        Previous_GPU_Power := GPU_Power;
+        Previous_Total_Power := Total_Power;
 
-        -- Increment total energy with cpu power of current cycle
+        -- Increment total energy with power of current cycle
         -- Cycle is 1 second, so energy for 1 sec = power
-        Total_Energy := Total_Energy + CPU_Power;
+        Total_Energy := Total_Energy + Total_Power;
+        CPU_Energy := CPU_Energy + CPU_Power;
+        GPU_Energy := GPU_Energy + GPU_Power;
 
-        -- Save power data to CSV file of entire CPU
+        -- Save total power data to CSV file
         if Print_File then
-            Save_To_CSV_File (To_String (CSV_Filename), CPU_Utilization, CPU_Power, Overwrite_Data);
+            Save_To_CSV_File (To_String (CSV_Filename), CPU_Utilization, Total_Power, CPU_Power, GPU_Power, Overwrite_Data);
         end if;
     end loop;
 end Powerjoular;

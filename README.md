@@ -1,7 +1,7 @@
-# PowerJoular :zap:
+# [![Joular Project](https://gitlab.com/uploads/-/system/group/avatar/10668049/joular.png?width=64)](https://www.noureddine.org/research/joular/) PowerJoular :zap:
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue)](https://www.gnu.org/licenses/gpl-3.0)
-![License: GPL v3](https://img.shields.io/badge/Made%20with-Ada-blue)
+[![Ada](https://img.shields.io/badge/Made%20with-Ada-blue)](https://www.adaic.org)
 
 PowerJoular is a command line software to monitor, in real time, the power consumption of software and hardware components.
 
