@@ -19,7 +19,45 @@ with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 
 package body CSV_Power is
 
-    procedure Save_To_CSV_File (Filename : String; Utilization : Float; Power : Float; Overwrite_Data : Boolean) is
+    procedure Save_To_CSV_File (Filename : String; Utilization : Float; Total_Power : Float; CPU_Power : Float; GPU_Power : Float; Overwrite_Data : Boolean) is
+        F : File_Type; -- File handle
+        Now : Time := Clock; -- Current UTC time
+
+        -- Procedure to save data to file
+        procedure Save_Data (F : File_Type) is
+        begin
+            Put (F, Image (Date => Now, Time_Zone => UTC_Time_Offset) & ","); -- Get time based on current timezone with UTC offset
+            Put (F, Utilization, Exp => 0, Fore => 0); -- Exp = 0 to not show in scientific notation. Fore = 0 to show all digits
+            Put (F, ",");
+            Put (F, Total_Power, Exp => 0, Fore => 0);
+            Put (F, ",");
+            Put (F, CPU_Power, Exp => 0, Fore => 0);
+            Put (F, ",");
+            Put (F, GPU_Power, Exp => 0, Fore => 0);
+            New_Line (F);
+        end Save_Data;
+    begin
+        if Overwrite_Data then
+            -- Overwrite each line of data on the file
+            Open (F, Out_File, Filename);
+        else
+            -- Append new data to the file
+            Open (F, Append_File, Filename);
+        end if;
+        Save_Data (F);
+        Close (F);
+    exception
+        when Name_Error =>
+            -- If failed to open file (happens on first time if file doesn't exist), then create it
+            Create (F, Out_File, Filename);
+            Put_Line (F, "Date,CPU Utilization,Total Power,CPU Power,GPU Power");
+            Save_Data (F);
+            Close (F);
+        when others =>
+            raise PROGRAM_ERROR with "Error in accessing or creating the CSV file";
+    end;
+
+    procedure Save_PID_To_CSV_File (Filename : String; Utilization : Float; Power : Float; Overwrite_Data : Boolean) is
         F : File_Type; -- File handle
         Now : Time := Clock; -- Current UTC time
 
