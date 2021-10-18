@@ -68,7 +68,7 @@ On latest Fedora, install gnat, gprbuild and GNATColl:
 sudo dnf install fedora-gnat-project-common gprbuild gnatcoll
 ```
 
-On Debian 10, install gnat, gprbuild and GNATColl (on Ubuntu 20.04 use libgnatcoll17-dev instead):
+On Debian 10, install gnat, gprbuild and GNATColl (on Ubuntu 20.04 use libgnatcoll18-dev instead):
 ```
 sudo apt install gnat gprbuild libgnatcoll17-dev
 ```
