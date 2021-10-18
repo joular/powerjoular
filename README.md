@@ -78,7 +78,7 @@ To compile the project, use ```gprbuild``` on ```powerjoular.gpr``` file.
 ```
 git clone https://gitlab.com/joular/powerjoular.git
 cd powerjoular
-mkdir obj (only first time if obj folder doesn't exist)
+mkdir -p obj
 gprbuild
 ```
 
