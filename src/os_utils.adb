@@ -19,7 +19,7 @@ package body OS_Utils is
        
     function Check_Intel_Supported_System (Platform_Name : in String) return Boolean is
     begin
-        return Platform_Name = "intel"; -- or or else Platform_Name = "amd";
+        return Platform_Name = "intel" or else Platform_Name = "amd";
     end;
 
     function Get_Platform_Name return String is
@@ -27,6 +27,7 @@ package body OS_Utils is
         File_Name : constant String := "/proc/cpuinfo"; -- File to read
         Index_Search : Integer; -- Index of platform name in the searched string
         Line_String : Unbounded_String; -- Variable to store each line of the read file
+        AMD_vendor : Unbounded_String; -- AMD vendor name
     begin
         Open (F_Name, In_File, File_Name);
         -- Loop through file to check if it's one of the supported ones and get its name
@@ -37,10 +38,32 @@ package body OS_Utils is
             if (Index_Search > 0) then
                 return "intel";
             end if;
+            
+            Index_Search := Index (To_String (Line_String), "AuthenticAMD");
+            if (Index_Search > 0) then
+                AMD_vendor := To_Unbounded_String ("amd");
+            end if;
 
         end loop;
         
         Close (F_Name);
+        
+        if (AMD_vendor = "amd") then
+            Open (F_Name, In_File, File_Name);
+            
+            while not End_Of_File (F_Name) loop
+                Line_String := To_Unbounded_String (Get_Line (F_Name));
+            
+                Index_Search := Index (To_String (Line_String), "Ryzen");
+                if (Index_Search > 0) then
+                    return "amd";
+                end if;
+
+            end loop;
+            
+            Close (F_Name);
+        end if;
+
         return "";
     exception
         when others =>

@@ -16,7 +16,7 @@ PowerJoular is a command line software to monitor, in real time, the power consu
 ## :satellite: Supported platforms
 
 PowerJoular monitors the following platforms:
-- :computer: PC/Servers using a RAPL supported Intel processor (since Sandy Bridge), and optionally an Nvidia graphic card
+- :computer: PC/Servers using a RAPL supported Intel processor (since Sandy Bridge) or a RAPL supported AMD processor (since Ryzen), and optionally an Nvidia graphic card
 
 In all platforms, PowerJoular works currently only on GNU/Linux.
 
@@ -26,7 +26,10 @@ PowerJoular supports RAPL package domain (core, including integrated graphics, a
 
 ## :package: Installation
 
-Easy-to-use installation scripts are available in the ```installer``` folder.
+RPM and DEB packages are available for easy installation in the ```packages``` folder.
+These packages install the PowerJoular binary and systemd service.
+
+Alternativaly, easy-to-use installation scripts are available in the ```installer``` folder.
 Just open the installer folder and run the appropriate file to build and/or install or uninstall the program and systemd service.
 
 - ```install-bin.sh```: install the already compiled binaries of the program and systemd service. The script will detect the device architecture (x86_64) and install the appropriate binary.
@@ -68,7 +71,7 @@ On latest Fedora, install gnat, gprbuild and GNATColl:
 sudo dnf install fedora-gnat-project-common gprbuild gnatcoll
 ```
 
-On latest Debian, install gnat, gprbuild and GNATColl:
+On Debian 10, install gnat, gprbuild and GNATColl (on Ubuntu 20.04 use ```libgnatcoll18-dev``` instead, and ```libgnatcoll16.1.0-dev``` on Ubuntu 18.04):
 ```
 sudo apt install gnat gprbuild libgnatcoll17-dev
 ```
@@ -78,7 +81,7 @@ To compile the project, use ```gprbuild``` on ```powerjoular.gpr``` file.
 ```
 git clone https://gitlab.com/joular/powerjoular.git
 cd powerjoular
-mkdir obj (only first time if obj folder doesn't exist)
+mkdir -p obj
 gprbuild
 ```
 
