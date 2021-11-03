@@ -14,6 +14,9 @@ package OS_Utils is
     -- Function to check if we are running on an system using an Intel processor
     function Check_Intel_Supported_System (Platform_Name : in String) return Boolean;
 
+    -- Function to check if we are running on a SailfishOS device
+    function Check_SailfishOS_Supported_System (Platform_Name : in String) return Boolean;
+
     -- Get the name of the current platform (intel, amd, raspberry) using a codename per supported platform
     -- For AMD, return only the platform name if the CPU is Ryzen as older ones are not supported
     -- Return empty string if platform is not supported

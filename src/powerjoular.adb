@@ -25,6 +25,7 @@ with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 with Ada.Command_Line; use Ada.Command_Line;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 with GNAT.Ctrl_C; use GNAT.Ctrl_C;
+with Battery_Power; use Battery_Power;
 
 procedure Powerjoular is
     -- Power variables
@@ -217,6 +218,11 @@ begin
             -- Add GPU power to total power
             -- The total power displayed by PowerJoular is therefore : CPU + GPU power
             Total_Power := Total_Power + GPU_Power;
+        end if;
+
+        if Check_SailfishOS_Supported_System (Platform_Name) then
+            -- Calculate battery power consumption for SailfishOS device
+            Total_Power := Get_Battery_Power;
         end if;
 
         -- If a particular PID is monitored, calculate its CPU time, CPU utilization and CPU power

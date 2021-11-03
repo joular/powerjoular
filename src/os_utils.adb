@@ -12,6 +12,7 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
+with GNAT.String_Split; use GNAT;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with GNAT.Expect; use GNAT.Expect;
 
@@ -21,7 +22,36 @@ package body OS_Utils is
     begin
         return Platform_Name = "intel" or else Platform_Name = "amd";
     end;
+    
+    function Check_SailfishOS_Supported_System (Platform_Name : in String) return Boolean is
+    begin
+        return Platform_Name = "sailfishos";
+    end;
 
+    function Get_GNU_Linux_Name return String is
+        F : File_Type; -- File handle
+        File_Name : constant String := "/etc/os-release"; -- Filename to read
+        Subs : String_Split.Slice_Set; -- Used to slice the read data from stat file
+        Seps : constant String := "="; -- Seperator (space) for slicing string
+    begin
+        Open (F, In_File, File_Name);
+        String_Split.Create (S          => Subs, -- Store sliced data in Subs
+                             From       => Get_Line (F), -- Read data to slice. We only need the first line of the file
+                             Separators => Seps, -- Separator (here space)
+                             Mode       => String_Split.Multiple);
+        Close (F);
+        
+        if (String_Split.Slice (Subs, 2) = """Sailfish OS""") then
+            return "sailfishos";
+        end if;
+                
+        return "";
+    exception
+        when others =>
+            Put_Line ("Error reading file: " & File_Name);
+            OS_Exit (0);
+    end;
+    
     function Get_Platform_Name return String is
         F_Name : File_Type; -- File handle
         File_Name : constant String := "/proc/cpuinfo"; -- File to read
@@ -64,7 +94,7 @@ package body OS_Utils is
             Close (F_Name);
         end if;
 
-        return "";
+        return Get_GNU_Linux_Name;
     exception
         when others =>
             Put_Line ("Error reading file: " & File_Name);
