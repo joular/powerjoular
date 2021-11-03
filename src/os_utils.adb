@@ -24,9 +24,10 @@ package body OS_Utils is
 
     function Get_Platform_Name return String is
         F_Name : File_Type; -- File handle
-        File_Name : constant String := "/proc/cpuinfo"; -- File to read
+        File_Name : constant String := "/home/adel/Bureau/ryzen"; -- File to read
         Index_Search : Integer; -- Index of platform name in the searched string
         Line_String : Unbounded_String; -- Variable to store each line of the read file
+        AMD_vendor : Unbounded_String; -- AMD vendor name
     begin
         Open (F_Name, In_File, File_Name);
         -- Loop through file to check if it's one of the supported ones and get its name
@@ -40,15 +41,29 @@ package body OS_Utils is
             
             Index_Search := Index (To_String (Line_String), "AuthenticAMD");
             if (Index_Search > 0) then
-                Index_Search := Index (To_String (Line_String), "Ryzen");
-                if (Index_Search > 0) then
-                    return "amd";
-                end if;
+                AMD_vendor := To_Unbounded_String ("amd");
             end if;
 
         end loop;
         
         Close (F_Name);
+        
+        if (AMD_vendor = "amd") then
+            Open (F_Name, In_File, File_Name);
+            
+            while not End_Of_File (F_Name) loop
+                Line_String := To_Unbounded_String (Get_Line (F_Name));
+            
+                Index_Search := Index (To_String (Line_String), "Ryzen");
+                if (Index_Search > 0) then
+                    return "amd";
+                end if;
+
+            end loop;
+            
+            Close (F_Name);
+        end if;
+
         return "";
     exception
         when others =>
