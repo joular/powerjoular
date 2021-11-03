@@ -19,7 +19,7 @@ package body OS_Utils is
        
     function Check_Intel_Supported_System (Platform_Name : in String) return Boolean is
     begin
-        return Platform_Name = "intel"; -- or or else Platform_Name = "amd";
+        return Platform_Name = "intel" or else Platform_Name = "amd";
     end;
 
     function Get_Platform_Name return String is
@@ -36,6 +36,14 @@ package body OS_Utils is
             Index_Search := Index (To_String (Line_String), "GenuineIntel");
             if (Index_Search > 0) then
                 return "intel";
+            end if;
+            
+            Index_Search := Index (To_String (Line_String), "AuthenticAMD");
+            if (Index_Search > 0) then
+                Index_Search := Index (To_String (Line_String), "Ryzen");
+                if (Index_Search > 0) then
+                    return "amd";
+                end if;
             end if;
 
         end loop;

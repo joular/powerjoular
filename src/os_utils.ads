@@ -14,7 +14,8 @@ package OS_Utils is
     -- Function to check if we are running on an system using an Intel processor
     function Check_Intel_Supported_System (Platform_Name : in String) return Boolean;
 
-    -- Get the name of the current platform (intel, raspberry) using a codename per supported platform
+    -- Get the name of the current platform (intel, amd, raspberry) using a codename per supported platform
+    -- For AMD, return only the platform name if the CPU is Ryzen as older ones are not supported
     -- Return empty string if platform is not supported
     function Get_Platform_Name return String;
 
