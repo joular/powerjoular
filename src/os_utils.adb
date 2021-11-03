@@ -24,7 +24,7 @@ package body OS_Utils is
 
     function Get_Platform_Name return String is
         F_Name : File_Type; -- File handle
-        File_Name : constant String := "/home/adel/Bureau/ryzen"; -- File to read
+        File_Name : constant String := "/proc/cpuinfo"; -- File to read
         Index_Search : Integer; -- Index of platform name in the searched string
         Line_String : Unbounded_String; -- Variable to store each line of the read file
         AMD_vendor : Unbounded_String; -- AMD vendor name
