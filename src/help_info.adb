@@ -15,14 +15,14 @@ with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 package body Help_Info is
 
     procedure Show_Help is
-    Version_Number : constant String := "0.1 beta";
+    Version_Number : constant String := "0.3";
     begin
         Put_Line (ESC & "[93m" & "~~ PowerJoular ~~" & ESC & "[0m");
         Put_Line ("Version " & Version_Number);
         Put_Line ("--------------------------");
         Put_Line ("PowerJoular is a multi-platform power monitoring tool");
         Put_Line ("It estimates power consumption every second based on:");
-        Put_Line("- Processor and SOC for Intel processors (since Sandy Bridge) using RAPL");
+        Put_Line("- Processor and SOC for Intel (since Sandy Bridge) or AMD (since Ryzen) processors using RAPL");
         Put_Line("- NVIDIA GPUs using NVIDIA SMI if power monitoring is supported by the GPU model");
         --Put_Line("- Processor for Raspberry Pi using a regression model");
         Put_Line ("--------------------------");
