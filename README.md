@@ -26,15 +26,13 @@ PowerJoular supports RAPL package domain (core, including integrated graphics, a
 
 ## :package: Installation
 
-RPM and DEB packages are available for easy installation in the ```packages``` folder.
-These packages install the PowerJoular binary and systemd service.
-
-Alternativaly, easy-to-use installation scripts are available in the ```installer``` folder.
+Easy-to-use installation scripts are available in the ```installer``` folder.
 Just open the installer folder and run the appropriate file to build and/or install or uninstall the program and systemd service.
 
-- ```install-bin.sh```: install the already compiled binaries of the program and systemd service. The script will detect the device architecture (x86_64) and install the appropriate binary.
 - ```build-install.sh```: will build (using ```gprbuild```) and install the program binary to ```/usr/bin``` and systemd service. It requires having installed GNAT, gprbuild and GNATColl (see [Compilation](#floppy_disk-compilation)).
 - ```uninstall.sh```: deletes the program binary and systemd service.
+
+A makeself script is also available to create an self-contained installation script with the binary included.
 
 ## :bulb: Usage
 
