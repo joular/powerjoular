@@ -67,6 +67,9 @@ procedure Powerjoular is
     PID_Time : Long_Integer; -- Monitored PID CPU time
     PID_Number : Integer; -- PID number to monitor
 
+     -- OS name
+    OS_Name : String := Get_OS_Name;
+
     -- Platform name
     Platform_Name : String := Get_Platform_Name;
 

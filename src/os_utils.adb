@@ -14,6 +14,7 @@ with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with GNAT.Expect; use GNAT.Expect;
+with Ada.Environment_Variables; use Ada.Environment_Variables;
 
 package body OS_Utils is
        
@@ -68,7 +69,17 @@ package body OS_Utils is
     exception
         when others =>
             Put_Line ("Error reading file: " & File_Name);
+            Put_Line (Get_OS_Name);
             OS_Exit (0);
+    end;
+    
+    function Get_OS_Name return String is
+    begin
+        if (Ada.Environment_Variables.Exists ("OS")) then
+            return Ada.Environment_Variables.Value ("OS");
+        else
+            return "";
+        end if;
     end;
 
 end OS_Utils;

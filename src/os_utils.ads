@@ -19,4 +19,8 @@ package OS_Utils is
     -- Return empty string if platform is not supported
     function Get_Platform_Name return String;
 
+    -- Get the name of the operating system from environmental variable
+    -- Return empty string is OS can't be detected
+    function Get_OS_Name return String;
+
 end OS_Utils;
