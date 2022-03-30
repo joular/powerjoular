@@ -68,9 +68,10 @@ package body OS_Utils is
         return "";
     exception
         when others =>
-            Put_Line ("Error reading file: " & File_Name);
-            Put_Line (Get_OS_Name);
-            OS_Exit (0);
+            -- Put_Line ("Error reading file: " & File_Name);
+            -- Put_Line (Get_OS_Name);
+            -- OS_Exit (0);
+            return "";
     end;
     
     function Get_OS_Name return String is

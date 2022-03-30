@@ -138,6 +138,7 @@ begin
     -- If platform not supported, then exit program
     if (Platform_Name = "") then
         Put_Line ("Platform not supported");
+        Put_Line (OS_Name);
         return;
     end if;
 
