@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2021, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2021, Adel Noureddine, UniversitÃ© de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -16,7 +16,7 @@ with GNAT.OS_Lib; use GNAT.OS_Lib;
 package body Nvidia_SMI is
 
     function Get_Nvidia_SMI_Power return Float is
-        Command    : String          := "nvidia-smi --format=csv,noheader,nounits --query-gpu=power.draw";
+        Command    : String          := "nvidia-smi -i 0 --format=csv,noheader,nounits --query-gpu=power.draw";
         Args       : Argument_List_Access;
         Status     : aliased Integer;
     begin
