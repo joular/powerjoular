@@ -40,7 +40,7 @@ package body Nvidia_SMI is
                 return 0.0;
             else
                 String_Split.Create (S          => Subs, -- Store sliced data in Subs
-                                     From       => Response, -- Read data to slice. We only need the first line of the stat file
+                                     From       => Response, -- Read data to slice
                                      Separators => Seps, -- Separator (here space)
                                      Mode       => String_Split.Multiple);
 
