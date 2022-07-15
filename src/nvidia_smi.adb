@@ -12,13 +12,19 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.Expect; use GNAT.Expect;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
+with GNAT.String_Split; use GNAT;
+with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 
 package body Nvidia_SMI is
 
     function Get_Nvidia_SMI_Power return Float is
-        Command    : String          := "nvidia-smi -i 0 --format=csv,noheader,nounits --query-gpu=power.draw";
+        Command    : String          := "nvidia-smi --format=csv,noheader,nounits --query-gpu=power.draw";
         Args       : Argument_List_Access;
         Status     : aliased Integer;
+        Subs : String_Split.Slice_Set; -- Used to slice the read data from stat file
+        Seps : constant String := CR & LF; -- Seperator (space) for slicing string
+        Slice_number_count : String_Split.Slice_Number;
+        GPU_Energy : Float := 0.0;
     begin
         Args := Argument_String_To_List (Command);
         declare
@@ -33,7 +39,18 @@ package body Nvidia_SMI is
             if Response = "[N/A]" then
                 return 0.0;
             else
-                return Float'Value (Response);
+                String_Split.Create (S          => Subs, -- Store sliced data in Subs
+                                     From       => Response, -- Read data to slice. We only need the first line of the stat file
+                                     Separators => Seps, -- Separator (here space)
+                                     Mode       => String_Split.Multiple);
+
+                Slice_number_count := String_Split.Slice_Count (Subs);
+
+                for I in 1 .. Slice_number_count loop
+                    GPU_Energy := GPU_Energy + Float'Value (String_Split.Slice (Subs, 1));
+                end loop;
+
+                return GPU_Energy;
             end if;
         end;
     exception
