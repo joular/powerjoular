@@ -23,6 +23,8 @@ with OS_Utils; use OS_Utils;
 with Nvidia_SMI; use Nvidia_SMI;
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 with Ada.Command_Line; use Ada.Command_Line;
+with Power_Models_Utils; use Power_Models_Utils;
+with Raspberry_Pi_CPU_Formula; use Raspberry_Pi_CPU_Formula;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 with GNAT.Ctrl_C; use GNAT.Ctrl_C;
 
@@ -53,6 +55,10 @@ procedure Powerjoular is
 
     -- Data types for Nvidia energy monitoring
     Nvidia_Supported : Boolean; -- If nvidia card, drivers and smi tool are available
+
+    -- Raspberrry Pi model settings
+    PowerModels_Data : Unbounded_String; -- Raspberrry Pi power models (read from file)
+    Algorithm_Name : Unbounded_String := To_Unbounded_String ("polynomial"); -- Regression model type (by default, polynomial regression model)
 
     -- Data types to monitor CPU cycles
     CPU_CCI_Before : CPU_Cycles_Data; -- Entire CPU cycles
@@ -126,6 +132,11 @@ begin
             CSV_Filename := To_Unbounded_String (Parameter);
             Print_File := True;
             Overwrite_Data := True;
+        when 'u' => -- Update power models from the internet
+            Update_Power_Models_File;
+            OS_Exit (0);
+        when 'l' => -- Use linear regression model instead of polynomial models
+            Algorithm_Name := To_Unbounded_String ("linear");
         when others =>
             exit;
         end case;
@@ -172,6 +183,11 @@ begin
         end if;
     end if;
 
+    -- Check for Raspberry Pi and read power models from file
+    if Check_Raspberry_Pi_Supported_System (Platform_Name) then
+        PowerModels_Data := Read_Power_Models_File;
+    end if;
+
     -- Amend PID CSV file with PID number
     if Monitor_PID then
         PID_CSV_Filename := CSV_Filename & "-" & Trim(Integer'Image (PID_Number), Ada.Strings.Left) & ".csv";
@@ -207,6 +223,12 @@ begin
 
         -- Calculate entire CPU utilization
         CPU_Utilization := (Float (CPU_CCI_After.cbusy) - Float (CPU_CCI_Before.cbusy)) / (Float (CPU_CCI_After.ctotal) - Float (CPU_CCI_Before.ctotal));
+
+        if Check_Raspberry_Pi_Supported_System (Platform_Name) then
+            -- Calculate power consumption for Raspberry
+            CPU_Power := Calculate_CPU_Power (CPU_Utilization, Platform_Name, PowerModels_Data, To_String (Algorithm_Name));
+            Total_Power := CPU_Power;
+        end if;
 
         if Check_Intel_Supported_System (Platform_Name) then
             -- Calculate Intel RAPL energy consumption

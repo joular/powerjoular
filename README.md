@@ -17,12 +17,25 @@ PowerJoular is a command line software to monitor, in real time, the power consu
 
 PowerJoular monitors the following platforms:
 - :computer: PC/Servers using a RAPL supported Intel processor (since Sandy Bridge) or a RAPL supported AMD processor (since Ryzen), and optionally an Nvidia graphic card
+- :radio: Raspberry Pi devices (multiple models)
 
 In all platforms, PowerJoular works currently only on GNU/Linux.
 
 On PC/Servers, PowerJoular uses powercap Linux interface to read Intel RAPL (Running Average Power Limit) energy consumption.
 
 PowerJoular supports RAPL package domain (core, including integrated graphics, and dram), and for more recent processors, we support Psys package (which covers the energy consumption of the entire SoC).
+
+On Raspberry Pi, PowerJoular uses its own research-based empirical regression models to estimate the power consumption of the ARM processor.
+
+We currently support the following Raspberry Pi models:
+- Model Zero W (rev 1.1), for 32 bits OS
+- Model 1 B (rev 2), for 32 bits OS
+- Model 1 B+ (rev 1.2), for 32 bits OS
+- Model 2 B (rev 1.1), for 32 bits OS
+- Model 3 B (rev 1.2), for 32 bits OS
+- Model 3 B+ (rev 1.3), for 32 bits OS
+- Model 4 B (rev 1.1, and rev 1.2), for both 32 bits and 64 bits OS
+- Model 400 (rev 1.0), for 64 bits OS
 
 ## :package: Installation
 
@@ -48,6 +61,8 @@ The following options are available:
 - ```-f filename```: save monitoring data to the given filename path
 - ```-o filename```: save only last monitoring data to the given filename path (file overwritten with only latest power measures)
 - ```-t```: print data to the terminal
+- ```-u```: update Raspberry Pi power models from the internet (saves to /etc/powerjoular/powerjoular_models.json). Requires root/sudo
+- ```-l```: use linear regression models (less accurate than the default polynomial models) for Raspberry Pi energy models
  
 You can mix options, i.e., ```powerjoular -tp 144``` will monitor PID 144 and will print to the terminal.
 
@@ -106,7 +121,7 @@ The systemd service is automatically installed when installing PowerJoular using
 
 PowerJoular is licensed under the GNU GPL 3 license only (GPL-3.0-only).
 
-Copyright (c) 2020-2021, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+Copyright (c) 2020-2022, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 All rights reserved. This program and the accompanying materials are made available under the terms of the GNU General Public License v3.0 only (GPL-3.0-only) which accompanies this distribution, and is available at: https://www.gnu.org/licenses/gpl-3.0.en.html
 
 Author : Adel Noureddine

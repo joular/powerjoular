@@ -23,6 +23,120 @@ package body OS_Utils is
         return Platform_Name = "intel" or else Platform_Name = "amd";
     end;
 
+    -- Check if platform supports Raspberry Pi
+    function Check_Raspberry_Pi_Supported_System (Platform_Name : in String) return Boolean is
+    begin
+        -- For now only one Raspberr Pi model is supported
+        return Platform_Name = "rbp4001.0-64" or else Platform_Name = "rbp4b1.2" or else Platform_Name = "rbp4b1.2-64" or else Platform_Name = "rbp4b1.1" or else Platform_Name = "rbp4b1.1-64" or else Platform_Name = "rbp4b1.2" or else Platform_Name = "rbp3b+1.3" or else Platform_Name = "rbp3b1.2" or else Platform_Name = "rbp2b1.1" or else Platform_Name = "rbp1b+1.2" or else Platform_Name = "rbp1b2" or else Platform_Name = "rbpzw1.1";
+    end;
+
+    -- Get architecture name (uname -m)
+    function Get_Architecture_Name return String is
+        Command    : String          := "uname -m";
+        Args       : Argument_List_Access;
+        Status     : aliased Integer;
+    begin
+        Args := Argument_String_To_List (Command);
+        declare
+            Response : String :=
+              Get_Command_Output
+                (Command   => Args (Args'First).all,
+                 Arguments => Args (Args'First + 1 .. Args'Last),
+                 Input     => "",
+                 Status    => Status'Access);
+        begin
+            Free (Args);
+            return Response;
+        end;
+    exception
+        when others =>
+            return "";
+    end;
+
+    -- Get the name of the current platform (Raspberry) using a codename per supported platform
+    -- Return empty string if platform is not supported
+    function Get_Platform_Name_Raspberry return String is
+        F_Name : File_Type; -- File handle
+        File_Name : constant String := "/proc/device-tree/model"; -- File to read
+        Index_Search : Integer; -- Index of platform name in the searched string
+        Line_String : Unbounded_String; -- Variable to store each line of the read file
+        Architecture_Name : String := Get_Architecture_Name; -- Architecture name (32/84 bits, arm/x86)
+    begin
+        Open (F_Name, In_File, File_Name);
+        -- Loop through file to check if it's one of the supported ones and get its name
+        while not End_Of_File (F_Name) loop
+            Line_String := To_Unbounded_String (Get_Line (F_Name));
+
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi 400 Rev 1.0");
+            if (Index_Search > 0) then
+                if (Architecture_Name = "aarch64") then
+                    return "rbp4001.0-64";
+                end if;
+            end if;
+
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi 4 Model B Rev 1.2");
+            if (Index_Search > 0) then
+                if (Architecture_Name = "aarch64") then
+                    return "rbp4b1.2-64";
+                else
+                    return "rbp4b1.2";
+                end if;
+            end if;
+
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi 4 Model B Rev 1.1");
+            if (Index_Search > 0) then
+                if (Architecture_Name = "aarch64") then
+                    return "rbp4b1.1-64";
+                else
+                    return "rbp4b1.1";
+                end if;
+            end if;
+
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi 4 Model B Rev 1.2");
+            if (Index_Search > 0) then
+                return "rbp4b1.2";
+            end if;
+
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi 3 Model B Plus Rev 1.3");
+            if (Index_Search > 0) then
+                return "rbp3b+1.3";
+            end if;
+
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi 3 Model B Rev 1.2");
+            if (Index_Search > 0) then
+                return "rbp3b1.2";
+            end if;
+
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi 2 Model B Rev 1.1");
+            if (Index_Search > 0) then
+                return "rbp2b1.1";
+            end if;
+
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi Model B Plus Rev 1.2");
+            if (Index_Search > 0) then
+                return "rbp1b+1.2";
+            end if;
+
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi Model B Rev 2");
+            if (Index_Search > 0) then
+                return "rbp1b2";
+            end if;
+
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi Zero W Rev 1.1");
+            if (Index_Search > 0) then
+                return "rbpzw1.1";
+            end if;
+        end loop;
+
+        Close (F_Name);
+
+        return "";
+    exception
+        when others =>
+            Put_Line ("Wrong platform or error reading file: " & File_Name);
+            OS_Exit (0);
+    end;
+
     function Get_Platform_Name return String is
         F_Name : File_Type; -- File handle
         File_Name : constant String := "/proc/cpuinfo"; -- File to read
@@ -65,7 +179,7 @@ package body OS_Utils is
             Close (F_Name);
         end if;
 
-        return "";
+        return Get_Platform_Name_Raspberry;
     exception
         when others =>
             -- Put_Line ("Error reading file: " & File_Name);
