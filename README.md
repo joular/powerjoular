@@ -45,8 +45,6 @@ Just open the installer folder and run the appropriate file to build and/or inst
 - ```build-install.sh```: will build (using ```gprbuild```) and install the program binary to ```/usr/bin``` and systemd service. It requires having installed GNAT, gprbuild and GNATColl (see [Compilation](#floppy_disk-compilation)).
 - ```uninstall.sh```: deletes the program binary and systemd service.
 
-A makeself script is also available to create a self-contained installation script with the binary included.
-
 ## :bulb: Usage
 
 To use PowerJoular, just run the command ```powerjoular```.
