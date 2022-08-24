@@ -3,6 +3,8 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue)](https://www.gnu.org/licenses/gpl-3.0)
 [![Ada](https://img.shields.io/badge/Made%20with-Ada-blue)](https://www.adaic.org)
 
+![PowerJoular Logo](powerjoular.png)
+
 PowerJoular is a command line software to monitor, in real time, the power consumption of software and hardware components.
 
 ## :rocket: Features
