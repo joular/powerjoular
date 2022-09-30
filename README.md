@@ -109,6 +109,8 @@ package Binder is
 end Binder;
 ```
 
+If you have [Alire]{https://alire.ada.dev/} installed, you can use it to build PowerJoular with: ```alr build```
+
 ## :hourglass: Systemd service
 
 A systemd service is provided and can be installed (by copying ```powerjoular.service``` in ```systemd``` folder to ```/etc/systemd/system/```).
