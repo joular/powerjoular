@@ -109,7 +109,7 @@ package Binder is
 end Binder;
 ```
 
-If you have [Alire]{https://alire.ada.dev/} installed, you can use it to build PowerJoular with: ```alr build```
+If you have [Alire](https://alire.ada.dev/) installed, you can use it to build PowerJoular with: ```alr build```
 
 ## :hourglass: Systemd service
 
