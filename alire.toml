@@ -6,6 +6,8 @@ authors = ["Adel Noureddine"]
 maintainers = ["Adel Noureddine <adel.noureddine@univ-pau.fr>"]
 maintainers-logins = ["adelnoureddine"]
 
+tags = ["linux", "power", "energy"]
+
 licenses = "GPL-3.0-only"
 website = "https://www.noureddine.org/research/joular/powerjoular"
 
