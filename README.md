@@ -81,12 +81,12 @@ PowerJoular depends on the following commands and libraries for certain of its f
 
 On latest Fedora, install gnat, gprbuild and GNATColl:
 ```
-sudo dnf install fedora-gnat-project-common gprbuild gnatcoll
+sudo dnf install fedora-gnat-project-common gprbuild gnatcoll gnatcoll-devel gcc-gnat
 ```
 
-On Debian 10, install gnat, gprbuild and GNATColl (on Ubuntu 20.04 use ```libgnatcoll18-dev``` instead, and ```libgnatcoll16.1.0-dev``` on Ubuntu 18.04):
+On Debian or Ubuntu, install gnat, gprbuild and GNATColl (depending on your Debian/Ubuntu version, install the appropriate version of libgnatcoll):
 ```
-sudo apt install gnat gprbuild libgnatcoll17-dev
+sudo apt install gnat gprbuild libgnatcoll19-dev
 ```
 
 To compile the project, use ```gprbuild``` on ```powerjoular.gpr``` file.
@@ -109,7 +109,7 @@ package Binder is
 end Binder;
 ```
 
-If you have [Alire](https://alire.ada.dev/) installed, you can use it to build PowerJoular with: ```alr build```
+If you have [Alire](https://alire.ada.dev/) installed, you can use it to build PowerJoular with: ```alr build```.
 
 ## :hourglass: Systemd service
 
