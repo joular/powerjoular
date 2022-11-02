@@ -266,7 +266,7 @@ begin
 
         -- Show total power data on terminal
         if Show_Terminal and (not Monitor_PID) then
-            Show_On_Terminal (CPU_Utilization, Total_Power, Previous_Total_Power);
+            Show_On_Terminal (CPU_Utilization, Total_Power, Previous_Total_Power, CPU_Power, GPU_Power, Nvidia_Supported);
         end if;
 
         Previous_CPU_Power := CPU_Power;

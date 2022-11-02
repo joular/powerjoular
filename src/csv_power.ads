@@ -17,8 +17,8 @@ package CSV_Power is
     -- Save PID's CPU utilization and power conusmption to CSV file
     procedure Save_PID_To_CSV_File (Filename : String; Utilization : Float; Power : Float; Overwrite_Data : Boolean);
 
-    -- Print CPU utilization and total power conusmption on the terminal
-    procedure Show_On_Terminal (Utilization : Float; Power : Float; Previous_Power : Float);
+     -- Print CPU utilization, CPU, GPU and total power conusmption on the terminal
+    procedure Show_On_Terminal (Utilization : Float; Power : Float; Previous_Power : Float; CPU_Power : Float; GPU_Power : Float; GPU_Supported : Boolean);
 
     -- Print CPU utilization and CPU power conusmption on the terminal of monitored PID
     procedure Show_On_Terminal_PID (PID_Utilization : Float; PID_Power : Float; Utilization : Float; Power : Float);

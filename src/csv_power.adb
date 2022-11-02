@@ -91,17 +91,26 @@ package body CSV_Power is
             raise PROGRAM_ERROR with "Error in accessing or creating the CSV file";
     end;
 
-    procedure Show_On_Terminal (Utilization : Float; Power : Float; Previous_Power : Float) is
+    procedure Show_On_Terminal (Utilization : Float; Power : Float; Previous_Power : Float; CPU_Power : Float; GPU_Power : Float; GPU_Supported : Boolean) is
         Utilization_Percentage : Float;
         Power_Difference : Float;
     begin
         Utilization_Percentage := Utilization * 100.0;
         Put (CR);
-        Put ("CPU: ");
-        Put (Utilization_Percentage, Exp => 0, Fore => 0, Aft => 2);
-        Put (" %" & HT);
+        Put ("Total Power: ");
         Put (Power, Exp => 0, Fore => 0, Aft => 2);
-        Put (" Watts" & HT);
+        Put (" Watts ");
+        Put ("(CPU: ");
+        Put (CPU_Power, Exp => 0, Fore => 0, Aft => 2);
+        Put (" W");
+
+        if (GPU_Supported) then
+            Put (", GPU: ");
+            Put (GPU_Power, Exp => 0, Fore => 0, Aft => 2);
+            Put (" W)" & HT);
+        else
+            Put (")" & HT);
+        end if;
 
         Power_Difference := Power - Previous_Power;
         if (Power_Difference >= 0.0) then
