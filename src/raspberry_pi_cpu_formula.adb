@@ -253,6 +253,24 @@ package body Raspberry_Pi_CPU_Formula is
                 end if;
             end if;
 
+            if (Platform_Name = "asustbs") then
+                if (Algorithm_Name = "linear") then
+                    return (5.3346584535257895 * CPU_Utilization) + 1.6289208146316931;
+                elsif (Algorithm_Name = "polynomial") then
+                    return 3.9146162374630173 + (-19.85430796 * (CPU_Utilization ** 1)) +
+                        (141.7306532 * (CPU_Utilization ** 2)) +
+                            (-298.12713091 * (CPU_Utilization ** 3)) +
+                                (-1115.76983141 * (CPU_Utilization ** 4)) +
+                                    (8238.27573132 * (CPU_Utilization ** 5)) +
+                                        (-20976.13898406 * (CPU_Utilization ** 6)) +
+                                            (27132.90930519 * (CPU_Utilization ** 7)) +
+                                                (-17741.01303757 * (CPU_Utilization ** 8)) +
+                                                    (4640.69530931 * (CPU_Utilization ** 9));
+                else
+                    return 0.0;
+                end if;
+            end if;
+
             -- If platform not supported, return 0
             return 0.0;
     end;

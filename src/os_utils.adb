@@ -27,7 +27,7 @@ package body OS_Utils is
     function Check_Raspberry_Pi_Supported_System (Platform_Name : in String) return Boolean is
     begin
         -- For now only one Raspberr Pi model is supported
-        return Platform_Name = "rbp4001.0-64" or else Platform_Name = "rbp4b1.2" or else Platform_Name = "rbp4b1.2-64" or else Platform_Name = "rbp4b1.1" or else Platform_Name = "rbp4b1.1-64" or else Platform_Name = "rbp4b1.2" or else Platform_Name = "rbp3b+1.3" or else Platform_Name = "rbp3b1.2" or else Platform_Name = "rbp2b1.1" or else Platform_Name = "rbp1b+1.2" or else Platform_Name = "rbp1b2" or else Platform_Name = "rbpzw1.1";
+        return Platform_Name = "rbp4001.0-64" or else Platform_Name = "rbp4b1.2" or else Platform_Name = "rbp4b1.2-64" or else Platform_Name = "rbp4b1.1" or else Platform_Name = "rbp4b1.1-64" or else Platform_Name = "rbp4b1.2" or else Platform_Name = "rbp3b+1.3" or else Platform_Name = "rbp3b1.2" or else Platform_Name = "rbp2b1.1" or else Platform_Name = "rbp1b+1.2" or else Platform_Name = "rbp1b2" or else Platform_Name = "rbpzw1.1" or else Platform_Name = "asustbs";
     end;
 
     -- Get architecture name (uname -m)
@@ -125,6 +125,11 @@ package body OS_Utils is
             Index_Search := Index (To_String (Line_String), "Raspberry Pi Zero W Rev 1.1");
             if (Index_Search > 0) then
                 return "rbpzw1.1";
+            end if;
+
+            Index_Search := Index (To_String (Line_String), "ASUS Tinker Board (S)");
+            if (Index_Search > 0) then
+                return "asustbs";
             end if;
         end loop;
 
