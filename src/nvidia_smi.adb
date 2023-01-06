@@ -73,11 +73,7 @@ package body Nvidia_SMI is
                  Status    => Status'Access);
         begin
             Free (Args);
-            if Response = "[N/A]" then
-                return False;
-            else
-                return True;
-            end if;
+            return Response /= "[N/A]";
         end;
     exception
         when others =>
