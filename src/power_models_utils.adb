@@ -23,7 +23,7 @@ package body Power_Models_Utils is
     begin
         Open (F_Name, In_File, File_Name);
         while not End_Of_File (F_Name) loop
-            Data_From_File := Data_From_File & String'(Get_Line (F_Name));
+            Append (Data_From_File, String'(Get_Line (F_Name)));
         end loop;
         Close (F_Name);
         return Data_From_File;
