@@ -39,6 +39,8 @@ We currently support the following Raspberry Pi models:
 - Model 4 B (rev 1.1, and rev 1.2), for both 32 bits and 64 bits OS
 - Model 400 (rev 1.0), for 64 bits OS
 
+We also support Asus Tinker Board (S).
+
 ## :package: Installation
 
 Easy-to-use installation scripts are available in the ```installer``` folder.
