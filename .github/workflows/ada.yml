@@ -1,0 +1,24 @@
+name: Ada (GNAT)
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Set up GNAT toolchain
+      run: >
+        sudo apt-get update &&
+        sudo apt-get install gnat gprbuild libgnatcoll19-dev
+
+    - name: Build
+      run: gprbuild -j0 -p
