@@ -34,7 +34,7 @@ package body Power_Models_Utils is
     
     procedure Update_Power_Models_File is
         -- Command to download file from URL using curl
-        Command    : String          := "curl -o /etc/powerjoular/powerjoular_models.json https://gitlab.com/joular/powerjoular/-/raw/main/powermodels/powerjoular_models.json";
+        Command    : String          := "curl -o /etc/powerjoular/powerjoular_models.json https://raw.githubusercontent.com/joular/powerjoular/main/powermodels/powerjoular_models.json";
         Args       : Argument_List_Access;
         Status     : aliased Integer;
     begin

@@ -1,4 +1,4 @@
-# [![Joular Project](https://gitlab.com/uploads/-/system/group/avatar/10668049/joular.png?width=64)](https://www.noureddine.org/research/joular/) PowerJoular :zap:
+# <a href="https://www.noureddine.org/research/joular/"><img src="https://raw.githubusercontent.com/joular/.github/main/profile/joular.png" alt="Joular Project" width="64" /></a> PowerJoular :zap:
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue)](https://www.gnu.org/licenses/gpl-3.0)
 [![Ada](https://img.shields.io/badge/Made%20with-Ada-blue)](https://www.adaic.org)
@@ -94,7 +94,7 @@ sudo apt install gnat gprbuild libgnatcoll19-dev
 To compile the project, use ```gprbuild``` on ```powerjoular.gpr``` file.
 
 ```
-git clone https://gitlab.com/joular/powerjoular.git
+git clone https://github.com/joular/powerjoular.git
 cd powerjoular
 mkdir -p obj
 gprbuild
