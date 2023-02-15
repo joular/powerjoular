@@ -61,15 +61,16 @@ procedure Powerjoular is
     -- Data types to monitor CPU cycles
     CPU_CCI_Before : CPU_Cycles_Data; -- Entire CPU cycles
     CPU_CCI_After : CPU_Cycles_Data; -- Entire CPU cycles
-    CPU_PID_Before : CPU_STAT_PID_Data; -- Monitored PID CPU cycles
-    CPU_PID_After : CPU_STAT_PID_Data; -- Monitored PID CPU cycles
+    CPU_PID_Monitor : CPU_STAT_PID_Data; -- Monitored PID CPU cycles and power
+    -- CPU_PID_Before : CPU_STAT_PID_Data; -- Monitored PID CPU cycles
+    -- CPU_PID_After : CPU_STAT_PID_Data; -- Monitored PID CPU cycles
 
     -- CPU utilization variables
     CPU_Utilization : Float; -- Entire CPU utilization
     PID_CPU_Utilization : Float; -- CPU utilization of monitored PID
 
-    PID_Time : Long_Integer; -- Monitored PID CPU time
-    PID_Number : Integer; -- PID number to monitor
+    -- PID_Time : Long_Integer; -- Monitored PID CPU time
+    -- PID_Number : Integer; -- PID number to monitor
 
      -- OS name
     OS_Name : String := Get_OS_Name;
@@ -121,7 +122,8 @@ begin
         when 't' => -- Show power data on terminal
             Show_Terminal := True;
         when 'p' => -- Monitor a particular PID
-            PID_Number := Integer'Value (Parameter);
+            -- PID_Number := Integer'Value (Parameter);
+            CPU_PID_Monitor.PID_Number := Integer'Value (Parameter);
             Monitor_PID := True;
         when 'f' => -- Specifiy a filename for CSV file (append data)
             CSV_Filename := To_Unbounded_String (Parameter);
@@ -180,8 +182,8 @@ begin
 
     -- Amend PID CSV file with PID number
     if Monitor_PID then
-        PID_CSV_Filename := CSV_Filename & "-" & Trim(Integer'Image (PID_Number), Ada.Strings.Left) & ".csv";
-        Put_Line ("Monitoring PID: " & Integer'Image (PID_Number));
+        PID_CSV_Filename := CSV_Filename & "-" & Trim(Integer'Image (CPU_PID_Monitor.PID_Number), Ada.Strings.Left) & ".csv";
+        Put_Line ("Monitoring PID: " & Integer'Image (CPU_PID_Monitor.PID_Number));
     end if;
 
     -- Main monitoring loop
@@ -189,7 +191,7 @@ begin
         -- Get a first snapshot of current entire CPU cycles
         Calculate_CPU_Cycles (CPU_CCI_Before);
         if Monitor_PID then -- Do the same for CPU cycles of the monitored PID
-            Calculate_PID_Time (CPU_PID_Before, PID_Number);
+            Calculate_PID_Time (CPU_PID_Monitor, True);
         end if;
 
         if Check_Intel_Supported_System (Platform_Name) then
@@ -203,7 +205,7 @@ begin
         -- Get a second snapshot of current entire CPU cycles
         Calculate_CPU_Cycles (CPU_CCI_After);
         if Monitor_PID then -- Do the same for CPU cycles of the monitored PID
-            Calculate_PID_Time (CPU_PID_After, PID_Number);
+            Calculate_PID_Time (CPU_PID_Monitor, False);
         end if;
 
         if Check_Intel_Supported_System (Platform_Name) then
@@ -237,8 +239,8 @@ begin
 
         -- If a particular PID is monitored, calculate its CPU time, CPU utilization and CPU power
         if Monitor_PID then
-            PID_Time := CPU_PID_After.total_time - CPU_PID_Before.total_time;
-            PID_CPU_Utilization := (Float (PID_Time)) / (Float (CPU_CCI_After.ctotal) - Float (CPU_CCI_Before.ctotal));
+            -- PID_Time := CPU_PID_After.total_time - CPU_PID_Before.total_time;
+            PID_CPU_Utilization := (Float (CPU_PID_Monitor.Monitored_Time)) / (Float (CPU_CCI_After.ctotal) - Float (CPU_CCI_Before.ctotal));
             PID_CPU_Power := (PID_CPU_Utilization * CPU_Power) / CPU_Utilization;
 
             -- Show CPU power data on terminal of monitored PID
