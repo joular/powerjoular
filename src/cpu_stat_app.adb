@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2023, Adel Noureddine, UniversitÃ© de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2023, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -13,12 +13,15 @@ with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.String_Split; use GNAT;
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
+with GNAT.Expect; use GNAT.Expect;
+with GNAT.String_Split; use GNAT;
 
-package body CPU_STAT_PID is
-
-    procedure Calculate_PID_Time (PID_Data : in out CPU_STAT_PID_Data; Is_Before : in Boolean) is
+package body CPU_STAT_App is
+    
+    -- Calculate PID CPU time
+     function Get_PID_Time (PID_Number : Integer) return Long_Integer is
         F : File_Type; -- File handle
-        File_Name : constant String := "/proc/" & Trim(Integer'Image(PID_Data.PID_Number), Ada.Strings.Left) & "/stat"; -- File name /proc/pid/stat
+        File_Name : constant String := "/proc/" & Trim(Integer'Image(PID_Number), Ada.Strings.Left) & "/stat"; -- File name /proc/pid/stat
         Subs : String_Split.Slice_Set; -- Used to slice the read data from stat file
         Seps : constant String := " "; -- Seperator (space) for slicing string
         Utime : Long_Integer; -- User time
@@ -40,15 +43,59 @@ package body CPU_STAT_PID is
         -- fscanf(fp, "%*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %lu %lu", &cpu_process_data->utime, &cpu_process_data->stime);
         Utime := Long_Integer'Value (String_Split.Slice (Subs, 14)); -- Index 13 in file. Slice function starts index at 1, so it is 14
         Stime := Long_Integer'Value (String_Split.Slice (Subs, 15)); -- Index 14 in file. Slice function starts index at 1, so it is 15
-        if (Is_Before) then
-            PID_Data.Before_Time := Utime + Stime; -- Total time
-        else
-            PID_Data.After_Time := Utime + Stime; -- Total time
-        end if;
+        return Utime + Stime; -- Total time
     exception
         when others =>
-            Put_Line ("Error reading " & File_Name & " file");
-            OS_Exit (0);
+            return 0; -- Return 0 if PID doesn't exist or its file can't be accessed
     end;
 
-end CPU_STAT_PID;
+    procedure Calculate_App_Time (App_Data : in out CPU_STAT_App_Data; Is_Before : in Boolean) is
+        Total_Time : Long_Integer := 0; -- Total time for app (all PIDs)
+        PID_Number : Integer;
+    begin
+        for I in App_Data.PID_Array'Range loop
+            PID_Number := App_Data.PID_Array (I);
+            Total_Time := Total_Time + Get_PID_Time (PID_Number);
+        end loop;
+        
+        if (Is_Before) then
+            App_Data.Before_Time := Total_Time; -- Total time
+        else
+            App_Data.After_Time := Total_Time; -- Total time
+        end if;
+    end;
+    
+    procedure Update_PID_Array (App_Data : in out CPU_STAT_App_Data) is
+        Command    : String := "pidof " & To_String (App_Data.App_Name);
+        Args       : Argument_List_Access;
+        Status     : aliased Integer;
+        Subs : String_Split.Slice_Set; -- Used to slice the read data from stat file
+        Seps : constant String := " "; -- Seperator (space) for slicing string
+        Slice_number_count : String_Split.Slice_Number;
+        Loop_I : Integer;
+    begin
+        Args := Argument_String_To_List (Command);
+        declare
+            Response : String :=
+              Get_Command_Output
+                (Command   => Args (Args'First).all,
+                 Arguments => Args (Args'First + 1 .. Args'Last),
+                 Input     => "",
+                 Status    => Status'Access);
+        begin
+            Free (Args);
+            String_Split.Create (S          => Subs, -- Store sliced data in Subs
+                                 From       => Response, -- Read data to slice
+                                 Separators => Seps, -- Separator (here space)
+                                 Mode       => String_Split.Multiple);
+
+            Slice_number_count := String_Split.Slice_Count (Subs);
+
+            for I in 1 .. Slice_number_count loop
+                Loop_I := Integer'Value (String_Split.Slice_Number'Image (I));
+                App_Data.PID_Array(Loop_I) := Integer'Value (String_Split.Slice (Subs, 1));
+            end loop;
+        end;
+    end;
+
+end CPU_STAT_App;
