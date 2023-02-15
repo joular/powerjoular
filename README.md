@@ -18,8 +18,8 @@ PowerJoular is a command line software to monitor, in real time, the power consu
 ## :satellite: Supported platforms
 
 PowerJoular monitors the following platforms:
-- :computer: PC/Servers using a RAPL supported Intel processor (since Sandy Bridge) or a RAPL supported AMD processor (since Ryzen), and optionally an Nvidia graphic card
-- :radio: Raspberry Pi devices (multiple models) and Asus Tinker Board
+- :computer: PC/Servers using a RAPL supported Intel processor (since Sandy Bridge) or a RAPL supported AMD processor (since Ryzen), and optionally an Nvidia graphic card.
+- :radio: Raspberry Pi devices (multiple models) and Asus Tinker Board.
 
 In all platforms, PowerJoular works currently only on GNU/Linux.
 
@@ -42,10 +42,12 @@ We currently support the following Raspberry Pi models and Asus Tinker Board:
 
 ## :package: Installation
 
+PowerJoular is written in Ada and can be easily compiled, and its unique binary added to your system PATH.
+
 Easy-to-use installation scripts are available in the ```installer``` folder.
 Just open the installer folder and run the appropriate file to build and/or install or uninstall the program and systemd service.
 
-- ```build-install.sh```: will build (using ```gprbuild```) and install the program binary to ```/usr/bin``` and systemd service. It requires having installed GNAT, gprbuild and GNATColl (see [Compilation](#floppy_disk-compilation)).
+- ```build-install.sh```: will build (using ```gprbuild```) and install the program binary to ```/usr/bin``` and systemd service. It requires having installed GNAT and gprbuild (see [Compilation](#floppy_disk-compilation)).
 - ```uninstall.sh```: deletes the program binary and systemd service.
 
 ## :bulb: Usage
@@ -68,36 +70,34 @@ You can mix options, i.e., ```powerjoular -tp 144``` will monitor PID 144 and wi
 
 ## :floppy_disk: Compilation
 
-PowerJoular is written with Ada (revision 2012), and requires an Ada compiler, such as GNAT, and uses gprbuild.
-
-PowerJoular is released under the GNU GPL 3 license, so you can use AdaCore GNAT Community Edition, or use the FSF GNAT which includes the GCC Runtime Library Exception.
+PowerJoular is written with Ada, and requires a modern Ada compiler, such as GNAT, and uses gprbuild.
 
 PowerJoular depends on the following commands and libraries for certain of its functions, but can function without them:
 - nvidia-smi: for monitoring power consumption of Nvidia graphic cards
 - Linux powercap with Intel RAPL support: for monitoring power consumption of Intel processors and SoC
 
-On latest Fedora, install gnat and gprbuild:
-```
-sudo dnf install fedora-gnat-project-common gprbuild gcc-gnat
-```
+On a modern GNU/Linux distribution, just install the GNAT compiler and GPRBuild, usually available from the distribution's repositories:
 
-On Debian or Ubuntu, install gnat and gprbuild:
 ```
+Fedora:
+sudo dnf install fedora-gnat-project-common gprbuild gcc-gnat
+
+Debian, Ubuntu or Raspberry Pi OS:
 sudo apt install gnat gprbuild
 ```
 
-To compile the project, use ```gprbuild``` on ```powerjoular.gpr``` file.
+For other distributions, use their package manager to download the compiler, or check [this article for easy instruction for various distributions](https://www.noureddine.org/articles/ada-on-windows-and-linux-an-installation-guide), including RHEL and its clones which does not ship with Ada support in GCC.
 
-```
-git clone https://github.com/joular/powerjoular.git
-cd powerjoular
-mkdir -p obj
-gprbuild
-```
+### Compilation with the GNAT compiler and GPRBuild
+
+To compile the project, just type ```gprbuild``` if using the latest GPRBuild versions.
+
+Or, on older versions, create the ```/obj``` folder first, then type ```gprbuild powerjoular.gpr```.
 
 The PowerJoular binary will be created in the ```obj/``` folder.
 
-By default, the project will statically link the required libraries.
+By default, the project will statically link the required libraries, and therefore the PowerJoular binary can be copied to any compatible system and used as-is.
+
 To build with dynamic linking, remove or comment the static switch in the ```powerjoular.gpr``` file, in particular these lines:
 
 ```
@@ -105,6 +105,8 @@ package Binder is
     for Switches ("Ada") use ("-static");
 end Binder;
 ```
+
+### Compilation with Alire
 
 If you have [Alire](https://alire.ada.dev/) installed, you can use it to build PowerJoular with: ```alr build```.
 
