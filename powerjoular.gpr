@@ -1,5 +1,3 @@
-with "gnatcoll";
-
 project Powerjoular is
     package Binder is
         for Switches ("Ada") use ("-static");
