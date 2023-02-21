@@ -121,6 +121,24 @@ The service can be enabled to run automatically on boot.
 
 The systemd service is automatically installed when installing PowerJoular using the GNU/Linux provided packages.
 
+## :bookmark_tabs: Cite this work
+
+To cite our work in a research paper, please cite our paper in the 18th International Conference on Intelligent Environments (IE2022).
+
+- **PowerJoular and JoularJX: Multi-Platform Software Power Monitoring Tools**. Adel Noureddine. In the 18th International Conference on Intelligent Environments (IE2022). Biarritz, France, 2022.
+
+```
+@inproceedings{noureddine-ie-2022,
+  title = {PowerJoular and JoularJX: Multi-Platform Software Power Monitoring Tools},
+  author = {Noureddine, Adel},
+  booktitle = {18th International Conference on Intelligent Environments (IE2022)},
+  address = {Biarritz, France}
+  year = {2022}
+  month = {Jun},
+  keywords = {Power Monitoring; Measurement; Power Consumption; Energy Analysis}
+}
+```
+
 ## :newspaper: License
 
 PowerJoular is licensed under the GNU GPL 3 license only (GPL-3.0-only).
