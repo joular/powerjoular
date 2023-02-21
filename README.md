@@ -134,6 +134,7 @@ To cite our work in a research paper, please cite our paper in the 18th Internat
   month = {Jun},
   keywords = {Power Monitoring; Measurement; Power Consumption; Energy Analysis}
 }
+```
 
 ## :newspaper: License
 
