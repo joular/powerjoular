@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the research paper."
+preferred-citation:
+  type: conference-paper
+  conference:
+    name: "Intelligent Environments"
+  collection-title: "Proceedings of the 18th International Conference on Intelligent Environments"
+  publisher: IEEE
+  authors:
+  - family-names: "Noureddine"
+    given-names: "Adel"
+    orcid: "https://orcid.org/0000-0002-8585-574X"
+  title: "PowerJoular and JoularJX: Multi-Platform Software Power Monitoring Tools"
+  year: 2022
+  doi: 10.1109/IE54923.2022.9826760
