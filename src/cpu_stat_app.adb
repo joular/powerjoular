@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2023, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2023, Adel Noureddine, UniversitÃ© de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -96,6 +96,10 @@ package body CPU_STAT_App is
                 App_Data.PID_Array(Loop_I) := Integer'Value (String_Split.Slice (Subs, 1));
             end loop;
         end;
+    exception
+        when others =>
+            Put_Line ("Can't find any PID of application: " & To_String (App_Data.App_Name));
+            OS_Exit (0);
     end;
 
 end CPU_STAT_App;
