@@ -70,13 +70,13 @@ You can mix options, i.e., ```powerjoular -tp 144``` will monitor PID 144 and wi
 
 ## :floppy_disk: Compilation
 
-PowerJoular is written with Ada, and requires a modern Ada compiler, such as GNAT, and uses gprbuild.
+PowerJoular is written with Ada, and requires a modern Ada compiler, such as GNAT.
 
 PowerJoular depends on the following commands and libraries for certain of its functions, but can function without them:
 - nvidia-smi: for monitoring power consumption of Nvidia graphic cards
 - Linux powercap with Intel RAPL support: for monitoring power consumption of Intel processors and SoC
 
-On a modern GNU/Linux distribution, just install the GNAT compiler and GPRBuild, usually available from the distribution's repositories:
+On a modern GNU/Linux distribution, just install the GNAT compiler (and GPRBuild), usually available from the distribution's repositories:
 
 ```
 Fedora:
@@ -106,9 +106,25 @@ package Binder is
 end Binder;
 ```
 
+### Compilation with the GNAT compiler only
+
+You can also compile PowerJoular with the GNAT compiler only (without the need for GPRBuild).
+
+Just compile using gnatmake. For example, to compile from ```obj/``` folder (so .o and .ali files are generated there), type the following:
+
+```
+mkdir -p obj
+cd obj
+gnatmake ../src/powerjoular.adb
+```
+
 ### Compilation with Alire
 
-If you have [Alire](https://alire.ada.dev/) installed, you can use it to build PowerJoular with: ```alr build```.
+If you have [Alire](https://alire.ada.dev/) installed, you can use it to build PowerJoular with:
+
+```
+alr build
+```
 
 ## :hourglass: Systemd service
 
