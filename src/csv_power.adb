@@ -124,14 +124,18 @@ package body CSV_Power is
         end if;
     end;
 
-    procedure Show_On_Terminal_PID (PID_Utilization : Float; PID_Power : Float; Utilization : Float; Power : Float) is
+    procedure Show_On_Terminal_PID (PID_Utilization : Float; PID_Power : Float; Utilization : Float; Power : Float; Is_PID : Boolean) is
         Utilization_Percentage : Float;
         PID_Utilization_Percentage : Float;
     begin
         Utilization_Percentage := Utilization * 100.0;
         PID_Utilization_Percentage := PID_Utilization * 100.0;
         Put (CR);
-        Put ("PID monitoring:" & HT & "CPU: ");
+        if (Is_PID) then
+            Put ("PID monitoring:" & HT & "CPU: ");
+        else
+            Put ("Application monitoring:" & HT & "CPU: ");
+        end if;
         Put (PID_Utilization_Percentage, Exp => 0, Fore => 0, Aft => 2);
         Put (" % (");
         Put (Utilization_Percentage, Exp => 0, Fore => 0, Aft => 2);

@@ -21,6 +21,6 @@ package CSV_Power is
     procedure Show_On_Terminal (Utilization : Float; Power : Float; Previous_Power : Float; CPU_Power : Float; GPU_Power : Float; GPU_Supported : Boolean);
 
     -- Print CPU utilization and CPU power conusmption on the terminal of monitored PID
-    procedure Show_On_Terminal_PID (PID_Utilization : Float; PID_Power : Float; Utilization : Float; Power : Float);
+    procedure Show_On_Terminal_PID (PID_Utilization : Float; PID_Power : Float; Utilization : Float; Power : Float; Is_PID : Boolean);
 
 end CSV_Power;

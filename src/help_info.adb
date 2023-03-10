@@ -33,6 +33,7 @@ package body Help_Info is
         Put_Line (ESC & "[93m" & "Options:" & ESC & "[0m");
         Put_Line (HT & "-h: show this help message");
         Put_Line (HT & "-p pid: specifiy a particular PID to monitor");
+        Put_Line (HT & "-a appName: specifiy a particular application name to monitor (will monitor all PIDs of the application)");
         Put_Line (HT & "-f filename: save monitoring data to the given filename path");
         Put_Line (HT & "-o filename: save only last monitoring data to the given filename path (file overwritten with only latest power measures)");
         Put_Line (HT & "-t: print data to the terminal");
