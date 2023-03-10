@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2021, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2023, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -11,22 +11,23 @@
 
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Float_Text_IO; use Ada.Float_Text_IO;
+with GNAT.Command_Line; use GNAT.Command_Line;
+with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with GNAT.OS_Lib; use GNAT.OS_Lib;
+with GNAT.Ctrl_C; use GNAT.Ctrl_C;
+with Ada.Strings.Fixed; use Ada.Strings.Fixed;
+with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
+with Ada.Command_Line; use Ada.Command_Line;
+
 with CPU_Cycles; use CPU_Cycles;
 with CSV_Power; use CSV_Power;
-with GNAT.Command_Line; use GNAT.Command_Line;
 with Help_Info; use Help_Info;
-with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with CPU_STAT_PID; use CPU_STAT_PID;
-with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with Intel_RAPL_sysfs; use Intel_RAPL_sysfs;
 with OS_Utils; use OS_Utils;
 with Nvidia_SMI; use Nvidia_SMI;
-with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
-with Ada.Command_Line; use Ada.Command_Line;
-with Power_Models_Utils; use Power_Models_Utils;
 with Raspberry_Pi_CPU_Formula; use Raspberry_Pi_CPU_Formula;
-with GNAT.OS_Lib; use GNAT.OS_Lib;
-with GNAT.Ctrl_C; use GNAT.Ctrl_C;
+with CPU_STAT_App; use CPU_STAT_App;
 
 procedure Powerjoular is
     -- Power variables
@@ -35,7 +36,7 @@ procedure Powerjoular is
     CPU_Power : Float; -- Entire CPU power consumption
     Previous_CPU_Power : Float := 0.0; -- Previous CPU power consumption (t - 1)
     PID_CPU_Power : Float; -- CPU power consumption of monitored PID
-    Previous_PID_CPU_Power : Float := 0.0; -- Previous CPU power consumption of monitored PID (t - 1)
+    App_CPU_Power : Float; -- CPU power consumption of monitored application
     CPU_Energy : Float := 0.0;
     --
     -- GPU Power
@@ -57,21 +58,18 @@ procedure Powerjoular is
     Nvidia_Supported : Boolean; -- If nvidia card, drivers and smi tool are available
 
     -- Raspberrry Pi model settings
-    PowerModels_Data : Unbounded_String; -- Raspberrry Pi power models (read from file)
     Algorithm_Name : Unbounded_String := To_Unbounded_String ("polynomial"); -- Regression model type (by default, polynomial regression model)
 
     -- Data types to monitor CPU cycles
     CPU_CCI_Before : CPU_Cycles_Data; -- Entire CPU cycles
     CPU_CCI_After : CPU_Cycles_Data; -- Entire CPU cycles
-    CPU_PID_Before : CPU_STAT_PID_Data; -- Monitored PID CPU cycles
-    CPU_PID_After : CPU_STAT_PID_Data; -- Monitored PID CPU cycles
+    CPU_PID_Monitor : CPU_STAT_PID_Data; -- Monitored PID CPU cycles and power
+    CPU_App_Monitor : CPU_STAT_App_Data; -- Monitored App CPU cycles and power
 
     -- CPU utilization variables
     CPU_Utilization : Float; -- Entire CPU utilization
     PID_CPU_Utilization : Float; -- CPU utilization of monitored PID
-
-    PID_Time : Long_Integer; -- Monitored PID CPU time
-    PID_Number : Integer; -- PID number to monitor
+    App_CPU_Utilization : Float; -- CPU utilization of monitored application
 
      -- OS name
     OS_Name : String := Get_OS_Name;
@@ -81,12 +79,13 @@ procedure Powerjoular is
 
     -- CSV filenames
     CSV_Filename : Unbounded_String; -- CSV filename for entire CPU power data
-    PID_CSV_Filename : Unbounded_String; -- CSV filename for monitored PID CPU power data
+    PID_Or_App_CSV_Filename : Unbounded_String; -- CSV filename for monitored PID or application CPU power data
 
     -- Settings
     Show_Terminal : Boolean := False; -- Show power data on terminal
     Print_File: Boolean := False; -- Save power data in file
     Monitor_PID : Boolean := False; -- Monitor a specific PID
+    Monitor_App : Boolean := False; -- Monitor a specific application by its name
     Overwrite_Data : Boolean := false; -- Overwrite data instead of append on file
 
     -- Procedure to capture Ctrl+C to show total energy on exit
@@ -116,15 +115,19 @@ begin
 
     -- Loop over command line options
     loop
-        case Getopt ("h t f: p: o: u l") is
+        case Getopt ("h t f: p: a: o: u l") is
         when 'h' => -- Show help
             Show_Help;
             return;
         when 't' => -- Show power data on terminal
             Show_Terminal := True;
         when 'p' => -- Monitor a particular PID
-            PID_Number := Integer'Value (Parameter);
+            -- PID_Number := Integer'Value (Parameter);
+            CPU_PID_Monitor.PID_Number := Integer'Value (Parameter);
             Monitor_PID := True;
+        when 'a' => -- Monitor a particular application by its name
+            CPU_App_Monitor.App_Name := To_Unbounded_String (Parameter);
+            Monitor_App := True;
         when 'f' => -- Specifiy a filename for CSV file (append data)
             CSV_Filename := To_Unbounded_String (Parameter);
             Print_File := True;
@@ -132,9 +135,6 @@ begin
             CSV_Filename := To_Unbounded_String (Parameter);
             Print_File := True;
             Overwrite_Data := True;
-        when 'u' => -- Update power models from the internet
-            Update_Power_Models_File;
-            OS_Exit (0);
         when 'l' => -- Use linear regression model instead of polynomial models
             Algorithm_Name := To_Unbounded_String ("linear");
         when others =>
@@ -183,15 +183,16 @@ begin
         end if;
     end if;
 
-    -- Check for Raspberry Pi and read power models from file
-    if Check_Raspberry_Pi_Supported_System (Platform_Name) then
-        PowerModels_Data := Read_Power_Models_File;
-    end if;
-
     -- Amend PID CSV file with PID number
     if Monitor_PID then
-        PID_CSV_Filename := CSV_Filename & "-" & Trim(Integer'Image (PID_Number), Ada.Strings.Left) & ".csv";
-        Put_Line ("Monitoring PID: " & Integer'Image (PID_Number));
+        PID_Or_App_CSV_Filename := CSV_Filename & "-" & Trim(Integer'Image (CPU_PID_Monitor.PID_Number), Ada.Strings.Left) & ".csv";
+        Put_Line ("Monitoring PID: " & Integer'Image (CPU_PID_Monitor.PID_Number));
+    end if;
+
+    -- Amend App CSV file with App name
+    if Monitor_App then
+        PID_Or_App_CSV_Filename := CSV_Filename & "-" & CPU_App_Monitor.App_Name & ".csv";
+        Put_Line ("Monitoring application: " & To_String (CPU_App_Monitor.App_Name));
     end if;
 
     -- Main monitoring loop
@@ -199,7 +200,14 @@ begin
         -- Get a first snapshot of current entire CPU cycles
         Calculate_CPU_Cycles (CPU_CCI_Before);
         if Monitor_PID then -- Do the same for CPU cycles of the monitored PID
-            Calculate_PID_Time (CPU_PID_Before, PID_Number);
+            Calculate_PID_Time (CPU_PID_Monitor, True);
+        end if;
+
+        if Monitor_App then -- Do the same for CPU cycles of the monitored application
+            -- First update the PID array for the application
+            -- We do it every cycle so PID list is always current and accurate
+            Update_PID_Array (CPU_App_Monitor);
+            Calculate_App_Time (CPU_App_Monitor, True);
         end if;
 
         if Check_Intel_Supported_System (Platform_Name) then
@@ -213,7 +221,11 @@ begin
         -- Get a second snapshot of current entire CPU cycles
         Calculate_CPU_Cycles (CPU_CCI_After);
         if Monitor_PID then -- Do the same for CPU cycles of the monitored PID
-            Calculate_PID_Time (CPU_PID_After, PID_Number);
+            Calculate_PID_Time (CPU_PID_Monitor, False);
+        end if;
+
+        if Monitor_App then -- Do the same for CPU cycles of the monitored application
+            Calculate_App_Time (CPU_App_Monitor, False);
         end if;
 
         if Check_Intel_Supported_System (Platform_Name) then
@@ -226,7 +238,7 @@ begin
 
         if Check_Raspberry_Pi_Supported_System (Platform_Name) then
             -- Calculate power consumption for Raspberry
-            CPU_Power := Calculate_CPU_Power (CPU_Utilization, Platform_Name, PowerModels_Data, To_String (Algorithm_Name));
+            CPU_Power := Calculate_CPU_Power (CPU_Utilization, Platform_Name, To_String (Algorithm_Name));
             Total_Power := CPU_Power;
         end if;
 
@@ -247,25 +259,39 @@ begin
 
         -- If a particular PID is monitored, calculate its CPU time, CPU utilization and CPU power
         if Monitor_PID then
-            PID_Time := CPU_PID_After.total_time - CPU_PID_Before.total_time;
-            PID_CPU_Utilization := (Float (PID_Time)) / (Float (CPU_CCI_After.ctotal) - Float (CPU_CCI_Before.ctotal));
+            PID_CPU_Utilization := (Float (CPU_PID_Monitor.Monitored_Time)) / (Float (CPU_CCI_After.ctotal) - Float (CPU_CCI_Before.ctotal));
             PID_CPU_Power := (PID_CPU_Utilization * CPU_Power) / CPU_Utilization;
 
             -- Show CPU power data on terminal of monitored PID
             if Show_Terminal then
-                Show_On_Terminal_PID (PID_CPU_Utilization, PID_CPU_Power, CPU_Utilization, CPU_Power);
+                Show_On_Terminal_PID (PID_CPU_Utilization, PID_CPU_Power, CPU_Utilization, CPU_Power, True);
             end if;
 
             -- Save CPU power data to CSV file of monitored PID
             if Print_File then
-                Save_PID_To_CSV_File (To_String (PID_CSV_Filename), PID_CPU_Utilization, PID_CPU_Power, Overwrite_Data);
+                Save_PID_To_CSV_File (To_String (PID_Or_App_CSV_Filename), PID_CPU_Utilization, PID_CPU_Power, Overwrite_Data);
+            end if;
+        end if;
+
+        -- If a particular application is monitored, calculate its CPU time, CPU utilization and CPU power
+        if Monitor_App then
+            -- PID_Time := CPU_PID_After.total_time - CPU_PID_Before.total_time;
+            App_CPU_Utilization := (Float (CPU_App_Monitor.Monitored_Time)) / (Float (CPU_CCI_After.ctotal) - Float (CPU_CCI_Before.ctotal));
+            App_CPU_Power := (App_CPU_Utilization * CPU_Power) / CPU_Utilization;
+
+            -- Show CPU power data on terminal of monitored PID
+            if Show_Terminal then
+                Show_On_Terminal_PID (App_CPU_Utilization, App_CPU_Power, CPU_Utilization, CPU_Power, False);
             end if;
 
-            Previous_PID_CPU_Power := PID_CPU_Power;
+            -- Save CPU power data to CSV file of monitored PID
+            if Print_File then
+                Save_PID_To_CSV_File (To_String (PID_Or_App_CSV_Filename), App_CPU_Utilization, App_CPU_Power, Overwrite_Data);
+            end if;
         end if;
 
         -- Show total power data on terminal
-        if Show_Terminal and then (not Monitor_PID) then
+        if Show_Terminal and then (not Monitor_PID) and then (not Monitor_App) then
             Show_On_Terminal (CPU_Utilization, Total_Power, Previous_Total_Power, CPU_Power, GPU_Power, Nvidia_Supported);
         end if;
 

@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2021, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2023, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -124,14 +124,18 @@ package body CSV_Power is
         end if;
     end;
 
-    procedure Show_On_Terminal_PID (PID_Utilization : Float; PID_Power : Float; Utilization : Float; Power : Float) is
+    procedure Show_On_Terminal_PID (PID_Utilization : Float; PID_Power : Float; Utilization : Float; Power : Float; Is_PID : Boolean) is
         Utilization_Percentage : Float;
         PID_Utilization_Percentage : Float;
     begin
         Utilization_Percentage := Utilization * 100.0;
         PID_Utilization_Percentage := PID_Utilization * 100.0;
         Put (CR);
-        Put ("PID monitoring:" & HT & "CPU: ");
+        if (Is_PID) then
+            Put ("PID monitoring:" & HT & "CPU: ");
+        else
+            Put ("Application monitoring:" & HT & "CPU: ");
+        end if;
         Put (PID_Utilization_Percentage, Exp => 0, Fore => 0, Aft => 2);
         Put (" % (");
         Put (Utilization_Percentage, Exp => 0, Fore => 0, Aft => 2);

@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2021, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2023, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -15,7 +15,7 @@ with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 package body Help_Info is
 
     procedure Show_Help is
-    Version_Number : constant String := "0.5";
+    Version_Number : constant String := "0.6";
     begin
         Put_Line (ESC & "[93m" & "~~ PowerJoular ~~" & ESC & "[0m");
         Put_Line ("Version " & Version_Number);
@@ -33,10 +33,10 @@ package body Help_Info is
         Put_Line (ESC & "[93m" & "Options:" & ESC & "[0m");
         Put_Line (HT & "-h: show this help message");
         Put_Line (HT & "-p pid: specifiy a particular PID to monitor");
+        Put_Line (HT & "-a appName: specifiy a particular application name to monitor (will monitor all PIDs of the application)");
         Put_Line (HT & "-f filename: save monitoring data to the given filename path");
         Put_Line (HT & "-o filename: save only last monitoring data to the given filename path (file overwritten with only latest power measures)");
         Put_Line (HT & "-t: print data to the terminal");
-        Put_Line (HT & "-u: update Raspberry Pi power models from the internet (saves to /etc/powerjoular/powerjoular_models.json). Requires root/sudo");
         Put_Line (HT & "-l: use linear regression models (less accurate than the default polynomial models) for Raspberry Pi energy models");
         Put_Line ("You can mix options, i.e., powerjoular -tp 144 --> monitor PID 144 and will print to the terminal");
         Put_Line ("--------------------------");
