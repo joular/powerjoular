@@ -61,6 +61,7 @@ The difference (increase or decrease) of power consumption from last metric will
 The following options are available:
 - ```-h```: show the help message
 - ```-p pid```: specifiy a particular PID to monitor
+- ```-a appName```: specifiy a particular application name to monitor (will monitor all PIDs of the application)
 - ```-f filename```: save monitoring data to the given filename path
 - ```-o filename```: save only last monitoring data to the given filename path (file overwritten with only latest power measures)
 - ```-t```: print data to the terminal
