@@ -146,8 +146,8 @@ To cite our work in a research paper, please cite our paper in the 18th Internat
   title = {PowerJoular and JoularJX: Multi-Platform Software Power Monitoring Tools},
   author = {Noureddine, Adel},
   booktitle = {18th International Conference on Intelligent Environments (IE2022)},
-  address = {Biarritz, France}
-  year = {2022}
+  address = {Biarritz, France},
+  year = {2022},
   month = {Jun},
   keywords = {Power Monitoring; Measurement; Power Consumption; Energy Analysis}
 }
