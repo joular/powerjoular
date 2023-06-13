@@ -62,6 +62,7 @@ package body CPU_STAT_App is
             App_Data.Before_Time := Total_Time; -- Total time
         else
             App_Data.After_Time := Total_Time; -- Total time
+            App_Data.Monitored_Time := App_Data.After_Time - App_Data.Before_Time;
         end if;
     end;
     
