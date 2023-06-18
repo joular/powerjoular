@@ -44,6 +44,7 @@ package body CPU_STAT_PID is
             PID_Data.Before_Time := Utime + Stime; -- Total time
         else
             PID_Data.After_Time := Utime + Stime; -- Total time
+            PID_Data.Monitored_Time := PID_Data.After_Time - PID_Data.Before_Time;
         end if;
     exception
         when others =>
