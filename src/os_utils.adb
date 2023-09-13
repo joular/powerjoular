@@ -173,6 +173,11 @@ package body OS_Utils is
                     return "amd";
                 end if;
 
+                Index_Search := Index (To_String (Line_String), "EPYC");
+                if (Index_Search > 0) then
+                    return "amd";
+                end if;
+
             end loop;
             
             Close (F_Name);
