@@ -18,7 +18,7 @@ PowerJoular is a command line software to monitor, in real time, the power consu
 ## :satellite: Supported platforms
 
 PowerJoular monitors the following platforms:
-- :computer: PC/Servers using a RAPL supported Intel processor (since Sandy Bridge) or a RAPL supported AMD processor (since Ryzen), and optionally an Nvidia graphic card.
+- :computer: PC/Servers using a RAPL supported Intel processor (since Sandy Bridge) or a RAPL supported AMD processor (Ryzen or EPYC), and optionally an Nvidia graphic card.
 - :radio: Raspberry Pi devices (multiple models) and Asus Tinker Board.
 
 In all platforms, PowerJoular works currently only on GNU/Linux.
