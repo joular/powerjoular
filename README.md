@@ -31,7 +31,10 @@ PowerJoular supports RAPL package domain (core, including integrated graphics, a
 
 On Raspberry Pi and Asus Tinker Board, PowerJoular uses its own research-based empirical regression models to estimate the power consumption of the ARM processor.
 
-We currently support the following Raspberry Pi models and Asus Tinker Board:
+The supported list of Raspberry Pi and Asus Tinker Board models are listed below.
+We support all revisions of each model lineup. However, the model is generated and trained on a specific revision (listed between brackets), and the accuracy is best on this particular revision.
+
+We currently support the following Raspberry Pi and Asus Tinker Board models:
 - Model Zero W (rev 1.1), for 32 bits OS
 - Model 1 B (rev 2), for 32 bits OS
 - Model 1 B+ (rev 1.2), for 32 bits OS
@@ -62,11 +65,13 @@ The difference (increase or decrease) of power consumption from last metric will
 
 The following options are available:
 - ```-h```: show the help message
+- ```-h```: show version number
 - ```-p pid```: specifiy a particular PID to monitor
 - ```-a appName```: specifiy a particular application name to monitor (will monitor all PIDs of the application)
 - ```-f filename```: save monitoring data to the given filename path
 - ```-o filename```: save only last monitoring data to the given filename path (file overwritten with only latest power measures)
-- ```-t```: print data to the terminal
+- ```-t```: print energy data to the terminal
+- ```-d```: print debug info to the terminal
 - ```-l```: use linear regression models (less accurate than the default polynomial models) for Raspberry Pi energy models
  
 You can mix options, i.e., ```powerjoular -tp 144``` will monitor PID 144 and will print to the terminal.
