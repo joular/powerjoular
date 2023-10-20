@@ -66,6 +66,9 @@ package body OS_Utils is
         while not End_Of_File (F_Name) loop
             Line_String := To_Unbounded_String (Get_Line (F_Name));
 
+            -- Specific model used to train the energy models
+
+            -- Raspberry Pi 400 1.0
             Index_Search := Index (To_String (Line_String), "Raspberry Pi 400 Rev 1.0");
             if (Index_Search > 0) then
                 if (Architecture_Name = "aarch64") then
@@ -73,6 +76,7 @@ package body OS_Utils is
                 end if;
             end if;
 
+            -- Raspberry Pi 4B 1.2
             Index_Search := Index (To_String (Line_String), "Raspberry Pi 4 Model B Rev 1.2");
             if (Index_Search > 0) then
                 if (Architecture_Name = "aarch64") then
@@ -82,6 +86,7 @@ package body OS_Utils is
                 end if;
             end if;
 
+            -- Raspberry Pi 4B 1.1
             Index_Search := Index (To_String (Line_String), "Raspberry Pi 4 Model B Rev 1.1");
             if (Index_Search > 0) then
                 if (Architecture_Name = "aarch64") then
@@ -91,37 +96,107 @@ package body OS_Utils is
                 end if;
             end if;
 
+            -- Raspberry Pi 3B+ 1.3
             Index_Search := Index (To_String (Line_String), "Raspberry Pi 3 Model B Plus Rev 1.3");
             if (Index_Search > 0) then
                 return "rbp3b+1.3";
             end if;
 
+            -- Raspberry Pi 3B 1.2
             Index_Search := Index (To_String (Line_String), "Raspberry Pi 3 Model B Rev 1.2");
             if (Index_Search > 0) then
                 return "rbp3b1.2";
             end if;
 
+            -- Raspberry Pi 2B 1.1
             Index_Search := Index (To_String (Line_String), "Raspberry Pi 2 Model B Rev 1.1");
             if (Index_Search > 0) then
                 return "rbp2b1.1";
             end if;
 
+            -- Raspberry Pi B+ 1.2
             Index_Search := Index (To_String (Line_String), "Raspberry Pi Model B Plus Rev 1.2");
             if (Index_Search > 0) then
                 return "rbp1b+1.2";
             end if;
 
+            -- Raspberry Pi B 2
             Index_Search := Index (To_String (Line_String), "Raspberry Pi Model B Rev 2");
             if (Index_Search > 0) then
                 return "rbp1b2";
             end if;
 
+            -- Raspberry Pi Zero W 1.1
             Index_Search := Index (To_String (Line_String), "Raspberry Pi Zero W Rev 1.1");
             if (Index_Search > 0) then
                 return "rbpzw1.1";
             end if;
 
+            -- Asus Tinker Board (S)
             Index_Search := Index (To_String (Line_String), "ASUS Tinker Board (S)");
+            if (Index_Search > 0) then
+                return "asustbs";
+            end if;
+
+            -- Supporting other revisions where specific energy models were not generated
+            -- In this case, we use the model of the same RPi model but different revision
+
+            -- Raspberry Pi 400
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi 400");
+            if (Index_Search > 0) then
+                if (Architecture_Name = "aarch64") then
+                    return "rbp4001.0-64";
+                end if;
+            end if;
+
+            -- Raspberry Pi 4B
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi 4 Model B");
+            if (Index_Search > 0) then
+                if (Architecture_Name = "aarch64") then
+                    return "rbp4b1.2-64";
+                else
+                    return "rbp4b1.2";
+                end if;
+            end if;
+
+            -- Raspberry Pi 3B+
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi 3 Model B Plus");
+            if (Index_Search > 0) then
+                return "rbp3b+1.3";
+            end if;
+
+            -- Raspberry Pi 3B
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi 3 Model B");
+            if (Index_Search > 0) then
+                return "rbp3b1.2";
+            end if;
+
+            -- Raspberry Pi 2B
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi 2 Model B");
+            if (Index_Search > 0) then
+                return "rbp2b1.1";
+            end if;
+
+            -- Raspberry Pi B+
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi Model B Plus");
+            if (Index_Search > 0) then
+                return "rbp1b+1.2";
+            end if;
+
+            -- Raspberry Pi B
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi Model B");
+            if (Index_Search > 0) then
+                return "rbp1b2";
+            end if;
+
+            -- Raspberry Pi Zero W
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi Zero W");
+            if (Index_Search > 0) then
+                return "rbpzw1.1";
+            end if;
+
+            -- Asus Tinker Board
+            Index_Search := Index (To_String (Line_String), "ASUS Tinker Board");
             if (Index_Search > 0) then
                 return "asustbs";
             end if;
