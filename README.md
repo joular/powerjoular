@@ -63,11 +63,13 @@ The difference (increase or decrease) of power consumption from last metric will
 
 The following options are available:
 - ```-h```: show the help message
+- ```-h```: show version number
 - ```-p pid```: specifiy a particular PID to monitor
 - ```-a appName```: specifiy a particular application name to monitor (will monitor all PIDs of the application)
 - ```-f filename```: save monitoring data to the given filename path
 - ```-o filename```: save only last monitoring data to the given filename path (file overwritten with only latest power measures)
-- ```-t```: print data to the terminal
+- ```-t```: print energy data to the terminal
+- ```-d```: print debug info to the terminal
 - ```-l```: use linear regression models (less accurate than the default polynomial models) for Raspberry Pi energy models
  
 You can mix options, i.e., ```powerjoular -tp 144``` will monitor PID 144 and will print to the terminal.

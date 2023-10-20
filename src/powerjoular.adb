@@ -83,6 +83,7 @@ procedure Powerjoular is
 
     -- Settings
     Show_Terminal : Boolean := False; -- Show power data on terminal
+    Show_Debug : Boolean := False; -- Show debug info on terminal
     Print_File: Boolean := False; -- Save power data in file
     Monitor_PID : Boolean := False; -- Monitor a specific PID
     Monitor_App : Boolean := False; -- Monitor a specific application by its name
@@ -115,7 +116,7 @@ begin
 
     -- Loop over command line options
     loop
-        case Getopt ("h v t f: p: a: o: u l") is
+        case Getopt ("h v t d f: p: a: o: u l") is
         when 'h' => -- Show help
             Show_Help;
             return;
@@ -124,6 +125,8 @@ begin
             return;
         when 't' => -- Show power data on terminal
             Show_Terminal := True;
+        when 'd' => -- Show debug info on terminal
+            Show_Debug := True; 
         when 'p' => -- Monitor a particular PID
             -- PID_Number := Integer'Value (Parameter);
             CPU_PID_Monitor.PID_Number := Integer'Value (Parameter);
@@ -156,23 +159,25 @@ begin
         return;
     end if;
 
-    Put_Line ("System info:");
-    Put_Line (Ada.Characters.Latin_1.HT & "Platform: " & Platform_Name);
+    if Show_Debug then
+        Put_Line ("System info:");
+        Put_Line (Ada.Characters.Latin_1.HT & "Platform: " & Platform_Name);
+    end if;
 
     if Check_Intel_Supported_System (Platform_Name) then
         -- For Intel RAPL, check and populate supported packages first
         Check_Supported_Packages (RAPL_Before, "psys");
-        if RAPL_Before.psys_supported then
+        if RAPL_Before.psys_supported and Show_Debug then
             Put_Line (Ada.Characters.Latin_1.HT & "Intel RAPL psys: " & Boolean'Image (RAPL_Before.Psys_Supported));
         end if;
 
         if (not RAPL_Before.psys_supported) then -- Only check for pkg and dram if psys is not supported
             Check_Supported_Packages (RAPL_Before, "pkg");
             Check_Supported_Packages (RAPL_Before, "dram");
-            if RAPL_Before.Pkg_Supported then
+            if RAPL_Before.Pkg_Supported and Show_Debug then
                 Put_Line (Ada.Characters.Latin_1.HT & "Intel RAPL pkg: " & Boolean'Image (RAPL_Before.pkg_supported));
             end if;
-            if RAPL_Before.Dram_Supported then
+            if RAPL_Before.Dram_Supported and Show_Debug then
                 Put_Line (Ada.Characters.Latin_1.HT & "Intel RAPL dram: " & Boolean'Image (RAPL_Before.Dram_Supported));
             end if;
         end if;
@@ -181,7 +186,7 @@ begin
         -- Check if Nvidia card is supported
         -- For now, Nvidia support requiers a PC/server, thus Intel support
         Nvidia_Supported := Check_Nvidia_Supported_System;
-        if Nvidia_Supported then
+        if Nvidia_Supported and Show_Debug then
             Put_Line (Ada.Characters.Latin_1.HT & "Nvidia supported: " & Boolean'Image (Nvidia_Supported));
         end if;
     end if;
@@ -189,13 +194,17 @@ begin
     -- Amend PID CSV file with PID number
     if Monitor_PID then
         PID_Or_App_CSV_Filename := CSV_Filename & "-" & Trim(Integer'Image (CPU_PID_Monitor.PID_Number), Ada.Strings.Left) & ".csv";
-        Put_Line ("Monitoring PID: " & Integer'Image (CPU_PID_Monitor.PID_Number));
+        if Show_Debug then
+            Put_Line ("Monitoring PID: " & Integer'Image (CPU_PID_Monitor.PID_Number));
+        end if;
     end if;
 
     -- Amend App CSV file with App name
     if Monitor_App then
         PID_Or_App_CSV_Filename := CSV_Filename & "-" & CPU_App_Monitor.App_Name & ".csv";
-        Put_Line ("Monitoring application: " & To_String (CPU_App_Monitor.App_Name));
+        if Show_Debug then
+            Put_Line ("Monitoring application: " & To_String (CPU_App_Monitor.App_Name));
+        end if;
     end if;
 
     -- Main monitoring loop
