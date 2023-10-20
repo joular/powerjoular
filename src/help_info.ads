@@ -14,4 +14,7 @@ package Help_Info is
     -- Print help information on the terminal
     procedure Show_Help;
 
+    -- Print version number
+    procedure Show_Version;
+
 end Help_Info;

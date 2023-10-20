@@ -115,9 +115,12 @@ begin
 
     -- Loop over command line options
     loop
-        case Getopt ("h t f: p: a: o: u l") is
+        case Getopt ("h v t f: p: a: o: u l") is
         when 'h' => -- Show help
             Show_Help;
+            return;
+        when 'v' => -- Show help
+            Show_Version;
             return;
         when 't' => -- Show power data on terminal
             Show_Terminal := True;

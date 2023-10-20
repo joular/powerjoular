@@ -29,7 +29,10 @@ PowerJoular supports RAPL package domain (core, including integrated graphics, a
 
 On Raspberry Pi and Asus Tinker Board, PowerJoular uses its own research-based empirical regression models to estimate the power consumption of the ARM processor.
 
-We currently support the following Raspberry Pi models and Asus Tinker Board:
+The supported list of Raspberry Pi and Asus Tinker Board models are listed below.
+We support all revisions of each model lineup. However, the model is generated and trained on a specific revision (listed between brackets), and the accuracy is best on this particular revision.
+
+We currently support the following Raspberry Pi and Asus Tinker Board models:
 - Model Zero W (rev 1.1), for 32 bits OS
 - Model 1 B (rev 2), for 32 bits OS
 - Model 1 B+ (rev 1.2), for 32 bits OS
