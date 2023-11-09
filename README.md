@@ -7,6 +7,8 @@
 
 PowerJoular is a command line software to monitor, in real time, the power consumption of software and hardware components.
 
+Detailed documentation (including user and reference guides) are available at: [https://joular.github.io/powerjoular/](https://joular.github.io/powerjoular/).
+
 ## :rocket: Features
 
 - Monitor power consumption of CPU and GPU of PC/servers
