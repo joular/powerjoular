@@ -2,6 +2,9 @@ project Powerjoular is
     package Binder is
         for Switches ("Ada") use ("-static");
     end Binder;
+    package Compiler is
+	    for Switches ("Ada") use ("-O3");
+    end Compiler;
     for Create_Missing_Dirs use "True";
     for Source_Dirs use ("src");
     for Object_Dir use "obj";
