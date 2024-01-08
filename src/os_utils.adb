@@ -26,7 +26,7 @@ package body OS_Utils is
     -- Check if platform supports Raspberry Pi
     function Check_Raspberry_Pi_Supported_System (Platform_Name : in String) return Boolean is
     begin
-        return Platform_Name in "rbp4001.0-64" | "rbp4b1.2" | "rbp4b1.2-64" | "rbp4b1.1" | "rbp4b1.1-64" | "rbp3b+1.3" | "rbp3b1.2" | "rbp2b1.1" | "rbp1b+1.2" | "rbp1b2" | "rbpzw1.1" | "asustbs";
+        return Platform_Name in "rbp5b1.0-64" | "rbp4001.0-64" | "rbp4b1.2" | "rbp4b1.2-64" | "rbp4b1.1" | "rbp4b1.1-64" | "rbp3b+1.3" | "rbp3b1.2" | "rbp2b1.1" | "rbp1b+1.2" | "rbp1b2" | "rbpzw1.1" | "asustbs";
     end;
 
     -- Get architecture name (uname -m)
@@ -67,6 +67,14 @@ package body OS_Utils is
             Line_String := To_Unbounded_String (Get_Line (F_Name));
 
             -- Specific model used to train the energy models
+            
+            -- Raspberry Pi 5B 1.0
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi 5 Model B Rev 1.0");
+            if (Index_Search > 0) then
+                if (Architecture_Name = "aarch64") then
+                    return "rbp5b1.0-64";
+                end if;
+            end if;
 
             -- Raspberry Pi 400 1.0
             Index_Search := Index (To_String (Line_String), "Raspberry Pi 400 Rev 1.0");
@@ -140,6 +148,14 @@ package body OS_Utils is
 
             -- Supporting other revisions where specific energy models were not generated
             -- In this case, we use the model of the same RPi model but different revision
+            
+            -- Raspberry Pi 5B
+            Index_Search := Index (To_String (Line_String), "Raspberry Pi 5 Model B");
+            if (Index_Search > 0) then
+                if (Architecture_Name = "aarch64") then
+                    return "rbp5b1.0-64";
+                end if;
+            end if;
 
             -- Raspberry Pi 400
             Index_Search := Index (To_String (Line_String), "Raspberry Pi 400");
