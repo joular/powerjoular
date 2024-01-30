@@ -15,7 +15,7 @@ with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 package body Help_Info is
 
     procedure Show_Help is
-    Version_Number : constant String := "0.7.0";
+    Version_Number : constant String := "0.7.1";
     begin
         Put_Line (ESC & "[93m" & "~~ PowerJoular ~~" & ESC & "[0m");
         Put_Line ("Version " & Version_Number);
@@ -52,7 +52,7 @@ package body Help_Info is
     end;
 
     procedure Show_Version is
-    Version_Number : constant String := "0.7.0";
+    Version_Number : constant String := "0.7.1";
     begin
         Put_Line (Version_Number);
     end;
