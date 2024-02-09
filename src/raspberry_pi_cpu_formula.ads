@@ -14,6 +14,6 @@ with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 package Raspberry_Pi_CPU_Formula is
 
     -- Function to calculate CPU power consumption based on CPU utilization
-    function Calculate_CPU_Power (CPU_Utilization : Float; Platform_Name : String; Algorithm_Name : String) return Float;
+    function Calculate_CPU_Power (CPU_Utilization : Long_Float; Platform_Name : String; Algorithm_Name : String) return Long_Float;
 
 end Raspberry_Pi_CPU_Formula;

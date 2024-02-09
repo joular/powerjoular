@@ -15,12 +15,12 @@ package Intel_RAPL_sysfs is
     type Intel_RAPL_Data is
         record
             -- Data to store energy measures
-            psys : Float; -- Energy for psys (whole SOC)
-            pkg : Float; -- Energy for all packages
-            dram : Float; -- Energy for all dram
+            psys : Long_Float; -- Energy for psys (whole SOC)
+            pkg : Long_Float; -- Energy for all packages
+            dram : Long_Float; -- Energy for all dram
            
             -- Total energy is equal to psys if supoprted, or to pkg + dram
-            total_energy : Float := 0.0; -- Total energy
+            total_energy : Long_Float := 0.0; -- Total energy
             
             -- Data to store if packages are supported
             psys_supported : Boolean := False; -- if system supports psys

@@ -12,7 +12,7 @@
 package Nvidia_SMI is
 
     -- Function to return the current Nvidia board power consumption using nvidia-smi
-    function Get_Nvidia_SMI_Power return Float;
+    function Get_Nvidia_SMI_Power return Long_Float;
     
     -- Function to check if we have a supported Nvidia card and drivers and nvidia-smi tool
     function Check_Nvidia_Supported_System return Boolean;
