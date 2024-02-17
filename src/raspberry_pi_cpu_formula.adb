@@ -13,7 +13,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 
 package body Raspberry_Pi_CPU_Formula is
 
-    function Calculate_CPU_Power (CPU_Utilization : Float; Platform_Name : String; Algorithm_Name : String) return Float is
+    function Calculate_CPU_Power (CPU_Utilization : Long_Float; Platform_Name : String; Algorithm_Name : String) return Long_Float is
     begin
         -- Formulas are based on empirical experimentation and linear/polynomial regression
 

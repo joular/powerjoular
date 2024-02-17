@@ -17,14 +17,14 @@ with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 
 package body Nvidia_SMI is
 
-    function Get_Nvidia_SMI_Power return Float is
+    function Get_Nvidia_SMI_Power return Long_Float is
         Command    : String          := "nvidia-smi --format=csv,noheader,nounits --query-gpu=power.draw";
         Args       : Argument_List_Access;
         Status     : aliased Integer;
         Subs : String_Split.Slice_Set; -- Used to slice the read data from stat file
         Seps : constant String := CR & LF; -- Seperator (space) for slicing string
         Slice_number_count : String_Split.Slice_Number;
-        GPU_Energy : Float := 0.0;
+        GPU_Energy : Long_Float := 0.0;
     begin
         Args := Argument_String_To_List (Command);
         declare
@@ -47,7 +47,7 @@ package body Nvidia_SMI is
                 Slice_number_count := String_Split.Slice_Count (Subs);
 
                 for I in 1 .. Slice_number_count loop
-                    GPU_Energy := GPU_Energy + Float'Value (String_Split.Slice (Subs, 1));
+                    GPU_Energy := GPU_Energy + Long_Float'Value (String_Split.Slice (Subs, 1));
                 end loop;
 
                 return GPU_Energy;

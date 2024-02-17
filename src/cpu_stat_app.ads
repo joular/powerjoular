@@ -23,7 +23,7 @@ package CPU_STAT_App is
             Before_Time : Long_Integer; -- Total time, before monitoring
             After_Time : Long_Integer; -- Total time, after monitoring
             App_Name : Unbounded_String; -- App name to monitor
-            Power : Float; -- Power consumption in monitoring cycle for PID
+            Power : Long_Float; -- Power consumption in monitoring cycle for PID
             Monitored_Time : Long_Integer; -- Monitored CPU time in the monitoring cycle
             PID_Array : PID_Array_Int; -- Array of all PIDs of the application
         end record;
