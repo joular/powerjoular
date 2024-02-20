@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2023, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2024, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -15,12 +15,12 @@ package Intel_RAPL_sysfs is
     type Intel_RAPL_Data is
         record
             -- Data to store energy measures
-            psys : Float; -- Energy for psys (whole SOC)
-            pkg : Float; -- Energy for all packages
-            dram : Float; -- Energy for all dram
+            psys : Long_Float; -- Energy for psys (whole SOC)
+            pkg : Long_Float; -- Energy for all packages
+            dram : Long_Float; -- Energy for all dram
            
             -- Total energy is equal to psys if supoprted, or to pkg + dram
-            total_energy : Float := 0.0; -- Total energy
+            total_energy : Long_Float := 0.0; -- Total energy
             
             -- Data to store if packages are supported
             psys_supported : Boolean := False; -- if system supports psys

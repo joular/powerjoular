@@ -66,7 +66,7 @@ The difference (increase or decrease) of power consumption from last metric will
 
 The following options are available:
 - ```-h```: show the help message
-- ```-h```: show version number
+- ```-v```: show version number
 - ```-p pid```: specifiy a particular PID to monitor
 - ```-a appName```: specifiy a particular application name to monitor (will monitor all PIDs of the application)
 - ```-f filename```: save monitoring data to the given filename path
@@ -165,7 +165,7 @@ To cite our work in a research paper, please cite our paper in the 18th Internat
 
 PowerJoular is licensed under the GNU GPL 3 license only (GPL-3.0-only).
 
-Copyright (c) 2020-2023, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+Copyright (c) 2020-2024, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 All rights reserved. This program and the accompanying materials are made available under the terms of the GNU General Public License v3.0 only (GPL-3.0-only) which accompanies this distribution, and is available at: https://www.gnu.org/licenses/gpl-3.0.en.html
 
 Author : Adel Noureddine

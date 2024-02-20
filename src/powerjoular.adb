@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2023, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2024, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -10,7 +10,7 @@
 --
 
 with Ada.Text_IO; use Ada.Text_IO;
-with Ada.Float_Text_IO; use Ada.Float_Text_IO;
+with Ada.Long_Float_Text_IO; use Ada.Long_Float_Text_IO;
 with GNAT.Command_Line; use GNAT.Command_Line;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
@@ -33,26 +33,26 @@ procedure Powerjoular is
     -- Power variables
     --
     -- CPU Power
-    CPU_Power : Float; -- Entire CPU power consumption
-    Previous_CPU_Power : Float := 0.0; -- Previous CPU power consumption (t - 1)
-    PID_CPU_Power : Float; -- CPU power consumption of monitored PID
-    App_CPU_Power : Float; -- CPU power consumption of monitored application
-    CPU_Energy : Float := 0.0;
+    CPU_Power : Long_Float; -- Entire CPU power consumption
+    Previous_CPU_Power : Long_Float := 0.0; -- Previous CPU power consumption (t - 1)
+    PID_CPU_Power : Long_Float; -- CPU power consumption of monitored PID
+    App_CPU_Power : Long_Float; -- CPU power consumption of monitored application
+    CPU_Energy : Long_Float := 0.0;
     --
     -- GPU Power
-    GPU_Power : Float := 0.0;
-    Previous_GPU_Power : Float := 0.0; -- Previous GPU power consumption (t - 1)
-    GPU_Energy : Float := 0.0;
+    GPU_Power : Long_Float := 0.0;
+    Previous_GPU_Power : Long_Float := 0.0; -- Previous GPU power consumption (t - 1)
+    GPU_Energy : Long_Float := 0.0;
     --
     -- Total Power and Energy
-    Previous_Total_Power : Float := 0.0; -- Previous entire total power consumption (t - 1)
-    Total_Power : Float := 0.0; -- Total power consumption of all hardware components
-    Total_Energy : Float := 0.0; -- Total energy consumed since start of PowerJoular until exit
+    Previous_Total_Power : Long_Float := 0.0; -- Previous entire total power consumption (t - 1)
+    Total_Power : Long_Float := 0.0; -- Total power consumption of all hardware components
+    Total_Energy : Long_Float := 0.0; -- Total energy consumed since start of PowerJoular until exit
 
     -- Data types for Intel RAPL energy monitoring
     RAPL_Before : Intel_RAPL_Data; -- Intel RAPL data
     RAPL_After : Intel_RAPL_Data; -- Intel RAPL data
-    RAPL_Energy : Float; -- Intel RAPL energy difference for monitoring cycle
+    RAPL_Energy : Long_Float; -- Intel RAPL energy difference for monitoring cycle
 
     -- Data types for Nvidia energy monitoring
     Nvidia_Supported : Boolean; -- If nvidia card, drivers and smi tool are available
@@ -67,9 +67,9 @@ procedure Powerjoular is
     CPU_App_Monitor : CPU_STAT_App_Data; -- Monitored App CPU cycles and power
 
     -- CPU utilization variables
-    CPU_Utilization : Float; -- Entire CPU utilization
-    PID_CPU_Utilization : Float; -- CPU utilization of monitored PID
-    App_CPU_Utilization : Float; -- CPU utilization of monitored application
+    CPU_Utilization : Long_Float; -- Entire CPU utilization
+    PID_CPU_Utilization : Long_Float; -- CPU utilization of monitored PID
+    App_CPU_Utilization : Long_Float; -- CPU utilization of monitored application
 
      -- OS name
     OS_Name : String := Get_OS_Name;
@@ -246,7 +246,7 @@ begin
         end if;
 
         -- Calculate entire CPU utilization
-        CPU_Utilization := (Float (CPU_CCI_After.cbusy) - Float (CPU_CCI_Before.cbusy)) / (Float (CPU_CCI_After.ctotal) - Float (CPU_CCI_Before.ctotal));
+        CPU_Utilization := (Long_Float (CPU_CCI_After.cbusy) - Long_Float (CPU_CCI_Before.cbusy)) / (Long_Float (CPU_CCI_After.ctotal) - Long_Float (CPU_CCI_Before.ctotal));
 
         if Check_Raspberry_Pi_Supported_System (Platform_Name) then
             -- Calculate power consumption for Raspberry
@@ -271,7 +271,7 @@ begin
 
         -- If a particular PID is monitored, calculate its CPU time, CPU utilization and CPU power
         if Monitor_PID then
-            PID_CPU_Utilization := (Float (CPU_PID_Monitor.Monitored_Time)) / (Float (CPU_CCI_After.ctotal) - Float (CPU_CCI_Before.ctotal));
+            PID_CPU_Utilization := (Long_Float (CPU_PID_Monitor.Monitored_Time)) / (Long_Float (CPU_CCI_After.ctotal) - Long_Float (CPU_CCI_Before.ctotal));
             PID_CPU_Power := (PID_CPU_Utilization * CPU_Power) / CPU_Utilization;
 
             -- Show CPU power data on terminal of monitored PID
@@ -288,7 +288,7 @@ begin
         -- If a particular application is monitored, calculate its CPU time, CPU utilization and CPU power
         if Monitor_App then
             -- PID_Time := CPU_PID_After.total_time - CPU_PID_Before.total_time;
-            App_CPU_Utilization := (Float (CPU_App_Monitor.Monitored_Time)) / (Float (CPU_CCI_After.ctotal) - Float (CPU_CCI_Before.ctotal));
+            App_CPU_Utilization := (Long_Float (CPU_App_Monitor.Monitored_Time)) / (Long_Float (CPU_CCI_After.ctotal) - Long_Float (CPU_CCI_Before.ctotal));
             App_CPU_Power := (App_CPU_Utilization * CPU_Power) / CPU_Utilization;
 
             -- Show CPU power data on terminal of monitored PID

@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2023, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2024, Adel Noureddine, Universitï¿½ de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -23,7 +23,7 @@ package CPU_STAT_App is
             Before_Time : Long_Integer; -- Total time, before monitoring
             After_Time : Long_Integer; -- Total time, after monitoring
             App_Name : Unbounded_String; -- App name to monitor
-            Power : Float; -- Power consumption in monitoring cycle for PID
+            Power : Long_Float; -- Power consumption in monitoring cycle for PID
             Monitored_Time : Long_Integer; -- Monitored CPU time in the monitoring cycle
             PID_Array : PID_Array_Int; -- Array of all PIDs of the application
         end record;

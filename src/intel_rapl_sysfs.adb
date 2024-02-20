@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2023, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2024, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -23,14 +23,14 @@ package body Intel_RAPL_sysfs is
             -- Read energy_uj which is in micro joules
             Open (F_Name, In_File, Folder_Name & "intel-rapl:1/energy_uj");
             -- Store energy value divided by 1000000 to get it in joules
-            RAPL_Data.psys := Float'Value (Get_Line (F_Name)) / 1000000.0;
+            RAPL_Data.psys := Long_Float'Value (Get_Line (F_Name)) / 1000000.0;
             Close (F_Name);
             RAPL_Data.total_energy := RAPL_Data.psys;
         elsif RAPL_Data.pkg_supported then
             -- Read energy_uj which is in micro joules
             Open (F_Name, In_File, Folder_Name & "intel-rapl:0/energy_uj");
             -- Store energy value divided by 1000000 to get it in joules
-            RAPL_Data.pkg := Float'Value (Get_Line (F_Name)) / 1000000.0;
+            RAPL_Data.pkg := Long_Float'Value (Get_Line (F_Name)) / 1000000.0;
             Close (F_Name);
             RAPL_Data.total_energy := RAPL_Data.pkg;
 
@@ -39,7 +39,7 @@ package body Intel_RAPL_sysfs is
                 -- Read energy_uj which is in micro joules
                 Open (F_Name, In_File, Folder_Name & "intel-rapl:0/intel-rapl:0:2/energy_uj");
                 -- Store energy value divided by 1000000 to get it in joules
-                RAPL_Data.dram := Float'Value (Get_Line (F_Name)) / 1000000.0;
+                RAPL_Data.dram := Long_Float'Value (Get_Line (F_Name)) / 1000000.0;
                 Close (F_Name);
                 RAPL_Data.total_energy := RAPL_Data.pkg + RAPL_Data.dram;
             end if;

@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2023, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2024, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -11,7 +11,7 @@
 
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Calendar; use Ada.Calendar;
-with Ada.Float_Text_IO; use Ada.Float_Text_IO;
+with Ada.Long_Float_Text_IO; use Ada.Long_Float_Text_IO;
 with Ada.Calendar.Formatting; use Ada.Calendar.Formatting;
 with Ada.Calendar.Time_Zones; use Ada.Calendar.Time_Zones;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
@@ -19,7 +19,7 @@ with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 
 package body CSV_Power is
 
-    procedure Save_To_CSV_File (Filename : String; Utilization : Float; Total_Power : Float; CPU_Power : Float; GPU_Power : Float; Overwrite_Data : Boolean) is
+    procedure Save_To_CSV_File (Filename : String; Utilization : Long_Float; Total_Power : Long_Float; CPU_Power : Long_Float; GPU_Power : Long_Float; Overwrite_Data : Boolean) is
         F : File_Type; -- File handle
         Now : Time := Clock; -- Current UTC time
 
@@ -57,7 +57,7 @@ package body CSV_Power is
             raise PROGRAM_ERROR with "Error in accessing or creating the CSV file";
     end;
 
-    procedure Save_PID_To_CSV_File (Filename : String; Utilization : Float; Power : Float; Overwrite_Data : Boolean) is
+    procedure Save_PID_To_CSV_File (Filename : String; Utilization : Long_Float; Power : Long_Float; Overwrite_Data : Boolean) is
         F : File_Type; -- File handle
         Now : Time := Clock; -- Current UTC time
 
@@ -91,9 +91,9 @@ package body CSV_Power is
             raise PROGRAM_ERROR with "Error in accessing or creating the CSV file";
     end;
 
-    procedure Show_On_Terminal (Utilization : Float; Power : Float; Previous_Power : Float; CPU_Power : Float; GPU_Power : Float; GPU_Supported : Boolean) is
-        Utilization_Percentage : Float;
-        Power_Difference : Float;
+    procedure Show_On_Terminal (Utilization : Long_Float; Power : Long_Float; Previous_Power : Long_Float; CPU_Power : Long_Float; GPU_Power : Long_Float; GPU_Supported : Boolean) is
+        Utilization_Percentage : Long_Float;
+        Power_Difference : Long_Float;
     begin
         Utilization_Percentage := Utilization * 100.0;
         Put (CR);
@@ -124,9 +124,9 @@ package body CSV_Power is
         end if;
     end;
 
-    procedure Show_On_Terminal_PID (PID_Utilization : Float; PID_Power : Float; Utilization : Float; Power : Float; Is_PID : Boolean) is
-        Utilization_Percentage : Float;
-        PID_Utilization_Percentage : Float;
+    procedure Show_On_Terminal_PID (PID_Utilization : Long_Float; PID_Power : Long_Float; Utilization : Long_Float; Power : Long_Float; Is_PID : Boolean) is
+        Utilization_Percentage : Long_Float;
+        PID_Utilization_Percentage : Long_Float;
     begin
         Utilization_Percentage := Utilization * 100.0;
         PID_Utilization_Percentage := PID_Utilization * 100.0;
