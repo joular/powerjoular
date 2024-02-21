@@ -167,18 +167,28 @@ begin
     if Check_Intel_Supported_System (Platform_Name) then
         -- For Intel RAPL, check and populate supported packages first
         Check_Supported_Packages (RAPL_Before, "psys");
-        if RAPL_Before.psys_supported and Show_Debug then
-            Put_Line (Ada.Characters.Latin_1.HT & "Intel RAPL psys: " & Boolean'Image (RAPL_Before.Psys_Supported));
+
+        if RAPL_Before.psys_supported then
+            Get_Max_Energy_Range (RAPL_Before, "psys");
+            if Show_Debug then
+                Put_Line (Ada.Characters.Latin_1.HT & "Intel RAPL psys: " & Boolean'Image (RAPL_Before.Psys_Supported));
+            end if;
         end if;
 
         if (not RAPL_Before.psys_supported) then -- Only check for pkg and dram if psys is not supported
             Check_Supported_Packages (RAPL_Before, "pkg");
             Check_Supported_Packages (RAPL_Before, "dram");
-            if RAPL_Before.Pkg_Supported and Show_Debug then
-                Put_Line (Ada.Characters.Latin_1.HT & "Intel RAPL pkg: " & Boolean'Image (RAPL_Before.pkg_supported));
+            if RAPL_Before.Pkg_Supported then
+                Get_Max_Energy_Range (RAPL_Before, "pkg");
+                if Show_Debug then
+                    Put_Line (Ada.Characters.Latin_1.HT & "Intel RAPL pkg: " & Boolean'Image (RAPL_Before.pkg_supported));
+                end if;
             end if;
-            if RAPL_Before.Dram_Supported and Show_Debug then
-                Put_Line (Ada.Characters.Latin_1.HT & "Intel RAPL dram: " & Boolean'Image (RAPL_Before.Dram_Supported));
+            if RAPL_Before.Dram_Supported then
+                Get_Max_Energy_Range (RAPL_Before, "dram");
+                if Show_Debug then
+                    Put_Line (Ada.Characters.Latin_1.HT & "Intel RAPL dram: " & Boolean'Image (RAPL_Before.Dram_Supported));
+                end if;
             end if;
         end if;
         RAPL_After := RAPL_Before; -- Populate the "after" data type with same checking as the "before" (insteaf of wasting redundant calls to procedure)
@@ -257,6 +267,19 @@ begin
         if Check_Intel_Supported_System (Platform_Name) then
             -- Calculate Intel RAPL energy consumption
             RAPL_Energy := RAPL_After.total_energy - RAPL_Before.total_energy;
+
+            if RAPL_Before.Dram_supported then
+                if RAPL_Before.dram > RAPL_After.dram then
+                    -- dram has wrapped
+                    RAPL_Energy := RAPL_Energy + RAPL_Before.dram_max_energy_range;
+                end if;
+            end if;
+
+            if RAPL_Before.total_energy > RAPL_After.total_energy then
+                -- energy has wrapped
+                RAPL_Energy := RAPL_Energy + RAPL_Before.max_energy_range;
+            end if;
+
             CPU_Power := RAPL_Energy;
             Total_Power := CPU_Power;
         end if;
