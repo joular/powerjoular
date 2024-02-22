@@ -13,7 +13,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up GNAT toolchain
       run: >
@@ -22,3 +22,9 @@ jobs:
 
     - name: Build
       run: gprbuild -j0 -p
+    
+    - name: Packages
+      run: >
+        cd installer
+        chmod +x create-packages.sh
+        ./create-packages.sh
