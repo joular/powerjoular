@@ -2,6 +2,8 @@
 
 for ARCH in amd64 arm64 armhf
 do
+    rm -rf $ARCH
+    
     # Create folder for architecture and package format
     mkdir -p $ARCH/powerjoular/usr/bin $ARCH/powerjoular/etc/systemd/system $ARCH/powerjoular/DEBIAN
 
