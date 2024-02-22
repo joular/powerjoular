@@ -1,17 +1,19 @@
 #!/bin/sh
 
-# Create folders for pacakge formats
-mkdir deb
+for ARCH in amd64 arm64 armhf
+do
+    # Create folder for architecture and package format
+    mkdir -p $ARCH/powerjoular/usr/bin $ARCH/powerjoular/etc/systemd/system $ARCH/powerjoular/DEBIAN
 
-# Create folder structure for debian
-mkdir -p deb/powerjoular/usr/bin deb/powerjoular/etc/systemd/system deb/powerjoular/DEBIAN
+    # Copy binary files for deb package
+    cp ../obj/powerjoular ./$ARCH/powerjoular/usr/bin/
+    cp ../systemd/powerjoular.service ./$ARCH/powerjoular/etc/systemd/system/
+    cp ./debian-control-$ARCH.txt ./$ARCH/powerjoular/DEBIAN/control
 
-# Copy binary files for deb package
-cp ../obj/powerjoular ./deb/powerjoular/usr/bin/
-cp ../systemd/powerjoular.service ./deb/powerjoular/etc/systemd/system/
-cp ./debian-control-$1.txt ./deb/powerjoular/DEBIAN/control
-
-# Create deb package
-cd deb
-dpkg-deb --build powerjoular
-cd ..
+    # Create deb package
+    cd ./$ARCH
+    VERSION=$(grep '^Version:' powerjoular/DEBIAN/control | awk '{print $2}')
+    dpkg-deb --build powerjoular
+    mv powerjoular.deb powerjoular_${VERSION}_${ARCH}.deb
+    cd ..
+done
