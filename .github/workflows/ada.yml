@@ -24,7 +24,7 @@ jobs:
       run: gprbuild -j0 -p
     
     - name: Packages
-      run:
+      run: |
         cd installer
         chmod +x create-packages.sh
         ./create-packages.sh
