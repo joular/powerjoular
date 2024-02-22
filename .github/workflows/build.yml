@@ -1,4 +1,4 @@
-name: Build and create packages
+name: Build
 
 on:
   push:
@@ -11,10 +11,6 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    env: 
-      CI_COMMIT_MESSAGE: Continuous Integration Build Artifacts
-      CI_COMMIT_AUTHOR: Continuous Integration
-
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -26,16 +22,3 @@ jobs:
 
     - name: Build
       run: gprbuild -j0 -p
-    
-    - name: Packages
-      run: |
-        cd installer
-        chmod +x create-packages.sh
-        ./create-packages.sh
-    
-    - name: GIT Commit Build Artifacts
-      run: |
-        git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
-        git config --global user.email "username@users.noreply.github.com"
-        git commit -a -m "${{ env.CI_COMMIT_MESSAGE }}"
-        git push
