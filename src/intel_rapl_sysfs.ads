@@ -28,7 +28,8 @@ package Intel_RAPL_sysfs is
             dram_supported : Boolean := False; -- if system support dram 0
 
             -- Data to store max energy ranges
-            max_energy_range : Long_Float := 0.0; -- max_energy_range_uj
+            pkg_max_energy_range : Long_Float := 0.0; -- pkg max_energy_range_uj
+            psys_max_energy_range : Long_Float := 0.0; -- psys max_energy_range_uj
             dram_max_energy_range : Long_Float := 0.0; -- dram max_energy_range_uj
         end record;
     

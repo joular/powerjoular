@@ -93,11 +93,11 @@ package body Intel_RAPL_sysfs is
     begin
         if (Package_Name = "psys") then
             Open (F_Name, In_File, Folder_Name & "intel-rapl:1/max_energy_range_uj");
-            RAPL_Data.max_energy_range := Long_Float'Value (Get_Line (F_Name)) / 1000000.0;
+            RAPL_Data.psys_max_energy_range := Long_Float'Value (Get_Line (F_Name)) / 1000000.0;
             Close (F_Name);
         elsif (Package_Name = "pkg") then
             Open (F_Name, In_File, Folder_Name & "intel-rapl:0/max_energy_range_uj");
-            RAPL_Data.max_energy_range := Long_Float'Value (Get_Line (F_Name)) / 1000000.0;
+            RAPL_Data.pkg_max_energy_range := Long_Float'Value (Get_Line (F_Name)) / 1000000.0;
             Close (F_Name);
         elsif (Package_Name = "dram") then
             Open (F_Name, In_File, Folder_Name & "intel-rapl:0/intel-rapl:0:2/max_energy_range_uj");

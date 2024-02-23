@@ -268,16 +268,20 @@ begin
             -- Calculate Intel RAPL energy consumption
             RAPL_Energy := RAPL_After.total_energy - RAPL_Before.total_energy;
 
-            if RAPL_Before.Dram_supported then
+            if RAPL_Before.total_energy > RAPL_After.total_energy then
+                -- energy has wrapped
+                if RAPL_Before.psys_supported then
+                    RAPL_Energy := RAPL_Energy + RAPL_Before.psys_max_energy_range;
+                elsif RAPL_Before.Pkg_Supported then
+                    RAPL_Energy := RAPL_Energy + RAPL_Before.pkg_max_energy_range;
+                end if;
+            end if;
+
+            if RAPL_Before.Pkg_Supported and RAPL_Before.Dram_supported then
                 if RAPL_Before.dram > RAPL_After.dram then
                     -- dram has wrapped
                     RAPL_Energy := RAPL_Energy + RAPL_Before.dram_max_energy_range;
                 end if;
-            end if;
-
-            if RAPL_Before.total_energy > RAPL_After.total_energy then
-                -- energy has wrapped
-                RAPL_Energy := RAPL_Energy + RAPL_Before.max_energy_range;
             end if;
 
             CPU_Power := RAPL_Energy;
