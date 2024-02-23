@@ -87,4 +87,26 @@ package body Intel_RAPL_sysfs is
             --Put_Line ("Error reading file " & Package_Name & " for Intel RAPL.");
     end;
 
+    procedure Get_Max_Energy_Range (RAPL_Data : in out Intel_RAPL_Data; Package_Name : in String) is
+        F_Name : File_Type; -- File handle
+        Folder_Name : constant String := "/sys/class/powercap/intel-rapl/"; -- Folder prefix for file to read
+    begin
+        if (Package_Name = "psys") then
+            Open (F_Name, In_File, Folder_Name & "intel-rapl:1/max_energy_range_uj");
+            RAPL_Data.psys_max_energy_range := Long_Float'Value (Get_Line (F_Name)) / 1000000.0;
+            Close (F_Name);
+        elsif (Package_Name = "pkg") then
+            Open (F_Name, In_File, Folder_Name & "intel-rapl:0/max_energy_range_uj");
+            RAPL_Data.pkg_max_energy_range := Long_Float'Value (Get_Line (F_Name)) / 1000000.0;
+            Close (F_Name);
+        elsif (Package_Name = "dram") then
+            Open (F_Name, In_File, Folder_Name & "intel-rapl:0/intel-rapl:0:2/max_energy_range_uj");
+            RAPL_Data.dram_max_energy_range := Long_Float'Value (Get_Line (F_Name)) / 1000000.0;
+            Close (F_Name);
+        end if;
+    exception
+        when others =>
+            return;
+    end;
+
 end Intel_RAPL_sysfs;
