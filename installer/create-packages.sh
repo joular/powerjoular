@@ -21,14 +21,3 @@ do
     mv powerjoular.deb powerjoular_${VERSION}_${ARCH}.deb
     cd ..
 done
-
-# For Red Hat, Fedora (.rpm package)
-rm -rf rpmbuild
-mkdir rpmbuild
-cd rpmbuild
-mkdir BUILD RPMS SOURCES SPECS SRPMS
-cd ..
-cp ../obj/powerjoular ./rpmbuild/SOURCES/
-cp ../systemd/powerjoular.service ./rpmbuild/SOURCES/
-cp ./powerjoular.spec ./rpmbuild/SPECS/
-rpmbuild -bb --define "_topdir $(pwd)/rpmbuild" ./rpmbuild/SPECS/powerjoular.spec
