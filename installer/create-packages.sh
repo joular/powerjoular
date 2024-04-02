@@ -1,17 +1,34 @@
 #!/bin/sh
 
-# Create folders for pacakge formats
-mkdir deb
+# For Debian, Ubuntu (.deb package)
 
-# Create folder structure for debian
-mkdir -p deb/powerjoular/usr/bin deb/powerjoular/etc/systemd/system deb/powerjoular/DEBIAN
+for ARCH in amd64 arm64 armhf
+do
+    rm -rf $ARCH
+    
+    # Create folder for architecture and package format
+    mkdir -p $ARCH/powerjoular/usr/bin $ARCH/powerjoular/etc/systemd/system $ARCH/powerjoular/DEBIAN
 
-# Copy binary files for deb package
-cp ../obj/powerjoular ./deb/powerjoular/usr/bin/
-cp ../systemd/powerjoular.service ./deb/powerjoular/etc/systemd/system/
-cp ./debian-control-$1.txt ./deb/powerjoular/DEBIAN/control
+    # Copy binary files for deb package
+    cp ../obj/powerjoular ./$ARCH/powerjoular/usr/bin/
+    cp ../systemd/powerjoular.service ./$ARCH/powerjoular/etc/systemd/system/
+    cp ./debian-control-$ARCH.txt ./$ARCH/powerjoular/DEBIAN/control
 
-# Create deb package
-cd deb
-dpkg-deb --build powerjoular
+    # Create deb package
+    cd ./$ARCH
+    VERSION=$(grep '^Version:' powerjoular/DEBIAN/control | awk '{print $2}')
+    dpkg-deb --build powerjoular
+    mv powerjoular.deb powerjoular_${VERSION}_${ARCH}.deb
+    cd ..
+done
+
+# For Red Hat, Fedora (.rpm package)
+rm -rf rpmbuild
+mkdir rpmbuild
+cd rpmbuild
+mkdir BUILD RPMS SOURCES SPECS SRPMS
 cd ..
+cp ../obj/powerjoular ./rpmbuild/SOURCES/
+cp ../systemd/powerjoular.service ./rpmbuild/SOURCES/
+cp ./powerjoular.spec ./rpmbuild/SPECS/
+rpmbuild -bb --define "_topdir $(pwd)/rpmbuild" ./rpmbuild/SPECS/powerjoular.spec

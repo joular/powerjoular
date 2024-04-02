@@ -1,5 +1,5 @@
 Package: powerjoular
-Version: 0.7.2
+Version: 0.7.3
 Maintainer: Adel Noureddine
 Architecture: arm64
 Description: PowerJoular allows monitoring power consumption of multiple platforms and processes.

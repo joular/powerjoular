@@ -26,6 +26,11 @@ package Intel_RAPL_sysfs is
             psys_supported : Boolean := False; -- if system supports psys
             pkg_supported : Boolean := False; -- if system supports pkg 0
             dram_supported : Boolean := False; -- if system support dram 0
+
+            -- Data to store max energy ranges
+            pkg_max_energy_range : Long_Float := 0.0; -- pkg max_energy_range_uj
+            psys_max_energy_range : Long_Float := 0.0; -- psys max_energy_range_uj
+            dram_max_energy_range : Long_Float := 0.0; -- dram max_energy_range_uj
         end record;
     
     -- Calculate total energy consumption from Linux powercap sysfs
@@ -38,4 +43,5 @@ package Intel_RAPL_sysfs is
     -- So far, only package 0 is supported (and dram in package 0)
     procedure Check_Supported_Packages (RAPL_Data : in out Intel_RAPL_Data; Package_Name : in String);
 
+    procedure Get_Max_Energy_Range (RAPL_Data : in out Intel_RAPL_Data; Package_Name : in String);
 end Intel_RAPL_sysfs;

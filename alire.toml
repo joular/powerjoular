@@ -1,6 +1,6 @@
 name = "powerjoular"
 description = "Monitoring the power consumption of multiple platforms and processes"
-version = "0.7.2"
+version = "0.7.3"
 
 authors = ["Adel Noureddine"]
 maintainers = ["Adel Noureddine <adel.noureddine@univ-pau.fr>"]
