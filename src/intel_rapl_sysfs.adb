@@ -13,6 +13,8 @@ with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 
+with Debug; use Debug;
+
 package body Intel_RAPL_sysfs is
 
     procedure Calculate_Energy (RAPL_Data : in out Intel_RAPL_Data) is
@@ -26,6 +28,7 @@ package body Intel_RAPL_sysfs is
             RAPL_Data.psys := Long_Float'Value (Get_Line (F_Name)) / 1000000.0;
             Close (F_Name);
             RAPL_Data.total_energy := RAPL_Data.psys;
+            Save_Debug ("RAPL,psys," & Long_Float'Image (RAPL_Data.psys));
         elsif RAPL_Data.pkg_supported then
             -- Read energy_uj which is in micro joules
             Open (F_Name, In_File, Folder_Name & "intel-rapl:0/energy_uj");
@@ -33,6 +36,7 @@ package body Intel_RAPL_sysfs is
             RAPL_Data.pkg := Long_Float'Value (Get_Line (F_Name)) / 1000000.0;
             Close (F_Name);
             RAPL_Data.total_energy := RAPL_Data.pkg;
+            Save_Debug ("RAPL,pkg," & Long_Float'Image (RAPL_Data.pkg));
 
             -- For pkg, also check dram because total energy = pkg + dram
             if RAPL_Data.dram_supported then
@@ -42,6 +46,7 @@ package body Intel_RAPL_sysfs is
                 RAPL_Data.dram := Long_Float'Value (Get_Line (F_Name)) / 1000000.0;
                 Close (F_Name);
                 RAPL_Data.total_energy := RAPL_Data.pkg + RAPL_Data.dram;
+                Save_Debug ("RAPL,dram," & Long_Float'Image (RAPL_Data.dram));
             end if;
         else
             return;

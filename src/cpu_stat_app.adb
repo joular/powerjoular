@@ -16,6 +16,8 @@ with GNAT.OS_Lib; use GNAT.OS_Lib;
 with GNAT.Expect; use GNAT.Expect;
 with GNAT.String_Split; use GNAT;
 
+with Debug; use Debug;
+
 package body CPU_STAT_App is
     
     -- Calculate PID CPU time
@@ -43,6 +45,8 @@ package body CPU_STAT_App is
         -- fscanf(fp, "%*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %lu %lu", &cpu_process_data->utime, &cpu_process_data->stime);
         Utime := Long_Integer'Value (String_Split.Slice (Subs, 14)); -- Index 13 in file. Slice function starts index at 1, so it is 14
         Stime := Long_Integer'Value (String_Split.Slice (Subs, 15)); -- Index 14 in file. Slice function starts index at 1, so it is 15
+        Save_Debug ("/proc/" & Integer'Image (PID_Number) & "/stat,Stime," & Long_Integer'Image (Stime));
+        Save_Debug ("/proc/" & Integer'Image (PID_Number) & "/stat,Stime," & Long_Integer'Image (Stime));
         return Utime + Stime; -- Total time
     exception
         when others =>
@@ -95,6 +99,7 @@ package body CPU_STAT_App is
             for I in 1 .. Slice_number_count loop
                 Loop_I := Integer'Value (String_Split.Slice_Number'Image (I));
                 App_Data.PID_Array(Loop_I) := Integer'Value (String_Split.Slice (Subs, 1));
+                Save_Debug (To_String (App_Data.App_Name) & ",PID," & Integer'Image (App_Data.PID_Array(Loop_I)));
             end loop;
         end;
     exception

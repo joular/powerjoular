@@ -29,6 +29,8 @@ with Nvidia_SMI; use Nvidia_SMI;
 with Raspberry_Pi_CPU_Formula; use Raspberry_Pi_CPU_Formula;
 with CPU_STAT_App; use CPU_STAT_App;
 
+with Debug; use Debug;
+
 procedure Powerjoular is
     -- Power variables
     --

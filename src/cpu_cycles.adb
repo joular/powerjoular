@@ -13,6 +13,8 @@ with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.String_Split; use GNAT;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 
+with Debug; use Debug;
+
 package body CPU_Cycles is
 
     procedure Calculate_CPU_Cycles (CPU_Data : in out CPU_Cycles_Data) is
@@ -36,6 +38,10 @@ package body CPU_Cycles is
         CPU_Data.cidle := Long_Integer'Value (String_Split.Slice (Subs, 5)); -- Index 4 in file. Slice function starts index at 1, so it is 5
         CPU_Data.cbusy := CPU_Data.cuser + CPU_Data.cnice + CPU_Data.csystem; --- cbusy time
         CPU_Data.ctotal := CPU_Data.cuser + CPU_Data.cnice + CPU_Data.csystem + CPU_Data.cidle; -- total time
+        Save_Debug ("/proc/stat,cuser," & Long_Integer'Image (CPU_Data.cuser));
+        Save_Debug ("/proc/stat,cnice," & Long_Integer'Image (CPU_Data.cnice));
+        Save_Debug ("/proc/stat,csystem," & Long_Integer'Image (CPU_Data.csystem));
+        Save_Debug ("/proc/stat,cidle," & Long_Integer'Image (CPU_Data.cidle));
     exception
         when others =>
             Put_Line ("Error reading " & File_Name & " file");

@@ -14,6 +14,8 @@ with GNAT.String_Split; use GNAT;
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 
+with Debug; use Debug;
+
 package body CPU_STAT_PID is
 
     procedure Calculate_PID_Time (PID_Data : in out CPU_STAT_PID_Data; Is_Before : in Boolean) is
@@ -40,6 +42,8 @@ package body CPU_STAT_PID is
         -- fscanf(fp, "%*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %lu %lu", &cpu_process_data->utime, &cpu_process_data->stime);
         Utime := Long_Integer'Value (String_Split.Slice (Subs, 14)); -- Index 13 in file. Slice function starts index at 1, so it is 14
         Stime := Long_Integer'Value (String_Split.Slice (Subs, 15)); -- Index 14 in file. Slice function starts index at 1, so it is 15
+        Save_Debug ("/proc/" & Integer'Image (PID_Data.PID_Number) & "/stat,Utime," & Long_Integer'Image (Utime));
+        Save_Debug ("/proc/" & Integer'Image (PID_Data.PID_Number) & "/stat,Stime," & Long_Integer'Image (Stime));
         if (Is_Before) then
             PID_Data.Before_Time := Utime + Stime; -- Total time
         else
