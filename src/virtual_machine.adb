@@ -14,14 +14,14 @@ package body Virtual_Machine is
 
     --Read the exported data in PowerJoular format
     function Read_File_PowerJoular_Format
-       (File_Path : String) return Float
+       (File_Path : String) return Long_Float
     is
         F     : File_Type;
         Line  : Unbounded_String;
         Last  : Unbounded_String := To_Unbounded_String ("");
         Subs  : String_Split.Slice_Set;
         Seps  : constant String  := ",";
-        Value : Float;
+        Value : Long_Float;
     begin
         -- Opens the file in read mode
         Open (F, In_File, File_Path);
@@ -47,7 +47,7 @@ package body Virtual_Machine is
             Mode       => String_Split.Multiple);
 
         -- Converts the value of the third column into a float
-        Value := Float'Value (String_Split.Slice (Subs, 3));
+        Value := Long_Float'Value (String_Split.Slice (Subs, 3));
 
         return Value;
     exception
@@ -58,11 +58,11 @@ package body Virtual_Machine is
     end Read_File_PowerJoular_Format;
 
    function Read_SingleLine_Format
-      (File_Path : String) return Float
+      (File_Path : String) return Long_Float
    is
        F      : File_Type;
        Line   : Unbounded_String;
-       Result : Float := 0.0;
+       Result : Long_Float := 0.0;
    begin
        Open (F, In_File, File_Path);
        Line := To_Unbounded_String (Get_Line (F));
@@ -86,11 +86,11 @@ package body Virtual_Machine is
 
        -- Attempted conversion
        begin
-           Result := Float'Value (To_String (Line));
+           Result := Long_Float'Value (To_String (Line));
        exception
            when E : others =>
                Put_Line
-                  ("Failed to convert to float: " & Exception_Message (E));
+                  ("Failed to convert to long float: " & Exception_Message (E));
                OS_Exit (0);
        end;
 
@@ -101,10 +101,10 @@ package body Virtual_Machine is
            OS_Exit (0);
    end Read_SingleLine_Format;
 
-    function Calculate_VM_Consumption (File_Name : Unbounded_String; Power_Format : Unbounded_String) return Float is
+    function Read_VM_Power (File_Name : Unbounded_String; Power_Format : Unbounded_String) return Long_Float is
         VM_File_Name    : String := To_String(File_Name);
         VM_Power_Format : String := To_String(Power_Format);
-        Power           : Float;
+        Power           : Long_Float;
 
         -- Customized exceptions
         Invalid_File_Name_Exception : exception;
@@ -140,6 +140,6 @@ package body Virtual_Machine is
             Ada.Text_IO.Put_Line
                ("Error: The specified power format is not supported.");
             OS_Exit (0);
-    end Calculate_VM_Consumption;
+    end Read_VM_Power;
 
 end Virtual_Machine;

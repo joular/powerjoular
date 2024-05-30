@@ -85,12 +85,7 @@ procedure Powerjoular is
       Unbounded_String; -- CSV filename for monitored PID or application CPU power data
    VM_File_Name                  : Unbounded_String;
    VM_Power_Format               : Unbounded_String;
-   Read_File_Power_Joular_Format : Boolean := False;
-   Read_File_Single_Cell_Format  : Boolean := False;
    Monitor_VM                    : Boolean := False;
-   VM_Consumption                : Long_Float   := 0.0;
-   Last_CPU_Power                : Float;
-   Headers                       : Unbounded_String;
 
     -- Settings
     Show_Terminal : Boolean := False; -- Show power data on terminal
@@ -155,10 +150,10 @@ begin
               Overwrite_Data := True;
           when 'l' => -- Use linear regression model instead of polynomial models
               Algorithm_Name := To_Unbounded_String ("linear");
-          when 'm' => -- Specify a filename for CSV file to be read
+          when 'm' => -- Specify a filename for a file to be read
               VM_File_Name := To_Unbounded_String (Parameter);
               Monitor_VM := True;
-          when 's' => -- Specify a filename for CSV file to be read
+          when 's' => -- Specify a data format for the provided file
               VM_Power_Format := To_Unbounded_String (Parameter);
               Monitor_VM := True;
           when others =>
@@ -276,11 +271,10 @@ begin
         -- Calculate entire CPU utilization
         CPU_Utilization := (Long_Float (CPU_CCI_After.cbusy) - Long_Float (CPU_CCI_Before.cbusy)) / (Long_Float (CPU_CCI_After.ctotal) - Long_Float (CPU_CCI_Before.ctotal));
 
-        --Ajouter Test VM
+        --Calculate VM consumption
       if Monitor_VM then
-        --Put_Line ("VM Consumption : " & Float'Image(Calculate_VM_Consumption(VM_File_Name, VM_Power_Format)));
-        CPU_Power := Long_Float(Calculate_VM_Consumption(VM_File_Name, VM_Power_Format));
-        --CPU Power = Calculate
+        CPU_Power := Read_VM_Power(VM_File_Name, VM_Power_Format);
+        Total_Power := CPU_Power;
       else
           if Check_Raspberry_Pi_Supported_System (Platform_Name) then
               -- Calculate power consumption for Raspberry
