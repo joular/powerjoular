@@ -12,50 +12,46 @@ with Ada.Exceptions;                use Ada.Exceptions;
 
 package body Virtual_Machine is
 
-    --Read the exported data in PowerJoular format
-    function Read_File_PowerJoular_Format
-       (File_Path : String) return Long_Float
-    is
-        F     : File_Type;
-        Line  : Unbounded_String;
-        Last  : Unbounded_String := To_Unbounded_String ("");
-        Subs  : String_Split.Slice_Set;
-        Seps  : constant String  := ",";
-        Value : Long_Float;
-    begin
-        -- Opens the file in read mode
-        Open (F, In_File, File_Path);
+   --Read the exported data in PowerJoular format
+   function Read_File_PowerJoular_Format
+      (File_Path : String) return Long_Float
+   is
+       F     : File_Type;
+       Line  : Unbounded_String;
+       Subs  : String_Split.Slice_Set;
+       Seps  : constant String := ",";
+       Value : Long_Float;
+   begin
+       -- Opens the file in read mode
+       Open (F, In_File, File_Path);
 
-        -- Read all lines to the end of the file to get the last one
-        while not End_Of_File (F) loop
-            Line := Get_Line (F);
-            if Line /= To_Unbounded_String ("") then
-                Last := Line;
-            end if;
-        end loop;
+       -- Read the first line from the file
+       Line := Get_Line (F);
 
-        -- Closing the file after playback
-        Close (F);
+       -- Closing the file after playback
+       Close (F);
 
-        -- Processes the last line obtained
-        String_Split.Create
-           (S          => Subs,
-            From       =>
-               To_String
-                  (Last),
-            Separators => Seps,
-            Mode       => String_Split.Multiple);
+       -- Ensure the line is not empty before processing
+       if Line /= To_Unbounded_String ("") then
+           -- Processes the first line obtained
+           String_Split.Create
+              (S    => Subs, From => To_String (Line), Separators => Seps,
+               Mode => String_Split.Multiple);
 
-        -- Converts the value of the third column into a float
-        Value := Long_Float'Value (String_Split.Slice (Subs, 3));
+           -- Converts the value of the third column into a float
+           Value := Long_Float'Value (String_Split.Slice (Subs, 3));
 
-        return Value;
-    exception
-        when others =>
-            Ada.Text_IO.Put_Line
-               ("The file cannot be found, check the path");
-            OS_Exit (0);
-    end Read_File_PowerJoular_Format;
+           return Value;
+       else
+           Ada.Text_IO.Put_Line ("File is empty or first line is blank");
+           OS_Exit (1);
+       end if;
+   exception
+       when others =>
+           Ada.Text_IO.Put_Line
+              ("The file cannot be found, check the path");
+           OS_Exit (0);
+   end Read_File_PowerJoular_Format;
 
    function Read_SingleLine_Format
       (File_Path : String) return Long_Float
@@ -123,7 +119,7 @@ package body Virtual_Machine is
 
         -- Iteration on supported formats
         if VM_Power_Format = ("powerjoular") then
-            Power := Read_File_PowerJoular_Format (VM_File_Name);
+            Power := Read_File_PowerJoular_Format(VM_File_Name);
         elsif VM_Power_Format = ("singleline") then
             Power := Read_SingleLine_Format (VM_File_Name);
         else
@@ -141,5 +137,6 @@ package body Virtual_Machine is
                ("Error: The specified power format is not supported.");
             OS_Exit (0);
     end Read_VM_Power;
+
 
 end Virtual_Machine;
