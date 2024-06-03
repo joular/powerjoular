@@ -43,8 +43,7 @@ package body Virtual_Machine is
 
            return Value;
        else
-           Ada.Text_IO.Put_Line ("File is empty or first line is blank");
-           OS_Exit (1);
+           return 0.0;
        end if;
    exception
        when others =>
