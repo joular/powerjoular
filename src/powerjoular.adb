@@ -79,13 +79,11 @@ procedure Powerjoular is
     Platform_Name : String := Get_Platform_Name;
 
    -- CSV filenames
-   CSV_Filename                  :
-      Unbounded_String; -- CSV filename for entire CPU power data
-   PID_Or_App_CSV_Filename       :
-      Unbounded_String; -- CSV filename for monitored PID or application CPU power data
-   VM_File_Name                  : Unbounded_String;
-   VM_Power_Format               : Unbounded_String;
-   Monitor_VM                    : Boolean := False;
+   CSV_Filename : Unbounded_String; -- CSV filename for entire CPU power data
+   PID_Or_App_CSV_Filename : Unbounded_String; -- CSV filename for monitored PID or application CPU power data
+   VM_File_Name : Unbounded_String; -- Filename containing the power consumption of the VM
+   VM_Power_Format : Unbounded_String; -- Format of the VM power data (currently powerjoualr or watts)
+   Monitor_VM : Boolean := False;
 
     -- Settings
     Show_Terminal : Boolean := False; -- Show power data on terminal
@@ -150,10 +148,10 @@ begin
               Overwrite_Data := True;
           when 'l' => -- Use linear regression model instead of polynomial models
               Algorithm_Name := To_Unbounded_String ("linear");
-          when 'm' => -- Specify a filename for a file to be read
+          when 'm' => -- Specify a filename for the power consumption of the VM
               VM_File_Name := To_Unbounded_String (Parameter);
               Monitor_VM := True;
-          when 's' => -- Specify a data format for the provided file
+          when 's' => -- Specify a data format for the VM power
               VM_Power_Format := To_Unbounded_String (Parameter);
               Monitor_VM := True;
           when others =>
