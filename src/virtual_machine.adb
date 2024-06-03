@@ -53,7 +53,7 @@ package body Virtual_Machine is
            OS_Exit (0);
    end Read_File_PowerJoular_Format;
 
-   function Read_SingleLine_Format
+   function Read_Watts_Format
       (File_Path : String) return Long_Float
    is
        F      : File_Type;
@@ -95,7 +95,7 @@ package body Virtual_Machine is
        when E : others =>
            Put_Line ("Error after reading line: " & Exception_Message (E));
            OS_Exit (0);
-   end Read_SingleLine_Format;
+   end Read_Watts_Format;
 
     function Read_VM_Power (File_Name : Unbounded_String; Power_Format : Unbounded_String) return Long_Float is
         VM_File_Name    : String := To_String(File_Name);
@@ -120,8 +120,8 @@ package body Virtual_Machine is
         -- Iteration on supported formats
         if VM_Power_Format = ("powerjoular") then
             Power := Read_File_PowerJoular_Format(VM_File_Name);
-        elsif VM_Power_Format = ("singleline") then
-            Power := Read_SingleLine_Format (VM_File_Name);
+        elsif VM_Power_Format = ("watts") then
+            Power := Read_Watts_Format (VM_File_Name);
         else
             raise Invalid_Format_Exception; -- Format not supported
         end if;
