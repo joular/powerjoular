@@ -12,6 +12,7 @@ Detailed documentation (including user and reference guides) are available at: [
 ## :rocket: Features
 
 - Monitor power consumption of CPU and GPU of PC/servers
+- Monitor power consumption inside virtual machines
 - Monitor power consumption of individual processes in GNU/Linux
 - Expose power consumption to the terminal and CSV files
 - Provides a systemd service (daemon) to continuously monitor power of devices
@@ -22,12 +23,18 @@ Detailed documentation (including user and reference guides) are available at: [
 PowerJoular monitors the following platforms:
 - :computer: PC/Servers using a RAPL supported Intel processor (since Sandy Bridge) or a RAPL supported AMD processor (Ryzen or EPYC), and optionally an Nvidia graphic card.
 - :radio: Raspberry Pi devices (multiple models) and Asus Tinker Board.
+- :computer: Inside virtual machines in all supported host platforms.
 
 In all platforms, PowerJoular works currently only on GNU/Linux.
 
 On PC/Servers, PowerJoular uses powercap Linux interface to read Intel RAPL (Running Average Power Limit) energy consumption.
 
 PowerJoular supports RAPL package domain (core, including integrated graphics, and dram), and for more recent processors, we support Psys package (which covers the energy consumption of the entire SoC).
+
+On virtual machines, PowerJoular requires two steps:
+- Installing PowerJoular itself or another power monitoring tool in the host machine.
+Then monitoring the virtual machine power consumption every second and writing it to a file (to be shared with the guest VM).
+- Installing PowerJoular in the guest VM, then running PowerJoular while specifying the path of the power file shared with the host and its format.
 
 On Raspberry Pi and Asus Tinker Board, PowerJoular uses its own research-based empirical regression models to estimate the power consumption of the ARM processor.
 
@@ -74,6 +81,8 @@ The following options are available:
 - ```-t```: print energy data to the terminal
 - ```-d```: print debug info to the terminal
 - ```-l```: use linear regression models (less accurate than the default polynomial models) for Raspberry Pi energy models
+- ```-m```: specify a filename for the power consumption of the virtual machine
+- ```-s```: specify the format of the VM power, either ```powerjoular``` format (generated with the ```-o``` option: 3 columns csv file with the 3rd containing the power consumption the VM), or ```watts``` format (1 column containing just the power consumption of the VM)
  
 You can mix options, i.e., ```powerjoular -tp 144``` will monitor PID 144 and will print to the terminal.
 
