@@ -1,7 +1,7 @@
 pkgname=powerjoular
 pkgver=0.7.3
 pkgrel=1
-pkgdesc="PowerJoular allows monitoring power consumption of multiple platforms >
+pkgdesc="PowerJoular allows monitoring power consumption of multiple platforms"
 arch=('x86_64' 'aarch64' 'armv7h')
 license=('GPL3')
 source=("${pkgname}" "powerjoular.service")
@@ -9,7 +9,7 @@ md5sums=('SKIP' 'SKIP')
 
 package() {
   install -Dm755 "${srcdir}/${pkgname}" "${pkgdir}/usr/bin/${pkgname}"
-  install -Dm644 "${srcdir}/powerjoular.service" "${pkgdir}/etc/systemd/system/>
+  install -Dm644 "${srcdir}/powerjoular.service" "${pkgdir}/etc/systemd/system"
 }
 
 
