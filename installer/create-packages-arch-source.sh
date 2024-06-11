@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Maintainer: Adel Noureddine <adel.noureddine@univ-pau.fr>
+# Contributor: Axel TERRIER <axelterrier12071999@gmail.com>
+
 # Fonction pour vérifier les permissions de l'utilisateur pour écrire dans le répertoire courant
 if [ ! -w $(pwd) ]; then
     echo "ERREUR : Vous n'avez pas la permission en écriture sur le répertoire $(pwd)."
