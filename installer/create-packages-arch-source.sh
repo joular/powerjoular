@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# Maintainer: Adel Noureddine <adel.noureddine@univ-pau.fr>
-# Contributor: Axel TERRIER <axelterrier12071999@gmail.com>
+
 
 # Fonction pour vérifier les permissions de l'utilisateur pour écrire dans le répertoire courant
 if [ ! -w $(pwd) ]; then
@@ -17,7 +16,8 @@ mkdir -p $PKG_DIR $OUTPUT_DIR
 
 # Créer le fichier PKGBUILD
 cat <<EOL > $PKG_DIR/PKGBUILD
-# Maintainer: Axel TERRIER <axelterrier12071999@gmail.com>
+# Maintainer: Adel Noureddine <adel.noureddine@univ-pau.fr>
+# Contributor: Axel TERRIER <axelterrier12071999@gmail.com>
 pkgname=powerjoular
 pkgver=0.7.3
 pkgrel=1
