@@ -1,52 +1,52 @@
 #!/bin/bash
 
-# Liste des architectures
+# List of architectures
 ARCHITECTURES=("amd64" "arm64" "armhf")
 
-# Répertoire des binaires précompilés
+# Directory of precompiled binaries
 BIN_DIR="../obj"
 
-# Répertoire des fichiers de service systemd
+# Systemd service file directory
 SERVICE_DIR="../systemd"
 
-# Répertoire de sortie pour les paquets
+# Output directory for packages
 OUTPUT_DIR="deb_binary_packages"
 rm -rf $OUTPUT_DIR
 
 mkdir -p $OUTPUT_DIR
 
-# Pour chaque architecture
+# For each architecture
 for ARCH in "${ARCHITECTURES[@]}"
 do
-    # Créer une nouvelle structure de répertoire pour l'architecture
+    # Create a new directory structure for architecture
     rm -rf $ARCH
     mkdir -p $ARCH/powerjoular/usr/bin
     mkdir -p $ARCH/powerjoular/etc/systemd/system
     mkdir -p $ARCH/powerjoular/DEBIAN
 
-    # Copier les binaires précompilés dans le répertoire bin
+    # Copy precompiled binaries to bin directory
     cp $BIN_DIR/powerjoular $ARCH/powerjoular/usr/bin/
 
-    # Copier les fichiers de service systemd
+    # Copy systemd service files
     cp $SERVICE_DIR/powerjoular.service $ARCH/powerjoular/etc/systemd/system/
 
-    # Copier les fichiers de contrôle correspondants
+    # Copy the corresponding control files
     cp ./debian-control-$ARCH.txt $ARCH/powerjoular/DEBIAN/control
 
-    # Aller dans le répertoire de l'architecture
+    # Go to the architecture directory
     cd $ARCH
 
-    # Extraire la version à partir du fichier de contrôle
+    # Extract version from control file
     VERSION=$(grep '^Version:' powerjoular/DEBIAN/control | awk '{print $2}')
 
-    # Création du package .deb
+    # Creating a .deb package
     dpkg-deb --build powerjoular
     mv powerjoular.deb ../${OUTPUT_DIR}/powerjoular_${VERSION}_${ARCH}.deb
 
-    # Revenir au répertoire précédent
+    # Return to previous directory
     cd ..
     
-    # Supprimer les fichiers temporaires de l'architecture
+    # Delete temporary files from the architecture
     rm -rf $ARCH
 done
 
