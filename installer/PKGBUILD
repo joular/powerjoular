@@ -7,7 +7,7 @@ pkgdesc="PowerJoular allows monitoring power consumption of multiple platforms a
 arch=('x86_64' 'aarch64' 'armv7h')
 url="https://github.com/axelterrier/powerjoular"
 license=('GPL3')
-depends=('gnat' 'gprbuild' 'xmlada' 'libgnat' 'libgpr')
+depends=('gcc-ada' 'gprbuild' 'xmlada' 'libgpr')
 source=("$pkgname-$pkgver.tar.gz::https://github.com/axelterrier/powerjoular/archive/refs/heads/develop.tar.gz")
 sha256sums=('SKIP')
 
