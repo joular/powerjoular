@@ -35,10 +35,10 @@ do
 done
 
 # Combine all RPM packages into a single directory for convenience
-mkdir -p $SCRIPT_DIR/all_rpms
+mkdir -p $SCRIPT_DIR/rpm_binary_packages
 for ARCH in "${ARCHS[@]}"
 do
-    mv $SCRIPT_DIR/$ARCH/*.rpm $SCRIPT_DIR/all_rpms/
+    mv $SCRIPT_DIR/$ARCH/*.rpm $SCRIPT_DIR/rpm_binary_packages/
 done
 
-echo "All RPM packages have been created and moved to the 'all_rpms' directory in $SCRIPT_DIR."
+echo "All RPM packages have been created and moved to the 'rpm_binary_packages' directory in $SCRIPT_DIR."
