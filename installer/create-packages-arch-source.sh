@@ -1,30 +1,30 @@
 #!/bin/bash
 
-# Fonction pour vérifier les permissions de l'utilisateur pour écrire dans le répertoire courant
+# Function to check user permissions to write to current directory
 if [ ! -w "$(pwd)" ]; then
-    echo "ERREUR : Vous n'avez pas la permission en écriture sur le répertoire $(pwd)."
+    echo "ERROR: You don't have write permission on the directory $(pwd)."
     exit 1
 fi
 
-# Répertoire source pour le PKGBUILD
+# Source directory for PKGBUILD
 PKG_DIR="arch_pkgbuild"
 OUTPUT_DIR="arch_source_packages"
 rm -rf $PKG_DIR $OUTPUT_DIR
 mkdir -p $PKG_DIR $OUTPUT_DIR
 
-# Copier le fichier PKGBUILD dans le répertoire de construction
+# Copy the PKGBUILD file to the build directory
 cp PKGBUILD $PKG_DIR/
 
 # Changer de répertoire pour PKGBUILD
 cd $PKG_DIR
 
-# Construire le package
+# Change directory to PKGBUILD
 makepkg
 
-# Déplacer le package généré dans le répertoire de sortie
+#  Move the generated package to the output directory
 mv *.pkg.tar.zst ../$OUTPUT_DIR/
 
-# Nettoyer les répertoires temporaires
+#  Clean up temporary directories
 cd ..
 rm -rf $PKG_DIR
 
