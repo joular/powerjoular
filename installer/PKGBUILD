@@ -1,4 +1,5 @@
-# Maintainer: Axel TERRIER <axelterrier12071999@gmail.com>
+# Maintainer: Adel Noureddine <adel.noureddine@univ-pau.fr>
+# Contributor: Axel TERRIER <axelterrier12071999@gmail.com>
 pkgname=powerjoular
 pkgver=0.7.3
 pkgrel=1
