@@ -4,10 +4,10 @@
 ARCHITECTURES=("amd64" "arm64" "armhf")
 
 # Directory of precompiled binaries
-BIN_DIR="../obj"
+BIN_DIR="../binary"
 
 # Systemd service file directory
-SERVICE_DIR="../systemd"
+SERVICE_DIR="../binary/systemd"
 
 # Output directory for packages
 OUTPUT_DIR="deb_binary_packages"
@@ -25,7 +25,7 @@ do
     mkdir -p $ARCH/powerjoular/DEBIAN
 
     # Copy precompiled binaries to bin directory
-    cp $BIN_DIR/powerjoular $ARCH/powerjoular/usr/bin/
+    cp $BIN_DIR/$ARCH/powerjoular $ARCH/powerjoular/usr/bin/
 
     # Copy systemd service files
     cp $SERVICE_DIR/powerjoular.service $ARCH/powerjoular/etc/systemd/system/

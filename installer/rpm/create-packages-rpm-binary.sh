@@ -15,8 +15,8 @@ do
     mkdir -p $SCRIPT_DIR/$ARCH
 
     # Copy binary and service files to their respective directories
-    cp $SCRIPT_DIR/../obj/powerjoular $SCRIPT_DIR/$ARCH/
-    cp $SCRIPT_DIR/../systemd/powerjoular.service $SCRIPT_DIR/$ARCH/
+    cp $SCRIPT_DIR/../binary/$ARCH/powerjoular $SCRIPT_DIR/$ARCH/
+    cp $SCRIPT_DIR/../binary/systemd/powerjoular.service $SCRIPT_DIR/$ARCH/
 
     # Prepare the RPM build environment
     mkdir -p $SCRIPT_DIR/$ARCH/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
@@ -35,10 +35,12 @@ do
 done
 
 # Combine all RPM packages into a single directory for convenience
-mkdir -p $SCRIPT_DIR/rpm_binary_packages
+mkdir -p $SCRIPT_DIR/packages
+
 for ARCH in "${ARCHS[@]}"
 do
-    mv $SCRIPT_DIR/$ARCH/*.rpm $SCRIPT_DIR/rpm_binary_packages/
+    mv $SCRIPT_DIR/$ARCH/*.rpm $SCRIPT_DIR/packages/
+    rm -rf $SCRIPT_DIR/$ARCH
 done
 
-echo "All RPM packages have been created and moved to the 'rpm_binary_packages' directory in $SCRIPT_DIR."
+echo "All RPM packages have been created and moved to the 'packages' directory in $SCRIPT_DIR."
