@@ -10,12 +10,6 @@ Source1:        %{_sourcedir}/powerjoular.service
 %description
 PowerJoular allows monitoring power consumption of multiple platforms and processes.
 
-%prep
-# Preparatory steps if necessary
-
-%build
-# Build steps if necessary
-
 %install
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/%{_bindir}
@@ -28,5 +22,7 @@ install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/%{_sysconfdir}/systemd/system/%{name}.
 %{_sysconfdir}/systemd/system/%{name}.service
 
 %changelog
-* Tue Jun 06 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 0.7.3-1
+* Thu Jun 20 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 0.8.0-1
+- Version 0.8.0
+* Thu Jun 06 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 0.7.3-1
 - First RPM build
