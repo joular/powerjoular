@@ -1,5 +1,5 @@
 Name:           powerjoular
-Version:        0.7.3
+Version:        1.0.0
 Release:        1%{?dist}
 Summary:        PowerJoular allows monitoring power consumption of multiple platforms and processes.
 
@@ -22,7 +22,7 @@ install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/%{_sysconfdir}/systemd/system/%{name}.
 %{_sysconfdir}/systemd/system/%{name}.service
 
 %changelog
-* Thu Jun 20 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 0.8.0-1
-- Version 0.8.0
+* Thu Jun 20 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.0.0-1
+- Version 1.0.0
 * Thu Jun 06 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 0.7.3-1
 - First RPM build
