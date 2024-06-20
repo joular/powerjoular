@@ -146,8 +146,8 @@ alr build
 
 ### Cross-compilation and package generation
 
-The ```release-version.sh``` script cross-compiles PowerJoular to multiple platforms (for now x86_64 and aarch64, but can be tweak to add other platforms).
-The script then generates RPM and DEB binary installation packages for these plateforms.
+The ```release-version.sh``` script cross-compiles PowerJoular to multiple platforms (for now x86_64 and aarch64, but can be tweaked to add other platforms).
+The script then generates RPM and DEB binary installation packages for these platforms.
 
 The script needs a x86_64 and an aarch64 gnat compiler, along with deb and rpm packaging tools.
 
