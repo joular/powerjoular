@@ -23,6 +23,7 @@ with CPU_Cycles; use CPU_Cycles;
 with CSV_Power; use CSV_Power;
 with Help_Info; use Help_Info;
 with CPU_STAT_PID; use CPU_STAT_PID;
+with CPU_STAT_TID; use CPU_STAT_TID;
 with Intel_RAPL_sysfs; use Intel_RAPL_sysfs;
 with OS_Utils; use OS_Utils;
 with Nvidia_SMI; use Nvidia_SMI;
@@ -92,6 +93,7 @@ procedure Powerjoular is
     Monitor_PID : Boolean := False; -- Monitor a specific PID
     Monitor_App : Boolean := False; -- Monitor a specific application by its name
     Overwrite_Data : Boolean := false; -- Overwrite data instead of append on file
+    TID_PID : Boolean := false; -- Use TIDs to calculate PID stats instead of PID directly (Experimental feature)
 
     -- Procedure to capture Ctrl+C to show total energy on exit
     procedure CtrlCHandler is
@@ -120,7 +122,7 @@ begin
 
     -- Loop over command line options
     loop
-      case Getopt ("h v t d f: p: a: o: u l m: s:") is
+      case Getopt ("h v t d f: p: a: o: u l m: s: k") is
           when 'h' => -- Show help
               Show_Help;
               return;
@@ -154,6 +156,8 @@ begin
           when 's' => -- Specify a data format for the VM power
               VM_Power_Format := To_Unbounded_String (Parameter);
               Monitor_VM := True;
+          when 'k' => -- Use TIDs to calculate PID stats instead of PID stat directly (Experimental feature)
+              TID_PID := True;
           when others =>
               exit;
       end case;
@@ -233,7 +237,11 @@ begin
         -- Get a first snapshot of current entire CPU cycles
         Calculate_CPU_Cycles (CPU_CCI_Before);
         if Monitor_PID then -- Do the same for CPU cycles of the monitored PID
-            Calculate_PID_Time (CPU_PID_Monitor, True);
+            if TID_PID then
+                Calculate_PID_Time_TID (CPU_PID_Monitor, True);
+            else
+                Calculate_PID_Time (CPU_PID_Monitor, True);
+            end if;
         end if;
 
         if Monitor_App then -- Do the same for CPU cycles of the monitored application
@@ -254,7 +262,11 @@ begin
         -- Get a second snapshot of current entire CPU cycles
         Calculate_CPU_Cycles (CPU_CCI_After);
         if Monitor_PID then -- Do the same for CPU cycles of the monitored PID
-            Calculate_PID_Time (CPU_PID_Monitor, False);
+            if TID_PID then
+                Calculate_PID_Time_TID (CPU_PID_Monitor, False);
+            else
+                Calculate_PID_Time (CPU_PID_Monitor, False);
+            end if;
         end if;
 
         if Monitor_App then -- Do the same for CPU cycles of the monitored application
