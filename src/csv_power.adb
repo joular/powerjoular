@@ -97,6 +97,7 @@ package body CSV_Power is
     begin
         Utilization_Percentage := Utilization * 100.0;
         Put (CR);
+        Put (ESC & "[0K");
         Put ("Total Power: ");
         Put (Power, Exp => 0, Fore => 0, Aft => 2);
         Put (" Watts ");
@@ -131,6 +132,7 @@ package body CSV_Power is
         Utilization_Percentage := Utilization * 100.0;
         PID_Utilization_Percentage := PID_Utilization * 100.0;
         Put (CR);
+        Put (ESC & "[0K");
         if (Is_PID) then
             Put ("PID monitoring:" & HT & "CPU: ");
         else

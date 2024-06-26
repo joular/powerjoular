@@ -23,11 +23,13 @@ with CPU_Cycles; use CPU_Cycles;
 with CSV_Power; use CSV_Power;
 with Help_Info; use Help_Info;
 with CPU_STAT_PID; use CPU_STAT_PID;
+with CPU_STAT_TID; use CPU_STAT_TID;
 with Intel_RAPL_sysfs; use Intel_RAPL_sysfs;
 with OS_Utils; use OS_Utils;
 with Nvidia_SMI; use Nvidia_SMI;
 with Raspberry_Pi_CPU_Formula; use Raspberry_Pi_CPU_Formula;
 with CPU_STAT_App; use CPU_STAT_App;
+with Virtual_Machine; use Virtual_Machine;
 
 procedure Powerjoular is
     -- Power variables
@@ -77,9 +79,12 @@ procedure Powerjoular is
     -- Platform name
     Platform_Name : String := Get_Platform_Name;
 
-    -- CSV filenames
-    CSV_Filename : Unbounded_String; -- CSV filename for entire CPU power data
-    PID_Or_App_CSV_Filename : Unbounded_String; -- CSV filename for monitored PID or application CPU power data
+   -- CSV filenames
+   CSV_Filename : Unbounded_String; -- CSV filename for entire CPU power data
+   PID_Or_App_CSV_Filename : Unbounded_String; -- CSV filename for monitored PID or application CPU power data
+   VM_File_Name : Unbounded_String; -- Filename containing the power consumption of the VM
+   VM_Power_Format : Unbounded_String; -- Format of the VM power data (currently powerjoualr or watts)
+   Monitor_VM : Boolean := False;
 
     -- Settings
     Show_Terminal : Boolean := False; -- Show power data on terminal
@@ -88,6 +93,7 @@ procedure Powerjoular is
     Monitor_PID : Boolean := False; -- Monitor a specific PID
     Monitor_App : Boolean := False; -- Monitor a specific application by its name
     Overwrite_Data : Boolean := false; -- Overwrite data instead of append on file
+    TID_PID : Boolean := false; -- Use TIDs to calculate PID stats instead of PID directly (Experimental feature)
 
     -- Procedure to capture Ctrl+C to show total energy on exit
     procedure CtrlCHandler is
@@ -116,36 +122,45 @@ begin
 
     -- Loop over command line options
     loop
-        case Getopt ("h v t d f: p: a: o: u l") is
-        when 'h' => -- Show help
-            Show_Help;
-            return;
-        when 'v' => -- Show help
-            Show_Version;
-            return;
-        when 't' => -- Show power data on terminal
-            Show_Terminal := True;
-        when 'd' => -- Show debug info on terminal
-            Show_Debug := True; 
-        when 'p' => -- Monitor a particular PID
-            -- PID_Number := Integer'Value (Parameter);
-            CPU_PID_Monitor.PID_Number := Integer'Value (Parameter);
-            Monitor_PID := True;
-        when 'a' => -- Monitor a particular application by its name
-            CPU_App_Monitor.App_Name := To_Unbounded_String (Parameter);
-            Monitor_App := True;
-        when 'f' => -- Specifiy a filename for CSV file (append data)
-            CSV_Filename := To_Unbounded_String (Parameter);
-            Print_File := True;
-        when 'o' => -- Specifiy a filename for CSV file (overwrite data)
-            CSV_Filename := To_Unbounded_String (Parameter);
-            Print_File := True;
-            Overwrite_Data := True;
-        when 'l' => -- Use linear regression model instead of polynomial models
-            Algorithm_Name := To_Unbounded_String ("linear");
-        when others =>
-            exit;
-        end case;
+      case Getopt ("h v t d f: p: a: o: u l m: s: k") is
+          when 'h' => -- Show help
+              Show_Help;
+              return;
+          when 'v' => -- Show help
+              Show_Version;
+              return;
+          when 't' => -- Show power data on terminal
+              Show_Terminal := True;
+          when 'd' => -- Show debug info on terminal
+              Show_Debug := True;
+          when 'p' => -- Monitor a particular PID
+              -- PID_Number := Integer'Value (Parameter);
+              CPU_PID_Monitor.PID_Number := Integer'Value (Parameter);
+              Monitor_PID                := True;
+          when 'a' => -- Monitor a particular application by its name
+              CPU_App_Monitor.App_Name :=
+                 To_Unbounded_String (Parameter);
+              Monitor_App              := True;
+          when 'f' => -- Specifiy a filename for CSV file (append data)
+              CSV_Filename := To_Unbounded_String (Parameter);
+              Print_File   := True;
+          when 'o' => -- Specifiy a filename for CSV file (overwrite data)
+              CSV_Filename   := To_Unbounded_String (Parameter);
+              Print_File     := True;
+              Overwrite_Data := True;
+          when 'l' => -- Use linear regression model instead of polynomial models
+              Algorithm_Name := To_Unbounded_String ("linear");
+          when 'm' => -- Specify a filename for the power consumption of the VM
+              VM_File_Name := To_Unbounded_String (Parameter);
+              Monitor_VM := True;
+          when 's' => -- Specify a data format for the VM power
+              VM_Power_Format := To_Unbounded_String (Parameter);
+              Monitor_VM := True;
+          when 'k' => -- Use TIDs to calculate PID stats instead of PID stat directly (Experimental feature)
+              TID_PID := True;
+          when others =>
+              exit;
+      end case;
     end loop;
 
     if (Argument_Count = 0) then
@@ -222,7 +237,11 @@ begin
         -- Get a first snapshot of current entire CPU cycles
         Calculate_CPU_Cycles (CPU_CCI_Before);
         if Monitor_PID then -- Do the same for CPU cycles of the monitored PID
-            Calculate_PID_Time (CPU_PID_Monitor, True);
+            if TID_PID then
+                Calculate_PID_Time_TID (CPU_PID_Monitor, True);
+            else
+                Calculate_PID_Time (CPU_PID_Monitor, True);
+            end if;
         end if;
 
         if Monitor_App then -- Do the same for CPU cycles of the monitored application
@@ -243,7 +262,11 @@ begin
         -- Get a second snapshot of current entire CPU cycles
         Calculate_CPU_Cycles (CPU_CCI_After);
         if Monitor_PID then -- Do the same for CPU cycles of the monitored PID
-            Calculate_PID_Time (CPU_PID_Monitor, False);
+            if TID_PID then
+                Calculate_PID_Time_TID (CPU_PID_Monitor, False);
+            else
+                Calculate_PID_Time (CPU_PID_Monitor, False);
+            end if;
         end if;
 
         if Monitor_App then -- Do the same for CPU cycles of the monitored application
@@ -258,35 +281,50 @@ begin
         -- Calculate entire CPU utilization
         CPU_Utilization := (Long_Float (CPU_CCI_After.cbusy) - Long_Float (CPU_CCI_Before.cbusy)) / (Long_Float (CPU_CCI_After.ctotal) - Long_Float (CPU_CCI_Before.ctotal));
 
-        if Check_Raspberry_Pi_Supported_System (Platform_Name) then
-            -- Calculate power consumption for Raspberry
-            CPU_Power := Calculate_CPU_Power (CPU_Utilization, Platform_Name, To_String (Algorithm_Name));
-            Total_Power := CPU_Power;
-        end if;
+        --Calculate VM consumption
+      if Monitor_VM then
+        CPU_Power := Read_VM_Power(VM_File_Name, VM_Power_Format);
+        Total_Power := CPU_Power;
+      else
+          if Check_Raspberry_Pi_Supported_System (Platform_Name) then
+              -- Calculate power consumption for Raspberry
+              CPU_Power   :=
+                 Calculate_CPU_Power
+                    (CPU_Utilization, Platform_Name,
+                     To_String (Algorithm_Name));
+              Total_Power := CPU_Power;
+          end if;
 
-        if Check_Intel_Supported_System (Platform_Name) then
-            -- Calculate Intel RAPL energy consumption
-            RAPL_Energy := RAPL_After.total_energy - RAPL_Before.total_energy;
+          if Check_Intel_Supported_System (Platform_Name) then
+              -- Calculate Intel RAPL energy consumption
+              RAPL_Energy :=
+                 RAPL_After.total_energy - RAPL_Before.total_energy;
 
-            if RAPL_Before.total_energy > RAPL_After.total_energy then
-                -- energy has wrapped
-                if RAPL_Before.psys_supported then
-                    RAPL_Energy := RAPL_Energy + RAPL_Before.psys_max_energy_range;
-                elsif RAPL_Before.Pkg_Supported then
-                    RAPL_Energy := RAPL_Energy + RAPL_Before.pkg_max_energy_range;
-                end if;
-            end if;
+              if RAPL_Before.total_energy > RAPL_After.total_energy then
+                  -- energy has wrapped
+                  if RAPL_Before.psys_supported then
+                      RAPL_Energy :=
+                         RAPL_Energy + RAPL_Before.psys_max_energy_range;
+                  elsif RAPL_Before.pkg_supported then
+                      RAPL_Energy :=
+                         RAPL_Energy + RAPL_Before.pkg_max_energy_range;
+                  end if;
+              end if;
 
-            if RAPL_Before.Pkg_Supported and RAPL_Before.Dram_supported then
-                if RAPL_Before.dram > RAPL_After.dram then
-                    -- dram has wrapped
-                    RAPL_Energy := RAPL_Energy + RAPL_Before.dram_max_energy_range;
-                end if;
-            end if;
+              if RAPL_Before.pkg_supported and RAPL_Before.dram_supported
+              then
+                  if RAPL_Before.dram > RAPL_After.dram then
+                      -- dram has wrapped
+                      RAPL_Energy :=
+                         RAPL_Energy + RAPL_Before.dram_max_energy_range;
+                  end if;
+              end if;
 
-            CPU_Power := RAPL_Energy;
-            Total_Power := CPU_Power;
-        end if;
+              CPU_Power   := RAPL_Energy;
+              Total_Power := CPU_Power;
+          end if;
+
+      end if;
 
         if Nvidia_Supported then
             -- Calculate GPU power consumption
