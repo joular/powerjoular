@@ -17,7 +17,7 @@ package body Raspberry_Pi_CPU_Formula is
     begin
         -- Formulas are based on empirical experimentation and linear/polynomial regression
 
-        if (Platform_Name = "rbp51.0-64") then
+        if (Platform_Name = "rbp5b1.0-64") then
             if (Algorithm_Name = "linear") then
                 return (3.457855981342954 * CPU_Utilization) + 4.403192179893827;
             elsif (Algorithm_Name = "polynomial") then
