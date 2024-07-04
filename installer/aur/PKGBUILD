@@ -1,6 +1,6 @@
-# Maintainer: Adel Noureddine <adel.noureddine@univ-pau.fr>
+# Maintainer: Adel Noureddine <adel.noureddine@outlook.com>
 pkgname=powerjoular
-pkgver=1.0.0
+pkgver=1.0.1
 pkgrel=1
 pkgdesc="PowerJoular allows monitoring power consumption of multiple platforms and processes."
 arch=('x86_64' 'aarch64' 'armv7h')
