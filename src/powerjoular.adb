@@ -113,6 +113,56 @@ procedure Powerjoular is
         OS_Exit (0);
     end CtrlCHandler;
 
+    procedure Manage_OPT is
+    begin
+        -- Loop over command line options
+        loop
+            case Getopt ("h v t d f: p: a: o: u l m: s: k") is
+                when 'h' => -- Show help
+                    Show_Help;
+                    OS_Exit (0);
+                when 'v' => -- Show help
+                    Show_Version;
+                    OS_Exit (0);
+                when 't' => -- Show power data on terminal
+                    Show_Terminal := True;
+                when 'd' => -- Show debug info on terminal
+                    Show_Debug := True;
+                when 'p' => -- Monitor a particular PID
+                    -- PID_Number := Integer'Value (Parameter);
+                    CPU_PID_Monitor.PID_Number := Integer'Value (Parameter);
+                    Monitor_PID                := True;
+                when 'a' => -- Monitor a particular application by its name
+                    CPU_App_Monitor.App_Name :=
+                        To_Unbounded_String (Parameter);
+                    Monitor_App              := True;
+                when 'f' => -- Specifiy a filename for CSV file (append data)
+                    CSV_Filename := To_Unbounded_String (Parameter);
+                    Print_File   := True;
+                when 'o' => -- Specifiy a filename for CSV file (overwrite data)
+                    CSV_Filename   := To_Unbounded_String (Parameter);
+                    Print_File     := True;
+                    Overwrite_Data := True;
+                when 'l' => -- Use linear regression model instead of polynomial models
+                    Algorithm_Name := To_Unbounded_String ("linear");
+                when 'm' => -- Specify a filename for the power consumption of the VM
+                    VM_File_Name := To_Unbounded_String (Parameter);
+                    Monitor_VM := True;
+                when 's' => -- Specify a data format for the VM power
+                    VM_Power_Format := To_Unbounded_String (Parameter);
+                    Monitor_VM := True;
+                when 'k' => -- Use TIDs to calculate PID stats instead of PID stat directly (Experimental feature)
+                    TID_PID := True;
+                when others =>
+                    exit;
+            end case;
+        end loop;
+        exception
+            when Invalid_Switch | Invalid_Parameter =>
+                Put_Line ("Invalid command line option, or option not used properly.");
+                OS_Exit (0);
+    end Manage_OPT;
+
 begin
     -- Capture Ctrl+C and redirect to handler
     Install_Handler(Handler => CtrlCHandler'Unrestricted_Access);
@@ -120,52 +170,8 @@ begin
     -- Default CSV filename
     CSV_Filename := To_Unbounded_String ("./powerjoular-power.csv");
 
-    -- Loop over command line options
-    loop
-      case Getopt ("h v t d f: p: a: o: u l m: s: k") is
-          when 'h' => -- Show help
-              Show_Help;
-              return;
-          when 'v' => -- Show help
-              Show_Version;
-              return;
-          when 't' => -- Show power data on terminal
-              Show_Terminal := True;
-          when 'd' => -- Show debug info on terminal
-              Show_Debug := True;
-          when 'p' => -- Monitor a particular PID
-              -- PID_Number := Integer'Value (Parameter);
-              CPU_PID_Monitor.PID_Number := Integer'Value (Parameter);
-              Monitor_PID                := True;
-          when 'a' => -- Monitor a particular application by its name
-              CPU_App_Monitor.App_Name :=
-                 To_Unbounded_String (Parameter);
-              Monitor_App              := True;
-          when 'f' => -- Specifiy a filename for CSV file (append data)
-              CSV_Filename := To_Unbounded_String (Parameter);
-              Print_File   := True;
-          when 'o' => -- Specifiy a filename for CSV file (overwrite data)
-              CSV_Filename   := To_Unbounded_String (Parameter);
-              Print_File     := True;
-              Overwrite_Data := True;
-          when 'l' => -- Use linear regression model instead of polynomial models
-              Algorithm_Name := To_Unbounded_String ("linear");
-          when 'm' => -- Specify a filename for the power consumption of the VM
-              VM_File_Name := To_Unbounded_String (Parameter);
-              Monitor_VM := True;
-          when 's' => -- Specify a data format for the VM power
-              VM_Power_Format := To_Unbounded_String (Parameter);
-              Monitor_VM := True;
-          when 'k' => -- Use TIDs to calculate PID stats instead of PID stat directly (Experimental feature)
-              TID_PID := True;
-          when others =>
-              exit;
-      end case;
-    end loop;
-    exception
-        when Invalid_Switch | Invalid_Parameter =>
-            Put_Line ("Invalid command line option, or option not used properly.");
-            OS_Exit (0);
+    -- Check command line arguments
+    Manage_OPT;
 
     if (Argument_Count = 0) then
         Show_Terminal := True;
