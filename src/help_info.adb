@@ -14,7 +14,7 @@ with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 
 package body Help_Info is
 
-    Version_Number : constant String := "1.0.1";
+    Version_Number : constant String := "1.0.2";
 
     procedure Show_Help is
     begin
@@ -39,6 +39,8 @@ package body Help_Info is
         Put_Line (HT & "-o filename: save only last monitoring data to the given filename path (file overwritten with only latest power measures)");
         Put_Line (HT & "-t: print data to the terminal");
         Put_Line (HT & "-l: use linear regression models (less accurate than the default polynomial models) for Raspberry Pi energy models");
+        Put_Line (HT & "-m: specify a filename for the power consumption of the virtual machine");
+        Put_Line (HT & "-s: specify the format of the VM power, either powerjoular format (generated with the -o option: 3 columns csv file with the 3rd containing the power consumption the VM), or watts format (1 column containing just the power consumption of the VM)");
         Put_Line ("You can mix options, i.e., powerjoular -tp 144 --> monitor PID 144 and will print to the terminal");
         Put_Line ("--------------------------");
         Put_Line (ESC & "[93m" & "Daemons/Systemd service:" & ESC & "[0m");
