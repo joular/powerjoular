@@ -162,6 +162,10 @@ begin
               exit;
       end case;
     end loop;
+    exception
+        when Invalid_Switch | Invalid_Parameter =>
+            Put_Line ("Invalid command line option, or option not used properly.");
+            OS_Exit (0);
 
     if (Argument_Count = 0) then
         Show_Terminal := True;
