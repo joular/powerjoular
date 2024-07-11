@@ -70,10 +70,11 @@ package body CPU_STAT_App is
         Command    : String := "pidof " & To_String (App_Data.App_Name);
         Args       : Argument_List_Access;
         Status     : aliased Integer;
-        Subs : String_Split.Slice_Set; -- Used to slice the read data from stat file
+        Subs : String_Split.Slice_Set; -- Used to slice the read data from PID list
         Seps : constant String := " "; -- Seperator (space) for slicing string
         Slice_number_count : String_Split.Slice_Number;
         Loop_I : Integer;
+        Test : Integer;
     begin
         Args := Argument_String_To_List (Command);
         declare
@@ -94,7 +95,7 @@ package body CPU_STAT_App is
 
             for I in 1 .. Slice_number_count loop
                 Loop_I := Integer'Value (String_Split.Slice_Number'Image (I));
-                App_Data.PID_Array(Loop_I) := Integer'Value (String_Split.Slice (Subs, 1));
+                App_Data.PID_Array(Loop_I) := Integer'Value (String_Split.Slice (Subs, I));
             end loop;
         end;
     exception
