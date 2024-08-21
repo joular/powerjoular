@@ -2,6 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue)](https://www.gnu.org/licenses/gpl-3.0)
 [![Ada](https://img.shields.io/badge/Made%20with-Ada-blue)](https://www.adaic.org)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjoular%2Fpowerjoular.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fjoular%2Fpowerjoular?ref=badge_shield)
 
 ![PowerJoular Logo](powerjoular.png)
 
@@ -191,3 +192,6 @@ Copyright (c) 2020-2024, Adel Noureddine, Université de Pau et des Pays de l'Ad
 All rights reserved. This program and the accompanying materials are made available under the terms of the GNU General Public License v3.0 only (GPL-3.0-only) which accompanies this distribution, and is available at: https://www.gnu.org/licenses/gpl-3.0.en.html
 
 Author : Adel Noureddine
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjoular%2Fpowerjoular.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fjoular%2Fpowerjoular?ref=badge_large)
