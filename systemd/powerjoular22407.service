@@ -1,0 +1,14 @@
+[Unit]
+Description=PowerJoular et API service
+After=network.target  # Le service démarre après que le réseau soit actif
+
+[Service]
+Type=simple
+Restart=always
+User=root
+ExecStartPre=/usr/bin/powerjoular -o /tmp/powerjoular-service.csv
+ExecStart=/usr/bin/sudo -u _USER_ /usr/bin/python3 /usr/local/bin/powerjoular_api.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
