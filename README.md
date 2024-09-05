@@ -83,7 +83,7 @@ The following options are available:
 - ```-l```: use linear regression models (less accurate than the default polynomial models) for Raspberry Pi energy models
 - ```-m```: specify a filename for the power consumption of the virtual machine
 - ```-s```: specify the format of the VM power, either ```powerjoular``` format (generated with the ```-o``` option: 3 columns csv file with the 3rd containing the power consumption the VM), or ```watts``` format (1 column containing just the power consumption of the VM)
- 
+
 You can mix options, i.e., ```powerjoular -tp 144``` will monitor PID 144 and will print to the terminal.
 
 ## :floppy_disk: Compilation
@@ -164,6 +164,18 @@ The service will run the program with the ```-o``` option (which only saves the 
 The service can be enabled to run automatically on boot.
 
 The systemd service is automatically installed when installing PowerJoular using the GNU/Linux provided packages.
+
+## PowerJoular 22407 API service
+
+The python script  ```systemd/powerjoular_api.py``` activates a FastAPI service on port 22407
+
+Can be installed through ```./installer/bash-installer/build-install-API.sh```
+
+```
+http://localhost:22407/power
+
+{"timestamp":"2024-09-05 18:22:33","variation":0.6974358974359,"total_power":16.2744330000005,"cpu_power":16.2744330000005,"gpu_power":0.0}
+```
 
 ## :bookmark_tabs: Cite this work
 
