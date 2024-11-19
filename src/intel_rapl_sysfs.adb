@@ -36,12 +36,18 @@ package body Intel_RAPL_sysfs is
 
             -- For pkg, also check dram because total energy = pkg + dram
             if RAPL_Data.dram_supported then
-                -- Read energy_uj which is in micro joules
-                Open (F_Name, In_File, Folder_Name & "intel-rapl:0/intel-rapl:0:2/energy_uj");
-                -- Store energy value divided by 1000000 to get it in joules
-                RAPL_Data.dram := Long_Float'Value (Get_Line (F_Name)) / 1000000.0;
-                Close (F_Name);
-                RAPL_Data.total_energy := RAPL_Data.pkg + RAPL_Data.dram;
+                begin
+                    -- Read energy_uj which is in micro joules
+                    Open (F_Name, In_File, Folder_Name & "intel-rapl:0/intel-rapl:0:2/energy_uj");
+                    -- Store energy value divided by 1000000 to get it in joules
+                    RAPL_Data.dram := Long_Float'Value (Get_Line (F_Name)) / 1000000.0;
+                    Close (F_Name);
+                    RAPL_Data.total_energy := RAPL_Data.pkg + RAPL_Data.dram;
+                exception
+                    when others =>
+                        -- Don't exit because we can continue without dram
+                        null;
+                end;
             end if;
         else
             return;
