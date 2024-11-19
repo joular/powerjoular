@@ -74,7 +74,6 @@ package body CPU_STAT_App is
         Seps : constant String := " "; -- Seperator (space) for slicing string
         Slice_number_count : String_Split.Slice_Number;
         Loop_I : Integer;
-        Test : Integer;
     begin
         Args := Argument_String_To_List (Command);
         declare

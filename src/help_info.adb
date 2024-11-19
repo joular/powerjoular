@@ -14,7 +14,7 @@ with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 
 package body Help_Info is
 
-    Version_Number : constant String := "1.0.4";
+    Version_Number : constant String := "1.0.5";
 
     procedure Show_Help is
     begin

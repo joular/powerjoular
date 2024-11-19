@@ -1,5 +1,5 @@
 Name:           powerjoular
-Version:        1.0.4
+Version:        1.0.5
 Release:        1%{?dist}
 Summary:        PowerJoular allows monitoring power consumption of multiple platforms and processes.
 
@@ -22,6 +22,8 @@ install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/%{_sysconfdir}/systemd/system/%{name}.
 %{_sysconfdir}/systemd/system/%{name}.service
 
 %changelog
+* Tue Nov 19 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.0.5-1
+- Hotfix: don't exit when DRAM energy can't be read
 * Wed Jul 11 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.0.4-1
 - Hotfix for error in updating PID list for monitoring an application by name
 * Thu Jul 08 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.0.3-1
