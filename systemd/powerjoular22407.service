@@ -1,0 +1,13 @@
+[Unit]
+Description=PowerJoular 22407 API service
+After=network.target
+
+[Service]
+Type=simple
+User=_USER_
+ExecStart=/usr/bin/python3 /usr/local/bin/powerjoular_api.py
+Restart=always
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
