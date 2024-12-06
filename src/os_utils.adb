@@ -223,7 +223,7 @@ package body OS_Utils is
         return "";
     exception
         when others =>
-            Put_Line ("Wrong platform or error reading file: " & File_Name);
+            Put_Line (Standard_Error, "Wrong platform or error reading file: " & File_Name);
             OS_Exit (0);
     end;
 
@@ -277,9 +277,6 @@ package body OS_Utils is
         return Get_Platform_Name_Raspberry;
     exception
         when others =>
-            -- Put_Line ("Error reading file: " & File_Name);
-            -- Put_Line (Get_OS_Name);
-            -- OS_Exit (0);
             return "";
     end;
     

@@ -99,7 +99,7 @@ package body CPU_STAT_App is
         end;
     exception
         when others =>
-            Put_Line ("Can't find any PID of application: " & To_String (App_Data.App_Name));
+            Put_Line (Standard_Error, "Can't find any PID of application: " & To_String (App_Data.App_Name));
             OS_Exit (0);
     end;
 
