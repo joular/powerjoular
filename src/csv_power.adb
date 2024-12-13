@@ -52,7 +52,6 @@ package body CSV_Power is
 
                 if Hours < 0 then
                     Hours := 23;
-                    -- TODO: Handle rest of the date 
                 end if;
             end if;
         end if;
