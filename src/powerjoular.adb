@@ -94,6 +94,7 @@ procedure Powerjoular is
     Monitor_App : Boolean := False; -- Monitor a specific application by its name
     Overwrite_Data : Boolean := false; -- Overwrite data instead of append on file
     TID_PID : Boolean := false; -- Use TIDs to calculate PID stats instead of PID directly (Experimental feature)
+    Delay_Value : Duration := 1.0; -- Set frequency
 
     -- Procedure to capture Ctrl+C to show total energy on exit
     procedure CtrlCHandler is
@@ -153,6 +154,8 @@ procedure Powerjoular is
                     Monitor_VM := True;
                 when 'k' => -- Use TIDs to calculate PID stats instead of PID stat directly (Experimental feature)
                     TID_PID := True;
+                when 'D' => -- Flag for delay
+                     Delay_Value := Duration'Value (Parameter);
                 when others =>
                     exit;
             end case;
@@ -266,8 +269,8 @@ begin
             Calculate_Energy (RAPL_Before);
         end if;
 
-        -- Wait for 1 second
-        delay 1.0;
+        -- Wait for x seconds
+        delay Delay_Value;
 
         -- Get a second snapshot of current entire CPU cycles
         Calculate_CPU_Cycles (CPU_CCI_After);
@@ -330,7 +333,7 @@ begin
                   end if;
               end if;
 
-              CPU_Power   := RAPL_Energy;
+              CPU_Power   := RAPL_Energy / Long_Float(Delay_Value);
               Total_Power := CPU_Power;
           end if;
 
@@ -387,10 +390,10 @@ begin
         Previous_Total_Power := Total_Power;
 
         -- Increment total energy with power of current cycle
-        -- Cycle is 1 second, so energy for 1 sec = power
-        Total_Energy := Total_Energy + Total_Power;
-        CPU_Energy := CPU_Energy + CPU_Power;
-        GPU_Energy := GPU_Energy + GPU_Power;
+        -- Cycle is x seconds, so energy for x seconds = power * x
+        Total_Energy := Total_Energy + Total_Power * Long_Float(Delay_Value);
+        CPU_Energy := CPU_Energy + CPU_Power * Long_Float(Delay_Value);
+        GPU_Energy := GPU_Energy + GPU_Power * Long_Float(Delay_Value);
 
         -- Save total power data to CSV file
         if Print_File then
