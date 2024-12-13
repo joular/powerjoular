@@ -30,6 +30,9 @@ with Nvidia_SMI; use Nvidia_SMI;
 with Raspberry_Pi_CPU_Formula; use Raspberry_Pi_CPU_Formula;
 with CPU_STAT_App; use CPU_STAT_App;
 with Virtual_Machine; use Virtual_Machine;
+with Delay_Package; use Delay_Package;
+with Ada.Real_Time; use Ada.Real_Time;
+with Ada.Calendar; -- Required for using Duration
 
 procedure Powerjoular is
     -- Power variables
@@ -113,55 +116,55 @@ procedure Powerjoular is
         OS_Exit (0);
     end CtrlCHandler;
 
-    procedure Manage_OPT is
-    begin
-        -- Loop over command line options
-        loop
-            case Getopt ("h v t d f: p: a: o: u l m: s: k") is
-                when 'h' => -- Show help
-                    Show_Help;
-                    OS_Exit (0);
-                when 'v' => -- Show help
-                    Show_Version;
-                    OS_Exit (0);
-                when 't' => -- Show power data on terminal
-                    Show_Terminal := True;
-                when 'd' => -- Show debug info on terminal
-                    Show_Debug := True;
-                when 'p' => -- Monitor a particular PID
-                    -- PID_Number := Integer'Value (Parameter);
-                    CPU_PID_Monitor.PID_Number := Integer'Value (Parameter);
-                    Monitor_PID                := True;
-                when 'a' => -- Monitor a particular application by its name
-                    CPU_App_Monitor.App_Name :=
-                        To_Unbounded_String (Parameter);
-                    Monitor_App              := True;
-                when 'f' => -- Specifiy a filename for CSV file (append data)
-                    CSV_Filename := To_Unbounded_String (Parameter);
-                    Print_File   := True;
-                when 'o' => -- Specifiy a filename for CSV file (overwrite data)
-                    CSV_Filename   := To_Unbounded_String (Parameter);
-                    Print_File     := True;
-                    Overwrite_Data := True;
-                when 'l' => -- Use linear regression model instead of polynomial models
-                    Algorithm_Name := To_Unbounded_String ("linear");
-                when 'm' => -- Specify a filename for the power consumption of the VM
-                    VM_File_Name := To_Unbounded_String (Parameter);
-                    Monitor_VM := True;
-                when 's' => -- Specify a data format for the VM power
-                    VM_Power_Format := To_Unbounded_String (Parameter);
-                    Monitor_VM := True;
-                when 'k' => -- Use TIDs to calculate PID stats instead of PID stat directly (Experimental feature)
-                    TID_PID := True;
-                when others =>
-                    exit;
-            end case;
-        end loop;
-        exception
-            when Invalid_Switch | Invalid_Parameter =>
-                Put_Line ("Invalid command line option, or option not used properly.");
+procedure Manage_OPT is
+begin
+    -- Loop over command line options
+    loop
+        case Getopt ("h v t d f: p: a: o: u l m: s: k D:") is  -- Add 'D:' for the delay flag
+            when 'h' => -- Show help
+                Show_Help;
                 OS_Exit (0);
-    end Manage_OPT;
+            when 'v' => -- Show version
+                Show_Version;
+                OS_Exit (0);
+            when 't' => -- Show power data on terminal
+                Show_Terminal := True;
+            when 'd' => -- Show debug info on terminal
+                Show_Debug := True;
+            when 'p' => -- Monitor a particular PID
+                CPU_PID_Monitor.PID_Number := Integer'Value (Parameter);
+                Monitor_PID := True;
+            when 'a' => -- Monitor a particular application by its name
+                CPU_App_Monitor.App_Name := To_Unbounded_String (Parameter);
+                Monitor_App := True;
+            when 'f' => -- Specify a filename for CSV file (append data)
+                CSV_Filename := To_Unbounded_String (Parameter);
+                Print_File := True;
+            when 'o' => -- Specify a filename for CSV file (overwrite data)
+                CSV_Filename := To_Unbounded_String (Parameter);
+                Print_File := True;
+                Overwrite_Data := True;
+            when 'l' => -- Use linear regression model instead of polynomial models
+                Algorithm_Name := To_Unbounded_String ("linear");
+            when 'm' => -- Specify a filename for the power consumption of the VM
+                VM_File_Name := To_Unbounded_String (Parameter);
+                Monitor_VM := True;
+            when 's' => -- Specify a data format for the VM power
+                VM_Power_Format := To_Unbounded_String (Parameter);
+                Monitor_VM := True;
+            when 'k' => -- Use TIDs to calculate PID stats instead of PID stat directly
+                TID_PID := True;
+            when 'D' => -- Flag for delay
+                Delay_Value := Duration'Value (Parameter);
+            when others =>
+                exit;
+        end case;
+    end loop;
+exception
+    when Invalid_Switch | Invalid_Parameter =>
+        Put_Line ("Invalid command line option, or option not used properly.");
+        OS_Exit (0);
+end Manage_OPT;
 
 begin
     -- Capture Ctrl+C and redirect to handler
@@ -266,8 +269,8 @@ begin
             Calculate_Energy (RAPL_Before);
         end if;
 
-        -- Wait for 1 second
-        delay 1.0;
+        -- wait for x seconds
+        delay Delay_Value;
 
         -- Get a second snapshot of current entire CPU cycles
         Calculate_CPU_Cycles (CPU_CCI_After);

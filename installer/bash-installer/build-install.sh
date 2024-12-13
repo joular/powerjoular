@@ -1,8 +1,8 @@
 #!/bin/sh
 
 # Go back to main directory
-cd ..
 
+#echo "$PWD"
 # Create obj/ folder it not exist
 mkdir -p obj
 

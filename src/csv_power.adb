@@ -19,6 +19,52 @@ with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 
 package body CSV_Power is
 
+    procedure Get_Timestamp (F : in File_Type) is
+        Current_Time  : Time := Clock;
+        Year          : Year_Number;
+        Month         : Month_Number;
+        Day           : Day_Number;
+        Seconds       : Duration;
+        Hours, Minutes, Secs, Msecs : Integer;
+        Total_Seconds : Integer;
+        begin
+        Split(Current_Time, Year, Month, Day, Seconds);
+        
+        Total_Seconds := Integer(Seconds);
+        
+        Hours   := Total_Seconds / 3600;
+        Minutes := (Total_Seconds mod 3600) / 60;
+        Secs    := Total_Seconds mod 60;
+        Msecs   := Integer((Seconds - Duration(Total_Seconds)) * 1000.0); 
+
+            if Msecs < 0 then
+            Msecs   := 1000 + Msecs;
+            Secs := Secs -1;
+            end if;
+            
+        if Secs < 0 then
+            Secs := 59;
+            Minutes := Minutes - 1;
+
+            if Minutes < 0 then
+                Minutes := 59;
+                Hours := Hours - 1;
+
+                if Hours < 0 then
+                    Hours := 23;
+                end if;
+            end if;
+        end if;
+        Put(F, Year'Image & "-" &
+                    Month'Image & "-" &
+                    Day'Image & " " &
+                    Hours'Image & ":" &
+                    Minutes'Image & ":" &
+                    Secs'Image & "." &
+                    Msecs'Image & ",");
+        end Get_Timestamp;
+
+
     procedure Save_To_CSV_File (Filename : String; Utilization : Long_Float; Total_Power : Long_Float; CPU_Power : Long_Float; GPU_Power : Long_Float; Overwrite_Data : Boolean) is
         F : File_Type; -- File handle
         Now : Time := Clock; -- Current UTC time
@@ -26,7 +72,8 @@ package body CSV_Power is
         -- Procedure to save data to file
         procedure Save_Data (F : File_Type) is
         begin
-            Put (F, Image (Date => Now, Time_Zone => UTC_Time_Offset) & ","); -- Get time based on current timezone with UTC offset
+            -- Put (F, Image (Date => Now, Time_Zone => UTC_Time_Offset) & ","); -- Get time based on current timezone with UTC offset
+            Get_Timestamp(F);
             Put (F, Utilization, Exp => 0, Fore => 0); -- Exp = 0 to not show in scientific notation. Fore = 0 to show all digits
             Put (F, ",");
             Put (F, Total_Power, Exp => 0, Fore => 0);
@@ -64,7 +111,8 @@ package body CSV_Power is
         -- Procedure to save data to file
         procedure Save_Data (F : File_Type) is
         begin
-            Put (F, Image (Date => Now, Time_Zone => UTC_Time_Offset) & ","); -- Get time based on current timezone with UTC offset
+            -- Put (F, Image (Date => Now, Time_Zone => UTC_Time_Offset) & ","); -- Get time based on current timezone with UTC offset
+            Get_Timestamp(F);
             Put (F, Utilization, Exp => 0, Fore => 0); -- Exp = 0 to not show in scientific notation. Fore = 0 to show all digits
             Put (F, ",");
             Put (F, Power, Exp => 0, Fore => 0);
