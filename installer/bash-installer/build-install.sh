@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Go back to main directory
-cd ..
+cd ../..
 
 # Create obj/ folder it not exist
 mkdir -p obj
