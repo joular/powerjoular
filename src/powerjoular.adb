@@ -118,7 +118,7 @@ procedure Powerjoular is
     begin
         -- Loop over command line options
         loop
-            case Getopt ("h v t d f: p: a: o: u l m: s: k") is
+            case Getopt ("h v t d f: p: a: o: u l m: s: k D:") is
                 when 'h' => -- Show help
                     Show_Help;
                     OS_Exit (0);
