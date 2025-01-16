@@ -38,7 +38,7 @@ package body CPU_Cycles is
         CPU_Data.ctotal := CPU_Data.cuser + CPU_Data.cnice + CPU_Data.csystem + CPU_Data.cidle; -- total time
     exception
         when others =>
-            Put_Line ("Error reading " & File_Name & " file");
+            Put_Line (Standard_Error, "Error reading " & File_Name & " file");
             OS_Exit (0);
     end;
 

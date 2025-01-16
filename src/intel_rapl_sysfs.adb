@@ -55,7 +55,7 @@ package body Intel_RAPL_sysfs is
     exception
         when others =>
             RAPL_Data.total_energy := 0.0;
-            Put_Line ("Error reading file. Did you run with root privileges?");
+            Put_Line (Standard_Error, "Error reading file. Did you run with root privileges?");
             OS_Exit (0);
     end;
 
@@ -90,7 +90,6 @@ package body Intel_RAPL_sysfs is
     exception
         when others =>
             return; -- When failing to read powercap file, fail without printing messages on terminal
-            --Put_Line ("Error reading file " & Package_Name & " for Intel RAPL.");
     end;
 
     procedure Get_Max_Energy_Range (RAPL_Data : in out Intel_RAPL_Data; Package_Name : in String) is

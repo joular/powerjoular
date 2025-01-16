@@ -48,7 +48,7 @@ package body CPU_STAT_PID is
         end if;
     exception
         when others =>
-            Put_Line ("Error reading " & File_Name & " file");
+            Put_Line (Standard_Error, "Error reading " & File_Name & " file");
             OS_Exit (0);
     end;
 

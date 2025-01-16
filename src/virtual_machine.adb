@@ -48,7 +48,7 @@ package body Virtual_Machine is
         end if;
     exception
         when others =>
-            Put_Line ("The file cannot be found, check the path");
+            Put_Line (Standard_Error, "The file cannot be found, check the path");
             OS_Exit (0);
     end Read_PowerJoular;
 
@@ -82,14 +82,14 @@ package body Virtual_Machine is
             Result := Long_Float'Value (To_String (Line));
         exception
             when E : others =>
-                Put_Line ("Failed to convert to long float: " & Exception_Message (E));
+                Put_Line (Standard_Error, "Failed to convert to long float: " & Exception_Message (E));
                 OS_Exit (0);
         end;
 
         return Result;
     exception
         when E : others =>
-            Put_Line ("Error after reading line: " & Exception_Message (E));
+            Put_Line (Standard_Error, "Error after reading line: " & Exception_Message (E));
             OS_Exit (0);
     end Read_Watts;
 
@@ -127,10 +127,10 @@ package body Virtual_Machine is
 
     exception
         when Invalid_File_Name_Exception =>
-            Put_Line ("Error: The file name is invalid..");
+            Put_Line (Standard_Error, "Error: The file name is invalid..");
             OS_Exit (0);
         when Invalid_Format_Exception    =>
-            Put_Line ("Error: The specified power format is not supported.");
+            Put_Line (Standard_Error, "Error: The specified power format is not supported.");
             OS_Exit (0);
     end Read_VM_Power;
 
