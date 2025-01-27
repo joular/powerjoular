@@ -22,7 +22,7 @@ package body Nvidia_SMI is
         Args       : Argument_List_Access;
         Status     : aliased Integer;
         Subs : String_Split.Slice_Set; -- Used to slice the read data from stat file
-        Seps : constant String := CR & LF; -- Seperator (space) for slicing string
+        Seps : constant String := CR & LF; -- Seperator (line return) for slicing string
         Slice_number_count : String_Split.Slice_Number;
         GPU_Energy : Long_Float := 0.0;
     begin
@@ -41,13 +41,13 @@ package body Nvidia_SMI is
             else
                 String_Split.Create (S          => Subs, -- Store sliced data in Subs
                                      From       => Response, -- Read data to slice
-                                     Separators => Seps, -- Separator (here space)
+                                     Separators => Seps, -- Separator (here line return)
                                      Mode       => String_Split.Multiple);
 
                 Slice_number_count := String_Split.Slice_Count (Subs);
 
                 for I in 1 .. Slice_number_count loop
-                    GPU_Energy := GPU_Energy + Long_Float'Value (String_Split.Slice (Subs, 1));
+                    GPU_Energy := GPU_Energy + Long_Float'Value (String_Split.Slice (Subs, I));
                 end loop;
 
                 return GPU_Energy;
