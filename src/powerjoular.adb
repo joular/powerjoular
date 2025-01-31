@@ -159,7 +159,7 @@ procedure Powerjoular is
         end loop;
         exception
             when Invalid_Switch | Invalid_Parameter =>
-                Put_Line ("Invalid command line option, or option not used properly.");
+                Put_Line (Standard_Error, "Invalid command line option, or option not used properly.");
                 OS_Exit (0);
     end Manage_OPT;
 
@@ -179,7 +179,7 @@ begin
 
     -- If platform not supported, then exit program
     if (Platform_Name = "") then
-        Put_Line ("Platform not supported");
+        Put_Line (Standard_Error, "Platform not supported");
         Put_Line (OS_Name);
         return;
     end if;
