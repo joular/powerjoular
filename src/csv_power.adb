@@ -16,10 +16,11 @@ with Ada.Calendar.Formatting; use Ada.Calendar.Formatting;
 with Ada.Calendar.Time_Zones; use Ada.Calendar.Time_Zones;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
+with Ada.Strings.Fixed;
 
 package body CSV_Power is
 
-    procedure Get_Timestamp (F : in File_Type) is
+    procedure Get_Timestamp (F : in File_Type; Save_Ms : Boolean) is
         Current_Time  : Time := Clock;
         Year          : Year_Number;
         Month         : Month_Number;
@@ -27,7 +28,13 @@ package body CSV_Power is
         Seconds       : Duration;
         Hours, Minutes, Secs, Msecs : Integer;
         Total_Seconds : Integer;
+        Now : Time := Clock; -- Current UTC time
+        use Ada.Strings.Fixed;
         begin
+        if not Save_Ms then
+            Put (F, Image (Date => Now, Time_Zone => UTC_Time_Offset) & ","); -- Get time based on current timezone
+            return;
+        end if;
         Split(Current_Time, Year, Month, Day, Seconds);
         
         Total_Seconds := Integer(Seconds);
@@ -55,17 +62,18 @@ package body CSV_Power is
                 end if;
             end if;
         end if;
-        Put(F, Year'Image & "-" &
-                    Month'Image & "-" &
-                    Day'Image & " " &
-                    Hours'Image & ":" &
-                    Minutes'Image & ":" &
-                    Secs'Image & "." &
-                    Msecs'Image & ",");
+        -- Trimmed_Image : constant String := Trim(Raw_Image, Ada.Strings.Left);
+        Put(F,Trim(Year'Image & "-" , Ada.Strings.Left) & 
+              Trim(Month'Image & "-" , Ada.Strings.Left) &
+              Trim(Day'Image & " " , Ada.Strings.Left) &
+              Trim(Hours'Image & ":" , Ada.Strings.Left) &
+              Trim(Minutes'Image & ":" , Ada.Strings.Left) &
+              Trim(Secs'Image & "." , Ada.Strings.Left) &
+              Trim(Msecs'Image & "," , Ada.Strings.Left));
         end Get_Timestamp;
 
 
-    procedure Save_To_CSV_File (Filename : String; Utilization : Long_Float; Total_Power : Long_Float; CPU_Power : Long_Float; GPU_Power : Long_Float; Overwrite_Data : Boolean) is
+    procedure Save_To_CSV_File (Filename : String; Utilization : Long_Float; Total_Power : Long_Float; CPU_Power : Long_Float; GPU_Power : Long_Float; Overwrite_Data : Boolean; Save_Ms : Boolean) is
         F : File_Type; -- File handle
         Now : Time := Clock; -- Current UTC time
 
@@ -73,7 +81,7 @@ package body CSV_Power is
         procedure Save_Data (F : File_Type) is
         begin
             -- Put (F, Image (Date => Now, Time_Zone => UTC_Time_Offset) & ","); -- Get time based on current timezone with UTC offset
-            Get_Timestamp(F);
+            Get_Timestamp(F, Save_Ms);
             Put (F, Utilization, Exp => 0, Fore => 0); -- Exp = 0 to not show in scientific notation. Fore = 0 to show all digits
             Put (F, ",");
             Put (F, Total_Power, Exp => 0, Fore => 0);
@@ -104,7 +112,7 @@ package body CSV_Power is
             raise PROGRAM_ERROR with "Error in accessing or creating the CSV file";
     end;
 
-    procedure Save_PID_To_CSV_File (Filename : String; Utilization : Long_Float; Power : Long_Float; Overwrite_Data : Boolean) is
+    procedure Save_PID_To_CSV_File (Filename : String; Utilization : Long_Float; Power : Long_Float; Overwrite_Data : Boolean; Save_Ms : Boolean) is
         F : File_Type; -- File handle
         Now : Time := Clock; -- Current UTC time
 
@@ -112,7 +120,7 @@ package body CSV_Power is
         procedure Save_Data (F : File_Type) is
         begin
             -- Put (F, Image (Date => Now, Time_Zone => UTC_Time_Offset) & ","); -- Get time based on current timezone with UTC offset
-            Get_Timestamp(F);
+            Get_Timestamp(F, Save_Ms);
             Put (F, Utilization, Exp => 0, Fore => 0); -- Exp = 0 to not show in scientific notation. Fore = 0 to show all digits
             Put (F, ",");
             Put (F, Power, Exp => 0, Fore => 0);

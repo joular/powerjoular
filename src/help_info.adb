@@ -43,6 +43,7 @@ package body Help_Info is
         Put_Line (HT & "-s: specify the format of the VM power, either powerjoular format (generated with the -o option: 3 columns csv file with the 3rd containing the power consumption the VM), or watts format (1 column containing just the power consumption of the VM)");
         Put_Line ("You can mix options, i.e., powerjoular -tp 144 --> monitor PID 144 and will print to the terminal");
         Put_Line (HT & "-k: use TIDs to calculate PID stats instead of PID stat directly (Experimental feature)");
+        Put_Line (HT & "-c: save timestamps with milliseconds in CSV");
         Put_Line ("--------------------------");
         Put_Line (ESC & "[93m" & "Daemons/Systemd service:" & ESC & "[0m");
         Put_Line ("When installing the tool, a systemd service can also be installed. The service runs PowerJoular using the -o option and saves power data to /tmp/powerjoular-service.csv");
