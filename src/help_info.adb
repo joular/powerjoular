@@ -41,7 +41,7 @@ package body Help_Info is
         Put_Line (HT & "-l: use linear regression models (less accurate than the default polynomial models) for Raspberry Pi energy models");
         Put_Line (HT & "-m: specify a filename for the power consumption of the virtual machine");
         Put_Line (HT & "-s: specify the format of the VM power, either powerjoular format (generated with the -o option: 3 columns csv file with the 3rd containing the power consumption the VM), or watts format (1 column containing just the power consumption of the VM)");
-        Put_Line (HT & "-D: specify the frequency of the samples in seconds");
+        Put_Line (HT & "-g: specify the frequency of the samples in seconds");
         Put_Line ("You can mix options, i.e., powerjoular -tp 144 --> monitor PID 144 and will print to the terminal");
         Put_Line ("--------------------------");
         Put_Line (ESC & "[93m" & "Daemons/Systemd service:" & ESC & "[0m");

@@ -94,7 +94,7 @@ procedure Powerjoular is
     Monitor_App : Boolean := False; -- Monitor a specific application by its name
     Overwrite_Data : Boolean := false; -- Overwrite data instead of append on file
     TID_PID : Boolean := false; -- Use TIDs to calculate PID stats instead of PID directly (Experimental feature)
-    Delay_Value : Duration := 1.0; -- Set frequency
+    Frequency_Value : Duration := 1.0; -- Set frequency
 
     -- Procedure to capture Ctrl+C to show total energy on exit
     procedure CtrlCHandler is
@@ -118,7 +118,7 @@ procedure Powerjoular is
     begin
         -- Loop over command line options
         loop
-            case Getopt ("h v t d f: p: a: o: u l m: s: k D:") is
+            case Getopt ("h v t d f: p: a: o: u l m: s: k g:") is
                 when 'h' => -- Show help
                     Show_Help;
                     OS_Exit (0);
@@ -154,8 +154,8 @@ procedure Powerjoular is
                     Monitor_VM := True;
                 when 'k' => -- Use TIDs to calculate PID stats instead of PID stat directly (Experimental feature)
                     TID_PID := True;
-                when 'D' => -- Flag for delay
-                     Delay_Value := Duration'Value (Parameter);
+                when 'g' => -- Flag for frequency
+                     Frequency_Value := Duration'Value (Parameter);
                 when others =>
                     exit;
             end case;
@@ -270,7 +270,7 @@ begin
         end if;
 
         -- Wait for x seconds
-        delay Delay_Value;
+        delay Frequency_Value;
 
         -- Get a second snapshot of current entire CPU cycles
         Calculate_CPU_Cycles (CPU_CCI_After);
@@ -333,7 +333,7 @@ begin
                   end if;
               end if;
 
-              CPU_Power   := RAPL_Energy / Long_Float(Delay_Value);
+              CPU_Power   := RAPL_Energy / Long_Float(Frequency_Value);
               Total_Power := CPU_Power;
           end if;
 
@@ -391,9 +391,9 @@ begin
 
         -- Increment total energy with power of current cycle
         -- Cycle is x seconds, so energy for x seconds = power * x
-        Total_Energy := Total_Energy + Total_Power * Long_Float(Delay_Value);
-        CPU_Energy := CPU_Energy + CPU_Power * Long_Float(Delay_Value);
-        GPU_Energy := GPU_Energy + GPU_Power * Long_Float(Delay_Value);
+        Total_Energy := Total_Energy + Total_Power * Long_Float(Frequency_Value);
+        CPU_Energy := CPU_Energy + CPU_Power * Long_Float(Frequency_Value);
+        GPU_Energy := GPU_Energy + GPU_Power;
 
         -- Save total power data to CSV file
         if Print_File then
