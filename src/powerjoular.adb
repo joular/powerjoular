@@ -359,7 +359,7 @@ begin
 
             -- Save CPU power data to CSV file of monitored PID
             if Print_File then
-                Save_PID_To_CSV_File (To_String (PID_Or_App_CSV_Filename), PID_CPU_Utilization, PID_CPU_Power, Overwrite_Data,Save_Ms);
+                Save_PID_To_CSV_File (To_String (PID_Or_App_CSV_Filename), PID_CPU_Utilization, PID_CPU_Power, Overwrite_Data, Save_Ms);
             end if;
         end if;
 
@@ -376,7 +376,7 @@ begin
 
             -- Save CPU power data to CSV file of monitored PID
             if Print_File then
-                Save_PID_To_CSV_File (To_String (PID_Or_App_CSV_Filename), App_CPU_Utilization, App_CPU_Power, Overwrite_Data,Save_Ms);
+                Save_PID_To_CSV_File (To_String (PID_Or_App_CSV_Filename), App_CPU_Utilization, App_CPU_Power, Overwrite_Data, Save_Ms);
             end if;
         end if;
 

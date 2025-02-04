@@ -16,7 +16,7 @@ with Ada.Calendar.Formatting; use Ada.Calendar.Formatting;
 with Ada.Calendar.Time_Zones; use Ada.Calendar.Time_Zones;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
-with Ada.Strings.Fixed;
+with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 
 package body CSV_Power is
 
@@ -29,40 +29,40 @@ package body CSV_Power is
         Hours, Minutes, Secs, Msecs : Integer;
         Total_Seconds : Integer;
         Now : Time := Clock; -- Current UTC time
-        use Ada.Strings.Fixed;
-        begin
+        
+    begin
         if not Save_Ms then
             Put (F, Image (Date => Now, Time_Zone => UTC_Time_Offset) & ","); -- Get time based on current timezone
             return;
         end if;
+        
         Split(Current_Time, Year, Month, Day, Seconds);
         
         Total_Seconds := Integer(Seconds);
-        
         Hours   := Total_Seconds / 3600;
         Minutes := (Total_Seconds mod 3600) / 60;
         Secs    := Total_Seconds mod 60;
         Msecs   := Integer((Seconds - Duration(Total_Seconds)) * 1000.0); 
 
-            if Msecs < 0 then
+        if Msecs < 0 then
             Msecs   := 1000 + Msecs;
             Secs := Secs -1;
-            end if;
+        end if;
             
         if Secs < 0 then
             Secs := 59;
             Minutes := Minutes - 1;
-
+            
             if Minutes < 0 then
                 Minutes := 59;
                 Hours := Hours - 1;
-
+                
                 if Hours < 0 then
                     Hours := 23;
                 end if;
             end if;
         end if;
-        -- Trimmed_Image : constant String := Trim(Raw_Image, Ada.Strings.Left);
+        
         Put(F,Trim(Year'Image & "-" , Ada.Strings.Left) & 
               Trim(Month'Image & "-" , Ada.Strings.Left) &
               Trim(Day'Image & " " , Ada.Strings.Left) &
