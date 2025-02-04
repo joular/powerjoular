@@ -94,6 +94,7 @@ procedure Powerjoular is
     Monitor_App : Boolean := False; -- Monitor a specific application by its name
     Overwrite_Data : Boolean := false; -- Overwrite data instead of append on file
     TID_PID : Boolean := false; -- Use TIDs to calculate PID stats instead of PID directly (Experimental feature)
+    Save_Ms : Boolean := false; -- Save timestamps with milliseconds in CSV
 
     -- Procedure to capture Ctrl+C to show total energy on exit
     procedure CtrlCHandler is
@@ -117,7 +118,7 @@ procedure Powerjoular is
     begin
         -- Loop over command line options
         loop
-            case Getopt ("h v t d f: p: a: o: u l m: s: k") is
+            case Getopt ("h v t d f: p: a: o: u l m: s: k c") is
                 when 'h' => -- Show help
                     Show_Help;
                     OS_Exit (0);
@@ -153,6 +154,8 @@ procedure Powerjoular is
                     Monitor_VM := True;
                 when 'k' => -- Use TIDs to calculate PID stats instead of PID stat directly (Experimental feature)
                     TID_PID := True;
+                when 'c' => -- Save timestamps with milliseconds in CSV
+                    Save_Ms := True;
                 when others =>
                     exit;
             end case;
@@ -356,7 +359,7 @@ begin
 
             -- Save CPU power data to CSV file of monitored PID
             if Print_File then
-                Save_PID_To_CSV_File (To_String (PID_Or_App_CSV_Filename), PID_CPU_Utilization, PID_CPU_Power, Overwrite_Data);
+                Save_PID_To_CSV_File (To_String (PID_Or_App_CSV_Filename), PID_CPU_Utilization, PID_CPU_Power, Overwrite_Data, Save_Ms);
             end if;
         end if;
 
@@ -373,7 +376,7 @@ begin
 
             -- Save CPU power data to CSV file of monitored PID
             if Print_File then
-                Save_PID_To_CSV_File (To_String (PID_Or_App_CSV_Filename), App_CPU_Utilization, App_CPU_Power, Overwrite_Data);
+                Save_PID_To_CSV_File (To_String (PID_Or_App_CSV_Filename), App_CPU_Utilization, App_CPU_Power, Overwrite_Data, Save_Ms);
             end if;
         end if;
 
@@ -394,7 +397,7 @@ begin
 
         -- Save total power data to CSV file
         if Print_File then
-            Save_To_CSV_File (To_String (CSV_Filename), CPU_Utilization, Total_Power, CPU_Power, GPU_Power, Overwrite_Data);
+            Save_To_CSV_File (To_String (CSV_Filename), CPU_Utilization, Total_Power, CPU_Power, GPU_Power, Overwrite_Data, Save_Ms);
         end if;
     end loop;
 end Powerjoular;
