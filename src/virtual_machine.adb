@@ -52,30 +52,27 @@ package body Virtual_Machine is
             OS_Exit (0);
     end Read_PowerJoular;
 
+    function Remove_CR (Line : Unbounded_String) return Unbounded_String is
+        S : String := To_String (Line);
+    begin
+        if S'Length > 0 and then S(S'Last) = ASCII.CR then
+            S := S(S'First .. S'Last - 1); -- Remove last character
+        end if;
+
+        return To_Unbounded_String (S);
+    end Remove_CR;
+
     function Read_Watts (File_Path : String) return Long_Float is
         F      : File_Type;
         Line   : Unbounded_String;
         Result : Long_Float := 0.0;
     begin
         Open (F, In_File, File_Path);
-        Line := To_Unbounded_String (Get_Line (F)); -- Read data. We only need the first line of the file
+        Line := To_Unbounded_String (Get_Line (F)); -- Read data. We only need the first line of the file.
         Close (F);
 
-        -- Clean the string and keep only numbers and dots
-        declare
-            Temp  : String                    := To_String (Line);
-            Clean : String (1 .. Temp'Length) := (others => '0');
-            j     : Natural                   := 1;
-        begin
-            for i in Temp'Range loop
-                if ('0' <= Temp (i) and Temp (i) <= '9') or Temp (i) = '.'
-                then
-                    Clean (j) := Temp (i);
-                    j := j + 1;
-                end if;
-            end loop;
-            Line := To_Unbounded_String (Clean (1 .. j - 1));
-        end;
+        -- Trim trailing CR caracter for Windows line ending if still present
+        Line := Remove_CR (Line);
 
         -- Attempted conversion
         begin
