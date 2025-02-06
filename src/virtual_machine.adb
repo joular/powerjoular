@@ -16,8 +16,6 @@ with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 with GNAT.String_Split; use GNAT;
 with Ada.Exceptions; use Ada.Exceptions;
-with Ada.Strings.Fixed; use Ada.Strings.Fixed;
-with Ada.Strings.Maps; use Ada.Strings.Maps;
 
 package body Virtual_Machine is
 
