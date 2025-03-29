@@ -1,5 +1,5 @@
 Name:           powerjoular
-Version:        1.0.5
+Version:        1.1.0
 Release:        1%{?dist}
 Summary:        PowerJoular allows monitoring power consumption of multiple platforms and processes.
 
@@ -22,6 +22,11 @@ install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/%{_sysconfdir}/systemd/system/%{name}.
 %{_sysconfdir}/systemd/system/%{name}.service
 
 %changelog
+* Sat Mar 29 2025 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.1.0-1
+- Add option to write timestamps in milliseconds instead of just seconds
+- Write error messages to stderr
+- Fix incorrect power value when multiple Nvidia GPUs are present
+- Better way to handle mixed OS line ending (LF and CRLF)
 * Tue Nov 19 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.0.5-1
 - Hotfix: don't exit when DRAM energy can't be read
 * Wed Jul 11 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.0.4-1

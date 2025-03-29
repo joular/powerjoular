@@ -72,3 +72,5 @@ cmake-build-debug
 
 alire
 config
+binary
+packages

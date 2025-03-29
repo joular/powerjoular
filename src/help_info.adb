@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2024, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2025, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -14,7 +14,7 @@ with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 
 package body Help_Info is
 
-    Version_Number : constant String := "1.0.5";
+    Version_Number : constant String := "1.1.0";
 
     procedure Show_Help is
     begin
@@ -53,7 +53,7 @@ package body Help_Info is
         Put_Line ("PowerJoular is written and maintained by Dr Adel Noureddine from the University of Pau and the Pays de l'Adour");
         Put_Line ("--------------------------");
         Put_Line (ESC & "[93m" & "Copyright:" & ESC & "[0m");
-        Put_Line ("Copyright (c) 2020-2024, Adel Noureddine. PowerJoular is licensed under the GNU GPL 3 license only (GPL-3.0-only)");
+        Put_Line ("Copyright (c) 2020-2025, Adel Noureddine. PowerJoular is licensed under the GNU GPL 3 license only (GPL-3.0-only)");
     end;
 
     procedure Show_Version is
