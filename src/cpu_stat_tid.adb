@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2024, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2025, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -46,13 +46,13 @@ package body CPU_STAT_TID is
         return Sum_Time;
     exception
         when NAME_ERROR | STATUS_ERROR =>
-            Put_Line ("Error opening or reading the file: " & File_Name);
+            Put_Line (Standard_Error, "Error opening or reading the file: " & File_Name);
             return 0;
         when DATA_ERROR | NUMERIC_ERROR =>
-            Put_Line ("Error converting data from the file: " & File_Name);
+            Put_Line (Standard_Error, "Error converting data from the file: " & File_Name);
             return 0;
         when others =>
-            Put_Line ("Unknown error processing the file: " & File_Name);
+            Put_Line (Standard_Error, "Unknown error processing the file: " & File_Name);
             return 0;
     end Get_TID_Time;
 
@@ -111,17 +111,17 @@ package body CPU_STAT_TID is
         end if;
     exception
         when NAME_ERROR | STATUS_ERROR =>
-            Put_Line ("Error dealing with files in /proc/" & Trim(Integer'Image(PID_Data.PID_Number), Ada.Strings.Left) & "/task directory");
+            Put_Line (Standard_Error, "Error dealing with files in /proc/" & Trim(Integer'Image(PID_Data.PID_Number), Ada.Strings.Left) & "/task directory");
             OS_Exit (0);
         when DATA_ERROR =>
-            Put_Line ("Error related to data formatting or I/O");
+            Put_Line (Standard_Error, "Error related to data formatting or I/O");
             OS_Exit (0);
         when E : NUMERIC_ERROR =>
-            Put_Line ("Arithmetic error encountered");
+            Put_Line (Standard_Error, "Arithmetic error encountered");
             Put_Line (Exception_Message (E));
             OS_Exit (0);
         when others =>
-            Put_Line ("Unknown error processing /proc/" & Trim(Integer'Image(PID_Data.PID_Number), Ada.Strings.Left) & "/task directory");
+            Put_Line (Standard_Error, "Unknown error processing /proc/" & Trim(Integer'Image(PID_Data.PID_Number), Ada.Strings.Left) & "/task directory");
             OS_Exit (0);
     end Calculate_PID_Time_TID;
 

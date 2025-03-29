@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2024, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2025, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -12,10 +12,10 @@
 package CSV_Power is
 
     -- Save CPU utilization and power conusmption to CSV file
-    procedure Save_To_CSV_File (Filename : String; Utilization : Long_Float; Total_Power : Long_Float; CPU_Power : Long_Float; GPU_Power : Long_Float; Overwrite_Data : Boolean);
+    procedure Save_To_CSV_File (Filename : String; Utilization : Long_Float; Total_Power : Long_Float; CPU_Power : Long_Float; GPU_Power : Long_Float; Overwrite_Data : Boolean; Save_Ms : Boolean);
 
     -- Save PID's CPU utilization and power conusmption to CSV file
-    procedure Save_PID_To_CSV_File (Filename : String; Utilization : Long_Float; Power : Long_Float; Overwrite_Data : Boolean);
+    procedure Save_PID_To_CSV_File (Filename : String; Utilization : Long_Float; Power : Long_Float; Overwrite_Data : Boolean; Save_Ms : Boolean);
 
      -- Print CPU utilization, CPU, GPU and total power conusmption on the terminal
     procedure Show_On_Terminal (Utilization : Long_Float; Power : Long_Float; Previous_Power : Long_Float; CPU_Power : Long_Float; GPU_Power : Long_Float; GPU_Supported : Boolean);

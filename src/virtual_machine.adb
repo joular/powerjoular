@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2024, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2025, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -48,9 +48,19 @@ package body Virtual_Machine is
         end if;
     exception
         when others =>
-            Put_Line ("The file cannot be found, check the path");
+            Put_Line (Standard_Error, "The file cannot be found, check the path");
             OS_Exit (0);
     end Read_PowerJoular;
+
+    function Remove_CR (Line : Unbounded_String) return Unbounded_String is
+        S : String := To_String (Line);
+    begin
+        if S'Length > 0 and then S(S'Last) = ASCII.CR then
+            S := S(S'First .. S'Last - 1); -- Remove last character
+        end if;
+
+        return To_Unbounded_String (S);
+    end Remove_CR;
 
     function Read_Watts (File_Path : String) return Long_Float is
         F      : File_Type;
@@ -58,38 +68,25 @@ package body Virtual_Machine is
         Result : Long_Float := 0.0;
     begin
         Open (F, In_File, File_Path);
-        Line := To_Unbounded_String (Get_Line (F)); -- Read data. We only need the first line of the file
+        Line := To_Unbounded_String (Get_Line (F)); -- Read data. We only need the first line of the file.
         Close (F);
 
-        -- Clean the string and keep only numbers and dots
-        declare
-            Temp  : String                    := To_String (Line);
-            Clean : String (1 .. Temp'Length) := (others => '0');
-            j     : Natural                   := 1;
-        begin
-            for i in Temp'Range loop
-                if ('0' <= Temp (i) and Temp (i) <= '9') or Temp (i) = '.'
-                then
-                    Clean (j) := Temp (i);
-                    j := j + 1;
-                end if;
-            end loop;
-            Line := To_Unbounded_String (Clean (1 .. j - 1));
-        end;
+        -- Trim trailing CR caracter for Windows line ending if still present
+        Line := Remove_CR (Line);
 
         -- Attempted conversion
         begin
             Result := Long_Float'Value (To_String (Line));
         exception
             when E : others =>
-                Put_Line ("Failed to convert to long float: " & Exception_Message (E));
+                Put_Line (Standard_Error, "Failed to convert to long float: " & Exception_Message (E));
                 OS_Exit (0);
         end;
 
         return Result;
     exception
         when E : others =>
-            Put_Line ("Error after reading line: " & Exception_Message (E));
+            Put_Line (Standard_Error, "Error after reading line: " & Exception_Message (E));
             OS_Exit (0);
     end Read_Watts;
 
@@ -127,10 +124,10 @@ package body Virtual_Machine is
 
     exception
         when Invalid_File_Name_Exception =>
-            Put_Line ("Error: The file name is invalid..");
+            Put_Line (Standard_Error, "Error: The file name is invalid..");
             OS_Exit (0);
         when Invalid_Format_Exception    =>
-            Put_Line ("Error: The specified power format is not supported.");
+            Put_Line (Standard_Error, "Error: The specified power format is not supported.");
             OS_Exit (0);
     end Read_VM_Power;
 

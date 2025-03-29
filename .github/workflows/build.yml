@@ -18,7 +18,7 @@ jobs:
     - name: Set up GNAT toolchain
       run: >
         sudo apt-get update &&
-        sudo apt-get install gnat gprbuild libgnatcoll19-dev
+        sudo apt-get install gnat gprbuild libgnatcoll-dev
 
     - name: Build
       run: gprbuild -j0 -p

@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2024, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2025, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -16,17 +16,72 @@ with Ada.Calendar.Formatting; use Ada.Calendar.Formatting;
 with Ada.Calendar.Time_Zones; use Ada.Calendar.Time_Zones;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
+with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 
 package body CSV_Power is
 
-    procedure Save_To_CSV_File (Filename : String; Utilization : Long_Float; Total_Power : Long_Float; CPU_Power : Long_Float; GPU_Power : Long_Float; Overwrite_Data : Boolean) is
+    procedure Get_Timestamp (F : in File_Type; Save_Ms : Boolean) is
+        Current_Time  : Time := Clock;
+        Year          : Year_Number;
+        Month         : Month_Number;
+        Day           : Day_Number;
+        Seconds       : Duration;
+        Hours, Minutes, Secs, Msecs : Integer;
+        Total_Seconds : Integer;
+        Now : Time := Clock; -- Current UTC time
+        
+    begin
+        if not Save_Ms then
+            Put (F, Image (Date => Now, Time_Zone => UTC_Time_Offset) & ","); -- Get time based on current timezone
+            return;
+        end if;
+        
+        Split(Current_Time, Year, Month, Day, Seconds);
+        
+        Total_Seconds := Integer(Seconds);
+        Hours   := Total_Seconds / 3600;
+        Minutes := (Total_Seconds mod 3600) / 60;
+        Secs    := Total_Seconds mod 60;
+        Msecs   := Integer((Seconds - Duration(Total_Seconds)) * 1000.0); 
+
+        if Msecs < 0 then
+            Msecs   := 1000 + Msecs;
+            Secs := Secs -1;
+        end if;
+            
+        if Secs < 0 then
+            Secs := 59;
+            Minutes := Minutes - 1;
+            
+            if Minutes < 0 then
+                Minutes := 59;
+                Hours := Hours - 1;
+                
+                if Hours < 0 then
+                    Hours := 23;
+                end if;
+            end if;
+        end if;
+        
+        Put(F,Trim(Year'Image & "-" , Ada.Strings.Left) & 
+              Trim(Month'Image & "-" , Ada.Strings.Left) &
+              Trim(Day'Image & " " , Ada.Strings.Left) &
+              Trim(Hours'Image & ":" , Ada.Strings.Left) &
+              Trim(Minutes'Image & ":" , Ada.Strings.Left) &
+              Trim(Secs'Image & "." , Ada.Strings.Left) &
+              Trim(Msecs'Image & "," , Ada.Strings.Left));
+        end Get_Timestamp;
+
+
+    procedure Save_To_CSV_File (Filename : String; Utilization : Long_Float; Total_Power : Long_Float; CPU_Power : Long_Float; GPU_Power : Long_Float; Overwrite_Data : Boolean; Save_Ms : Boolean) is
         F : File_Type; -- File handle
         Now : Time := Clock; -- Current UTC time
 
         -- Procedure to save data to file
         procedure Save_Data (F : File_Type) is
         begin
-            Put (F, Image (Date => Now, Time_Zone => UTC_Time_Offset) & ","); -- Get time based on current timezone with UTC offset
+            -- Put (F, Image (Date => Now, Time_Zone => UTC_Time_Offset) & ","); -- Get time based on current timezone with UTC offset
+            Get_Timestamp(F, Save_Ms);
             Put (F, Utilization, Exp => 0, Fore => 0); -- Exp = 0 to not show in scientific notation. Fore = 0 to show all digits
             Put (F, ",");
             Put (F, Total_Power, Exp => 0, Fore => 0);
@@ -57,14 +112,15 @@ package body CSV_Power is
             raise PROGRAM_ERROR with "Error in accessing or creating the CSV file";
     end;
 
-    procedure Save_PID_To_CSV_File (Filename : String; Utilization : Long_Float; Power : Long_Float; Overwrite_Data : Boolean) is
+    procedure Save_PID_To_CSV_File (Filename : String; Utilization : Long_Float; Power : Long_Float; Overwrite_Data : Boolean; Save_Ms : Boolean) is
         F : File_Type; -- File handle
         Now : Time := Clock; -- Current UTC time
 
         -- Procedure to save data to file
         procedure Save_Data (F : File_Type) is
         begin
-            Put (F, Image (Date => Now, Time_Zone => UTC_Time_Offset) & ","); -- Get time based on current timezone with UTC offset
+            -- Put (F, Image (Date => Now, Time_Zone => UTC_Time_Offset) & ","); -- Get time based on current timezone with UTC offset
+            Get_Timestamp(F, Save_Ms);
             Put (F, Utilization, Exp => 0, Fore => 0); -- Exp = 0 to not show in scientific notation. Fore = 0 to show all digits
             Put (F, ",");
             Put (F, Power, Exp => 0, Fore => 0);

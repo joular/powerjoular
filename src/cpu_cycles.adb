@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2024, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2025, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -38,7 +38,7 @@ package body CPU_Cycles is
         CPU_Data.ctotal := CPU_Data.cuser + CPU_Data.cnice + CPU_Data.csystem + CPU_Data.cidle; -- total time
     exception
         when others =>
-            Put_Line ("Error reading " & File_Name & " file");
+            Put_Line (Standard_Error, "Error reading " & File_Name & " file");
             OS_Exit (0);
     end;
 

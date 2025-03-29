@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2024, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2025, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -223,7 +223,7 @@ package body OS_Utils is
         return "";
     exception
         when others =>
-            Put_Line ("Wrong platform or error reading file: " & File_Name);
+            Put_Line (Standard_Error, "Wrong platform or error reading file: " & File_Name);
             OS_Exit (0);
     end;
 
@@ -277,9 +277,6 @@ package body OS_Utils is
         return Get_Platform_Name_Raspberry;
     exception
         when others =>
-            -- Put_Line ("Error reading file: " & File_Name);
-            -- Put_Line (Get_OS_Name);
-            -- OS_Exit (0);
             return "";
     end;
     
