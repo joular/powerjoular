@@ -31,6 +31,8 @@ with Raspberry_Pi_CPU_Formula; use Raspberry_Pi_CPU_Formula;
 with CPU_STAT_App; use CPU_STAT_App;
 with Virtual_Machine; use Virtual_Machine;
 
+with Gpu_Power_By_Process; use Gpu_Power_By_Process;
+
 procedure Powerjoular is
     -- Power variables
     --
@@ -133,6 +135,7 @@ procedure Powerjoular is
                     -- PID_Number := Integer'Value (Parameter);
                     CPU_PID_Monitor.PID_Number := Integer'Value (Parameter);
                     Monitor_PID                := True;
+                    Estimate_PID_Consumption (CPU_PID_Monitor.PID_Number);
                 when 'a' => -- Monitor a particular application by its name
                     CPU_App_Monitor.App_Name :=
                         To_Unbounded_String (Parameter);
