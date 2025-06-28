@@ -30,6 +30,7 @@ with Nvidia_SMI; use Nvidia_SMI;
 with Raspberry_Pi_CPU_Formula; use Raspberry_Pi_CPU_Formula;
 with CPU_STAT_App; use CPU_STAT_App;
 with Virtual_Machine; use Virtual_Machine;
+with Logger; use Logger;
 
 procedure Powerjoular is
     -- Power variables
@@ -94,7 +95,7 @@ procedure Powerjoular is
     Monitor_App : Boolean := False; -- Monitor a specific application by its name
     Overwrite_Data : Boolean := false; -- Overwrite data instead of append on file
     TID_PID : Boolean := false; -- Use TIDs to calculate PID stats instead of PID directly (Experimental feature)
-    Save_Ms : Boolean := false; -- Save timestamps with milliseconds in CSV
+   Save_Ms : Boolean := false; -- Save timestamps with milliseconds in CSV
 
     -- Procedure to capture Ctrl+C to show total energy on exit
     procedure CtrlCHandler is
@@ -111,6 +112,7 @@ procedure Powerjoular is
         Put (GPU_Energy, Exp => 0, Fore => 0, Aft => 2);
         Put_Line (" Joules");
         Put_Line ("--------------------------");
+        Logger.Close;
         OS_Exit (0);
     end CtrlCHandler;
 
@@ -170,8 +172,13 @@ begin
     -- Capture Ctrl+C and redirect to handler
     Install_Handler(Handler => CtrlCHandler'Unrestricted_Access);
 
+   -- Logger
+   Logger.init;
+
     -- Default CSV filename
     CSV_Filename := To_Unbounded_String ("./powerjoular-power.csv");
+
+    Logger.Log (Logger.Info, "Starting program");
 
     -- Check command line arguments
     Manage_OPT;
