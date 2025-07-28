@@ -3,7 +3,7 @@ description = "Monitoring the power consumption of multiple platforms and proces
 version = "1.1.0"
 
 authors = ["Adel Noureddine"]
-maintainers = ["Adel Noureddine <adel.noureddine@univ-pau.fr>"]
+maintainers = ["Adel Noureddine <adel.noureddine@outlook.com>"]
 maintainers-logins = ["adelnoureddine"]
 
 tags = ["linux", "power", "energy"]
