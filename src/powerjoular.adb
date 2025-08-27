@@ -320,10 +320,9 @@ begin
                       -- psys has wrapped
                       RAPL_Energy := RAPL_After.psys - RAPL_Before.psys + RAPL_Before.psys_max_energy_range;
                   end if;
-              end if;
 
               -- Handle pkg energy
-              if RAPL_Before.pkg_supported then
+              elsif RAPL_Before.pkg_supported then
                   if RAPL_After.pkg >= RAPL_Before.pkg then
                       RAPL_Energy := RAPL_Energy + (RAPL_After.pkg - RAPL_Before.pkg);
                   else
