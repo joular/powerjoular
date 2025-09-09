@@ -310,26 +310,34 @@ begin
 
           if Check_Intel_Supported_System (Platform_Name) then
               -- Calculate Intel RAPL energy consumption
-              RAPL_Energy :=
-                 RAPL_After.total_energy - RAPL_Before.total_energy;
+              RAPL_Energy := 0.0;
 
-              if RAPL_Before.total_energy > RAPL_After.total_energy then
-                  -- energy has wrapped
-                  if RAPL_Before.psys_supported then
-                      RAPL_Energy :=
-                         RAPL_Energy + RAPL_Before.psys_max_energy_range;
-                  elsif RAPL_Before.pkg_supported then
-                      RAPL_Energy :=
-                         RAPL_Energy + RAPL_Before.pkg_max_energy_range;
+              -- Handle psys energy
+              if RAPL_Before.psys_supported then
+                  if RAPL_After.psys >= RAPL_Before.psys then
+                      RAPL_Energy := RAPL_After.psys - RAPL_Before.psys;
+                  else
+                      -- psys has wrapped
+                      RAPL_Energy := RAPL_After.psys - RAPL_Before.psys + RAPL_Before.psys_max_energy_range;
+                  end if;
+
+              -- Handle pkg energy
+              elsif RAPL_Before.pkg_supported then
+                  if RAPL_After.pkg >= RAPL_Before.pkg then
+                      RAPL_Energy := RAPL_Energy + (RAPL_After.pkg - RAPL_Before.pkg);
+                  else
+                      -- pkg has wrapped
+                      RAPL_Energy := RAPL_Energy + (RAPL_After.pkg - RAPL_Before.pkg + RAPL_Before.pkg_max_energy_range);
                   end if;
               end if;
 
-              if RAPL_Before.pkg_supported and RAPL_Before.dram_supported
-              then
-                  if RAPL_Before.dram > RAPL_After.dram then
+              -- Handle dram
+              if RAPL_Before.pkg_supported and RAPL_Before.dram_supported then
+                  if RAPL_After.dram >= RAPL_Before.dram then
+                      RAPL_Energy := RAPL_Energy + (RAPL_After.dram - RAPL_Before.dram);
+                  else
                       -- dram has wrapped
-                      RAPL_Energy :=
-                         RAPL_Energy + RAPL_Before.dram_max_energy_range;
+                      RAPL_Energy := RAPL_Energy + (RAPL_After.dram - RAPL_Before.dram + RAPL_Before.dram_max_energy_range);
                   end if;
               end if;
 
