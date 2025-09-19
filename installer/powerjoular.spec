@@ -1,5 +1,5 @@
 Name:           powerjoular
-Version:        1.1.0
+Version:        1.1.1
 Release:        1%{?dist}
 Summary:        PowerJoular allows monitoring power consumption of multiple platforms and processes.
 
@@ -22,6 +22,8 @@ install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/%{_sysconfdir}/systemd/system/%{name}.
 %{_sysconfdir}/systemd/system/%{name}.service
 
 %changelog
+* Fri Sep 19 2025 Adel Noureddine <adel.noureddine@parisnanterre.fr> - 1.1.1-1
+- Fix Incorrect CPU power value after specific domain wrapping.
 * Sat Mar 29 2025 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.1.0-1
 - Add option to write timestamps in milliseconds instead of just seconds
 - Write error messages to stderr
