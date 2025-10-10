@@ -16,6 +16,8 @@ with GNAT.OS_Lib; use GNAT.OS_Lib;
 with GNAT.Expect; use GNAT.Expect;
 with GNAT.String_Split; use GNAT;
 
+with Logger; use Logger;
+
 package body CPU_STAT_App is
     
     -- Calculate PID CPU time
@@ -23,10 +25,12 @@ package body CPU_STAT_App is
         F : File_Type; -- File handle
         File_Name : constant String := "/proc/" & Trim(Integer'Image(PID_Number), Ada.Strings.Left) & "/stat"; -- File name /proc/pid/stat
         Subs : String_Split.Slice_Set; -- Used to slice the read data from stat file
-        Seps : constant String := " "; -- Seperator (space) for slicing string
+        Seps : constant String := " "; -- Separator (space) for slicing string
         Utime : Long_Integer; -- User time
         Stime : Long_Integer; -- System time
     begin
+        Log(Info, "Reading CPU time for PID: " & Integer'Image(PID_Number));
+
         Open (F, In_File, File_Name);
         String_Split.Create (S          => Subs, -- Store sliced data in Subs
                              From       => Get_Line (F), -- Read data to slice. We only need the first line of the stat file
@@ -43,16 +47,26 @@ package body CPU_STAT_App is
         -- fscanf(fp, "%*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %lu %lu", &cpu_process_data->utime, &cpu_process_data->stime);
         Utime := Long_Integer'Value (String_Split.Slice (Subs, 14)); -- Index 13 in file. Slice function starts index at 1, so it is 14
         Stime := Long_Integer'Value (String_Split.Slice (Subs, 15)); -- Index 14 in file. Slice function starts index at 1, so it is 15
+
+        Log(Debug, "PID " & Integer'Image(PID_Number) &
+                            " has Utime=" & Long_Integer'Image(Utime) &
+                            " Stime=" & Long_Integer'Image(Stime) &
+                            " Total=" & Long_Integer'Image(Utime + Stime));
+
         return Utime + Stime; -- Total time
     exception
         when others =>
+            Log(Error, "Can't access stat file for PID: " & Integer'Image(PID_Number));
             return 0; -- Return 0 if PID doesn't exist or its file can't be accessed
     end;
 
+    -- Calculate total time of the application from all its PIDs
     procedure Calculate_App_Time (App_Data : in out CPU_STAT_App_Data; Is_Before : in Boolean) is
         Total_Time : Long_Integer := 0; -- Total time for app (all PIDs)
         PID_Number : Integer;
     begin
+        Log(Info, "Calculating total CPU time for application: " & To_String(App_Data.App_Name));
+
         for I in App_Data.PID_Array'Range loop
             PID_Number := App_Data.PID_Array (I);
             Total_Time := Total_Time + Get_PID_Time (PID_Number);
@@ -60,21 +74,27 @@ package body CPU_STAT_App is
         
         if (Is_Before) then
             App_Data.Before_Time := Total_Time; -- Total time
+            Log(Info, "'Before' total time stored: " & Long_Integer'Image(App_Data.Before_Time));
         else
             App_Data.After_Time := Total_Time; -- Total time
             App_Data.Monitored_Time := App_Data.After_Time - App_Data.Before_Time;
+            Log(Info, "'After' total time stored: " & Long_Integer'Image(App_Data.After_Time));
+            Log(Info, "Monitored time difference: " & Long_Integer'Image(App_Data.Monitored_Time));
         end if;
     end;
     
+    -- Update the PID array of the application by calling 'pidof'
     procedure Update_PID_Array (App_Data : in out CPU_STAT_App_Data) is
         Command    : String := "pidof " & To_String (App_Data.App_Name);
         Args       : Argument_List_Access;
         Status     : aliased Integer;
         Subs : String_Split.Slice_Set; -- Used to slice the read data from PID list
-        Seps : constant String := " "; -- Seperator (space) for slicing string
+        Seps : constant String := " "; -- Separator (space) for slicing string
         Slice_number_count : String_Split.Slice_Number;
         Loop_I : Integer;
     begin
+        Log(Info, "Updating PID array for application: " & To_String(App_Data.App_Name));
+
         Args := Argument_String_To_List (Command);
         declare
             Response : String :=
@@ -99,7 +119,7 @@ package body CPU_STAT_App is
         end;
     exception
         when others =>
-            Put_Line (Standard_Error, "Can't find any PID of application: " & To_String (App_Data.App_Name));
+            Log(Error, "Can't find any PID of application: " & To_String (App_Data.App_Name));
             OS_Exit (0);
     end;
 

@@ -18,6 +18,8 @@ with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 
+with Logger; use Logger;
+
 package body CSV_Power is
 
     procedure Get_Timestamp (F : in File_Type; Save_Ms : Boolean) is
@@ -35,9 +37,9 @@ package body CSV_Power is
             Put (F, Image (Date => Now, Time_Zone => UTC_Time_Offset) & ","); -- Get time based on current timezone
             return;
         end if;
-        
+
         Split(Current_Time, Year, Month, Day, Seconds);
-        
+
         Total_Seconds := Integer(Seconds);
         Hours   := Total_Seconds / 3600;
         Minutes := (Total_Seconds mod 3600) / 60;
@@ -46,23 +48,23 @@ package body CSV_Power is
 
         if Msecs < 0 then
             Msecs   := 1000 + Msecs;
-            Secs := Secs -1;
+            Secs := Secs - 1;
         end if;
-            
+
         if Secs < 0 then
             Secs := 59;
             Minutes := Minutes - 1;
-            
+
             if Minutes < 0 then
                 Minutes := 59;
                 Hours := Hours - 1;
-                
+
                 if Hours < 0 then
                     Hours := 23;
                 end if;
             end if;
         end if;
-        
+
         Put(F,Trim(Year'Image & "-" , Ada.Strings.Left) & 
               Trim(Month'Image & "-" , Ada.Strings.Left) &
               Trim(Day'Image & " " , Ada.Strings.Left) &
@@ -70,8 +72,7 @@ package body CSV_Power is
               Trim(Minutes'Image & ":" , Ada.Strings.Left) &
               Trim(Secs'Image & "." , Ada.Strings.Left) &
               Trim(Msecs'Image & "," , Ada.Strings.Left));
-        end Get_Timestamp;
-
+    end Get_Timestamp;
 
     procedure Save_To_CSV_File (Filename : String; Utilization : Long_Float; Total_Power : Long_Float; CPU_Power : Long_Float; GPU_Power : Long_Float; Overwrite_Data : Boolean; Save_Ms : Boolean) is
         F : File_Type; -- File handle
@@ -84,11 +85,11 @@ package body CSV_Power is
             Get_Timestamp(F, Save_Ms);
             Put (F, Utilization, Exp => 0, Fore => 0); -- Exp = 0 to not show in scientific notation. Fore = 0 to show all digits
             Put (F, ",");
-            Put (F, Total_Power, Exp => 0, Fore => 0);
+            Put (F, Total_Power, Exp => 0, Fore => 0); -- Exp = 0 to not show in scientific notation. Fore = 0 to show all digits
             Put (F, ",");
-            Put (F, CPU_Power, Exp => 0, Fore => 0);
+            Put (F, CPU_Power, Exp => 0, Fore => 0); -- Exp = 0 to not show in scientific notation. Fore = 0 to show all digits
             Put (F, ",");
-            Put (F, GPU_Power, Exp => 0, Fore => 0);
+            Put (F, GPU_Power, Exp => 0, Fore => 0); -- Exp = 0 to not show in scientific notation. Fore = 0 to show all digits
             New_Line (F);
         end Save_Data;
     begin
@@ -108,7 +109,9 @@ package body CSV_Power is
             Put_Line (F, "Date,CPU Utilization,Total Power,CPU Power,GPU Power");
             Save_Data (F);
             Close (F);
+            Log(Info, "Created new CSV file: " & Filename);
         when others =>
+            Log(Error, "Error in accessing or creating the CSV file: " & Filename);
             raise PROGRAM_ERROR with "Error in accessing or creating the CSV file";
     end;
 
@@ -123,7 +126,7 @@ package body CSV_Power is
             Get_Timestamp(F, Save_Ms);
             Put (F, Utilization, Exp => 0, Fore => 0); -- Exp = 0 to not show in scientific notation. Fore = 0 to show all digits
             Put (F, ",");
-            Put (F, Power, Exp => 0, Fore => 0);
+            Put (F, Power, Exp => 0, Fore => 0); -- Exp = 0 to not show in scientific notation. Fore = 0 to show all digits
             New_Line (F);
         end Save_Data;
     begin
@@ -143,7 +146,9 @@ package body CSV_Power is
             Put_Line (F, "Date,CPU Utilization,CPU Power");
             Save_Data (F);
             Close (F);
+            Log(Info, "Created new PID CSV file: " & Filename);
         when others =>
+            Log(Error, "Error in accessing or creating PID CSV file: " & Filename);
             raise PROGRAM_ERROR with "Error in accessing or creating the CSV file";
     end;
 
@@ -161,7 +166,7 @@ package body CSV_Power is
         Put (CPU_Power, Exp => 0, Fore => 0, Aft => 2);
         Put (" W");
 
-        if (GPU_Supported) then
+        if GPU_Supported then
             Put (", GPU: ");
             Put (GPU_Power, Exp => 0, Fore => 0, Aft => 2);
             Put (" W)" & HT);
@@ -170,12 +175,12 @@ package body CSV_Power is
         end if;
 
         Power_Difference := Power - Previous_Power;
-        if (Power_Difference >= 0.0) then
-            Put ("/\ ");
+        if Power_Difference >= 0.0 then
+            Put ("/\\ ");
             Put (Power_Difference, Exp => 0, Fore => 0, Aft => 2);
             Put (" Watts");
         else
-            Put ("\/ ");
+            Put ("\\/ ");
             Put (Power_Difference, Exp => 0, Fore => 0, Aft => 2);
             Put (" Watts");
         end if;
@@ -189,7 +194,7 @@ package body CSV_Power is
         PID_Utilization_Percentage := PID_Utilization * 100.0;
         Put (CR);
         Put (ESC & "[0K");
-        if (Is_PID) then
+        if Is_PID then
             Put ("PID monitoring:" & HT & "CPU: ");
         else
             Put ("Application monitoring:" & HT & "CPU: ");

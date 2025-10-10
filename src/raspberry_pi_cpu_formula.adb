@@ -10,6 +10,7 @@
 --
 
 with Ada.Text_IO; use Ada.Text_IO;
+with Logger; use Logger;
 
 package body Raspberry_Pi_CPU_Formula is
 
@@ -17,6 +18,11 @@ package body Raspberry_Pi_CPU_Formula is
     begin
         -- Formulas are based on empirical experimentation and linear/polynomial regression
 
+        -- Log entrée dans la fonction
+        Logger.Log(Debug, "Calculating CPU power for platform: " & Platform_Name &
+                 ", algorithm: " & Algorithm_Name &
+                 ", CPU utilization: " & Long_Float'Image(CPU_Utilization));
+                 
         if (Platform_Name = "rbp5b1.0-64") then
             if (Algorithm_Name = "linear") then
                 return (3.457855981342954 * CPU_Utilization) + 4.403192179893827;
@@ -249,6 +255,7 @@ package body Raspberry_Pi_CPU_Formula is
         end if;
 
         -- If platform not supported, return 0
+        Logger.Log(Error, "Platform not supported, returning 0.0 for CPU power");
         return 0.0;
     end;
 
