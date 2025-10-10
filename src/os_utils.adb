@@ -51,7 +51,7 @@ package body OS_Utils is
         end;
     exception
         when others =>
-            Log(Error, "Error getting architecture name (uname -m). Returning empty string.");
+            Logger.Log(Error, "Error getting architecture name (uname -m). Returning empty string.");
             return "";
     end;
 
@@ -226,7 +226,7 @@ package body OS_Utils is
         return "";
     exception
         when others =>
-            Log(Error, "Wrong platform or error reading file: " & File_Name);
+            Logger.Log(Error, "Wrong platform or error reading file: " & File_Name);
             OS_Exit (0);
     end;
 
@@ -280,7 +280,7 @@ package body OS_Utils is
         return Get_Platform_Name_Raspberry;
     exception
         when others =>
-            Log(Error, "Error getting platform name from /proc/cpuinfo. Returning empty string.");
+            Logger.Log(Error, "Error getting platform name from /proc/cpuinfo. Returning empty string.");
             return "";
     end;
     

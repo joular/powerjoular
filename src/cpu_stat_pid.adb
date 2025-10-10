@@ -27,7 +27,7 @@ package body CPU_STAT_PID is
         Utime : Long_Integer; -- User time
         Stime : Long_Integer; -- System time
     begin
-        Log(Info, "Calculating CPU time for PID: " & Integer'Image(PID_Data.PID_Number));
+        Logger.Log(Info, "Calculating CPU time for PID: " & Integer'Image(PID_Data.PID_Number));
 
         Open (F, In_File, File_Name);
         String_Split.Create (S          => Subs, -- Store sliced data in Subs
@@ -46,11 +46,6 @@ package body CPU_STAT_PID is
         Utime := Long_Integer'Value (String_Split.Slice (Subs, 14)); -- Index 13 in file. Slice function starts index at 1, so it is 14
         Stime := Long_Integer'Value (String_Split.Slice (Subs, 15)); -- Index 14 in file. Slice function starts index at 1, so it is 15
 
-        Log(Debug, "PID " & Integer'Image(PID_Data.PID_Number) &
-                            " Utime=" & Long_Integer'Image(Utime) &
-                            " Stime=" & Long_Integer'Image(Stime) &
-                            " Total=" & Long_Integer'Image(Utime + Stime));
-
         if (Is_Before) then
             PID_Data.Before_Time := Utime + Stime; -- Total time
         else
@@ -59,7 +54,7 @@ package body CPU_STAT_PID is
         end if;
     exception
         when others =>
-            Log(Error, "Error reading " & File_Name & " file");
+            Logger.Log(Error, "Error reading " & File_Name & " file");
             OS_Exit (0);
     end;
 

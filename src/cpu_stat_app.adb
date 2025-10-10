@@ -30,7 +30,7 @@ package body CPU_STAT_App is
         Stime : Long_Integer; -- System time
     begin
         Log(Info, "Reading CPU time for PID: " & Integer'Image(PID_Number));
-
+        
         Open (F, In_File, File_Name);
         String_Split.Create (S          => Subs, -- Store sliced data in Subs
                              From       => Get_Line (F), -- Read data to slice. We only need the first line of the stat file

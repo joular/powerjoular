@@ -99,16 +99,31 @@ procedure Powerjoular is
 
     -- Procedure to capture Ctrl+C to show total energy on exit
     procedure CtrlCHandler is
+
+        -- Fixed-point type with 2 decimal precision
+        type Fixed_Long_Float is delta 0.01 range 0.0 .. 1.0E6;
+
+        -- Helper function to convert Long_Float to string with 2 decimals
+        function To_String(Value : Long_Float) return String is
+        begin
+            return Fixed_Long_Float(Value)'Image;
+        end To_String;
+
+        Log_Line : Unbounded_String := Null_Unbounded_String;
+
     begin
         New_Line;
-        Logger.Log(Info, "--------------------------");
-        Logger.Log(Info, "Total energy: " & Long_Float'Image(Total_Energy) & " Joules, including:");
-        Logger.Log(Info, HT & "CPU energy: " & Long_Float'Image(CPU_Energy) & " Joules");
-        Logger.Log(Info, HT & "GPU energy: " & Long_Float'Image(GPU_Energy) & " Joules");
-        Logger.Log(Info, "--------------------------");
+        Append(Log_Line, ASCII.LF);
+        Append(Log_Line, "--------------------------" & ASCII.LF);
+        Append(Log_Line, "Total energy: " & To_String(Total_Energy) & " Joules, including:" & ASCII.LF);
+        Append(Log_Line, HT & "CPU energy: " & To_String(CPU_Energy) & " Joules" & ASCII.LF);
+        Append(Log_Line, HT & "GPU energy: " & To_String(GPU_Energy) & " Joules" & ASCII.LF);
+        Append(Log_Line, "--------------------------");
+        Logger.Log(Info, Ada.Strings.Unbounded.To_String(Log_Line));
         Logger.Close;
-        OS_Exit (0);
+        OS_Exit(0);
     end CtrlCHandler;
+
 
     procedure Manage_OPT is
     begin

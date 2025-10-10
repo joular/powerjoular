@@ -20,47 +20,47 @@ package body Help_Info is
 
     procedure Show_Help is
     begin
-        Log(Info, ESC & "[93m" & "~~ PowerJoular ~~" & ESC & "[0m");
-        Log(Info, "Version " & Version_Number);
-        Log(Info, "--------------------------");
-        Log(Info, "PowerJoular is a multi-platform power monitoring tool");
-        Log(Info, "It estimates power consumption every second based on:");
-        Log(Info, "- Processor and SOC for Intel processors (since Sandy Bridge) using RAPL, or AMD (Ryzen, EPYC)");
-        Log(Info, "- NVIDIA GPUs using NVIDIA SMI if power monitoring is supported by the GPU model");
-        --Log(Info, "- Processor for Raspberry Pi using a regression model");
-        Log(Info, "--------------------------");
-        Log(Info, ESC & "[93m" & "Usage:" & ESC & "[0m");
-        --Log(Info, HT & "powerjoular (for Raspberry Pi)");
-        Log(Info, HT & "sudo powerjoular (for Intel requires root/sudo)");
-        Log(Info, "--------------------------");
-        Log(Info, ESC & "[93m" & "Options:" & ESC & "[0m");
-        Log(Info, HT & "-h: show this help message");
-        Log(Info, HT & "-p pid: specifiy a particular PID to monitor");
-        Log(Info, HT & "-a appName: specifiy a particular application name to monitor (will monitor all PIDs of the application)");
-        Log(Info, HT & "-f filename: save monitoring data to the given filename path");
-        Log(Info, HT & "-o filename: save only last monitoring data to the given filename path (file overwritten with only latest power measures)");
-        Log(Info, HT & "-t: print data to the terminal");
-        Log(Info, HT & "-l: use linear regression models (less accurate than the default polynomial models) for Raspberry Pi energy models");
-        Log(Info, HT & "-m: specify a filename for the power consumption of the virtual machine");
-        Log(Info, HT & "-s: specify the format of the VM power, either powerjoular format (generated with the -o option: 3 columns csv file with the 3rd containing the power consumption the VM), or watts format (1 column containing just the power consumption of the VM)");
-        Log(Info, "You can mix options, i.e., powerjoular -tp 144 --> monitor PID 144 and will print to the terminal");
-        Log(Info, HT & "-k: use TIDs to calculate PID stats instead of PID stat directly (Experimental feature)");
-        Log(Info, HT & "-c: save timestamps in milliseconds (instead of just seconds) in the written CSV files");
-        Log(Info, "--------------------------");
-        Log(Info, ESC & "[93m" & "Daemons/Systemd service:" & ESC & "[0m");
-        Log(Info, "When installing the tool, a systemd service can also be installed. The service runs PowerJoular using the -o option and saves power data to /tmp/powerjoular-service.csv");
-        Log(Info, "Service can be started using: systemctl start powerjoular.service, and can be enabled to run on boot with: systemctl enable powerjoular.service");
-        Log(Info, "--------------------------");
-        Log(Info, ESC & "[93m" & "About:" & ESC & "[0m");
-        Log(Info, "PowerJoular is written and maintained by Dr Adel Noureddine from the University of Pau and the Pays de l'Adour");
-        Log(Info, "--------------------------");
-        Log(Info, ESC & "[93m" & "Copyright:" & ESC & "[0m");
-        Log(Info, "Copyright (c) 2020-2025, Adel Noureddine. PowerJoular is licensed under the GNU GPL 3 license only (GPL-3.0-only)");
+        Logger.Log(Info, ESC & "[93m" & "~~ PowerJoular ~~" & ESC & "[0m");
+        Logger.Log(Info, "Version " & Version_Number);
+        Logger.Log(Info, "--------------------------");
+        Logger.Log(Info, "PowerJoular is a multi-platform power monitoring tool");
+        Logger.Log(Info, "It estimates power consumption every second based on:");
+        Logger.Log(Info, "- Processor and SOC for Intel processors (since Sandy Bridge) using RAPL, or AMD (Ryzen, EPYC)");
+        Logger.Log(Info, "- NVIDIA GPUs using NVIDIA SMI if power monitoring is supported by the GPU model");
+        --Logger.Log(Info, "- Processor for Raspberry Pi using a regression model");
+        Logger.Log(Info, "--------------------------");
+        Logger.Log(Info, ESC & "[93m" & "Usage:" & ESC & "[0m");
+        --Logger.Log(Info, HT & "powerjoular (for Raspberry Pi)");
+        Logger.Log(Info, HT & "sudo powerjoular (for Intel requires root/sudo)");
+        Logger.Log(Info, "--------------------------");
+        Logger.Log(Info, ESC & "[93m" & "Options:" & ESC & "[0m");
+        Logger.Log(Info, HT & "-h: show this help message");
+        Logger.Log(Info, HT & "-p pid: specifiy a particular PID to monitor");
+        Logger.Log(Info, HT & "-a appName: specifiy a particular application name to monitor (will monitor all PIDs of the application)");
+        Logger.Log(Info, HT & "-f filename: save monitoring data to the given filename path");
+        Logger.Log(Info, HT & "-o filename: save only last monitoring data to the given filename path (file overwritten with only latest power measures)");
+        Logger.Log(Info, HT & "-t: print data to the terminal");
+        Logger.Log(Info, HT & "-l: use linear regression models (less accurate than the default polynomial models) for Raspberry Pi energy models");
+        Logger.Log(Info, HT & "-m: specify a filename for the power consumption of the virtual machine");
+        Logger.Log(Info, HT & "-s: specify the format of the VM power, either powerjoular format (generated with the -o option: 3 columns csv file with the 3rd containing the power consumption the VM), or watts format (1 column containing just the power consumption of the VM)");
+        Logger.Log(Info, "You can mix options, i.e., powerjoular -tp 144 --> monitor PID 144 and will print to the terminal");
+        Logger.Log(Info, HT & "-k: use TIDs to calculate PID stats instead of PID stat directly (Experimental feature)");
+        Logger.Log(Info, HT & "-c: save timestamps in milliseconds (instead of just seconds) in the written CSV files");
+        Logger.Log(Info, "--------------------------");
+        Logger.Log(Info, ESC & "[93m" & "Daemons/Systemd service:" & ESC & "[0m");
+        Logger.Log(Info, "When installing the tool, a systemd service can also be installed. The service runs PowerJoular using the -o option and saves power data to /tmp/powerjoular-service.csv");
+        Logger.Log(Info, "Service can be started using: systemctl start powerjoular.service, and can be enabled to run on boot with: systemctl enable powerjoular.service");
+        Logger.Log(Info, "--------------------------");
+        Logger.Log(Info, ESC & "[93m" & "About:" & ESC & "[0m");
+        Logger.Log(Info, "PowerJoular is written and maintained by Dr Adel Noureddine from the University of Pau and the Pays de l'Adour");
+        Logger.Log(Info, "--------------------------");
+        Logger.Log(Info, ESC & "[93m" & "Copyright:" & ESC & "[0m");
+        Logger.Log(Info, "Copyright (c) 2020-2025, Adel Noureddine. PowerJoular is licensed under the GNU GPL 3 license only (GPL-3.0-only)");
     end;
 
     procedure Show_Version is
     begin
-        Log(Info, Version_Number);
+        Logger.Log(Info, Version_Number);
     end;
 
 end Help_Info;

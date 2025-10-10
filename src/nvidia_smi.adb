@@ -57,7 +57,7 @@ package body Nvidia_SMI is
         end;
     exception
         when others =>
-            Log(Error, "Failed to get NVIDIA SMI power. Returning 0.0");
+            Logger.Log(Error, "Failed to get NVIDIA SMI power. Returning 0.0");
             return 0.0;
     end;
 
@@ -80,7 +80,7 @@ package body Nvidia_SMI is
         end;
     exception
         when others =>
-            Log(Error, "Failed to check NVIDIA support.");
+            Logger.Log(Error, "Failed to check NVIDIA support.");
             return False;
     end;
 

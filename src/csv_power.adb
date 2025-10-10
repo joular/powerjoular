@@ -17,6 +17,7 @@ with Ada.Calendar.Time_Zones; use Ada.Calendar.Time_Zones;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
+with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
 with Logger; use Logger;
 
@@ -109,9 +110,9 @@ package body CSV_Power is
             Put_Line (F, "Date,CPU Utilization,Total Power,CPU Power,GPU Power");
             Save_Data (F);
             Close (F);
-            Log(Info, "Created new CSV file: " & Filename);
+            Logger.Log(Info, "Created new CSV file: " & Filename);
         when others =>
-            Log(Error, "Error in accessing or creating the CSV file: " & Filename);
+            Logger.Log(Error, "Error in accessing or creating the CSV file: " & Filename);
             raise PROGRAM_ERROR with "Error in accessing or creating the CSV file";
     end;
 
@@ -146,67 +147,95 @@ package body CSV_Power is
             Put_Line (F, "Date,CPU Utilization,CPU Power");
             Save_Data (F);
             Close (F);
-            Log(Info, "Created new PID CSV file: " & Filename);
+            Logger.Log(Info, "Created new PID CSV file: " & Filename);
         when others =>
-            Log(Error, "Error in accessing or creating PID CSV file: " & Filename);
+            Logger.Log(Error, "Error in accessing or creating PID CSV file: " & Filename);
             raise PROGRAM_ERROR with "Error in accessing or creating the CSV file";
     end;
 
     procedure Show_On_Terminal (Utilization : Long_Float; Power : Long_Float; Previous_Power : Long_Float; CPU_Power : Long_Float; GPU_Power : Long_Float; GPU_Supported : Boolean) is
-        Utilization_Percentage : Long_Float;
-        Power_Difference : Long_Float;
+       -- Terminal variables
+       Utilization_Percentage : Long_Float := Utilization * 100.0;
+       Power_Difference       : Long_Float := Power - Previous_Power;
+
+       -- Fixed-point type with 2 decimal precision
+       type Fixed_Long_Float is delta 0.01 range -1.0E10 .. 1.0E10;
+
+       -- Helper function to convert Long_Float to string with 2 decimals
+       function To_String(Value : Long_Float) return String is
+       begin
+           return Fixed_Long_Float(Value)'Image;
+       end To_String;
+
+    -- Log line
+    Log_Line : Unbounded_String := Null_Unbounded_String;
+
     begin
-        Utilization_Percentage := Utilization * 100.0;
-        Put (CR);
-        Put (ESC & "[0K");
-        Put ("Total Power: ");
-        Put (Power, Exp => 0, Fore => 0, Aft => 2);
-        Put (" Watts ");
-        Put ("(CPU: ");
-        Put (CPU_Power, Exp => 0, Fore => 0, Aft => 2);
-        Put (" W");
+       Put(ESC & "[2K");  -- Clear last insert       
+       Append(Log_Line, "Total Power: ");
+       Append(Log_Line, To_String(Power));
+       Append(Log_Line, " W, CPU:");
+       Append(Log_Line, To_String(CPU_Power));
 
-        if GPU_Supported then
-            Put (", GPU: ");
-            Put (GPU_Power, Exp => 0, Fore => 0, Aft => 2);
-            Put (" W)" & HT);
-        else
-            Put (")" & HT);
-        end if;
+       if GPU_Supported then
+          Append(Log_Line, ", GPU:");
+          Append(Log_Line, To_String(GPU_Power));
+       end if;
+          Append(Log_Line, ")");
 
-        Power_Difference := Power - Previous_Power;
-        if Power_Difference >= 0.0 then
-            Put ("/\\ ");
-            Put (Power_Difference, Exp => 0, Fore => 0, Aft => 2);
-            Put (" Watts");
-        else
-            Put ("\\/ ");
-            Put (Power_Difference, Exp => 0, Fore => 0, Aft => 2);
-            Put (" Watts");
-        end if;
-    end;
+       if Power_Difference >= 0.0 then
+          Append(Log_Line, "/\\ ");
+          Append(Log_Line, To_String(Power_Difference));
+          Append(Log_Line, " Watts");
+       else
+          Append(Log_Line, "\\/ ");
+          Append(Log_Line, To_String(Power_Difference));
+          Append(Log_Line, " Watts");
+       end if;
+       
+       Logger.Log(Info, Ada.Strings.Unbounded.To_String(Log_Line));
+       Put(ESC & "[A");  -- Move cursor up one line to erase prepare to erase last log
+
+    end Show_On_Terminal;
 
     procedure Show_On_Terminal_PID (PID_Utilization : Long_Float; PID_Power : Long_Float; Utilization : Long_Float; Power : Long_Float; Is_PID : Boolean) is
-        Utilization_Percentage : Long_Float;
-        PID_Utilization_Percentage : Long_Float;
-    begin
-        Utilization_Percentage := Utilization * 100.0;
-        PID_Utilization_Percentage := PID_Utilization * 100.0;
-        Put (CR);
-        Put (ESC & "[0K");
-        if Is_PID then
-            Put ("PID monitoring:" & HT & "CPU: ");
-        else
-            Put ("Application monitoring:" & HT & "CPU: ");
-        end if;
-        Put (PID_Utilization_Percentage, Exp => 0, Fore => 0, Aft => 2);
-        Put (" % (");
-        Put (Utilization_Percentage, Exp => 0, Fore => 0, Aft => 2);
-        Put (" %)" & HT);
-        Put (PID_Power, Exp => 0, Fore => 0, Aft => 2);
-        Put (" Watts (");
-        Put (Power, Exp => 0, Fore => 0, Aft => 2);
-        Put (" Watts)");
+       -- Fixed-point type with 2-decimal precision
+       type Fixed_Long_Float is delta 0.01 range -1.0E10 .. 1.0E10;
+
+       -- Helper function to convert Long_Float to string with 2 decimals
+       function To_String(Value : Long_Float) return String is
+       begin
+           return Fixed_Long_Float(Value)'Image;
+       end To_String;
+
+       Utilization_Percentage      : Long_Float;
+       PID_Utilization_Percentage  : Long_Float;
+       Log_Line : Unbounded_String := Null_Unbounded_String;
+
+     begin
+         Utilization_Percentage := Utilization * 100.0;
+         PID_Utilization_Percentage := PID_Utilization * 100.0;
+
+         Put(ESC & "2K");  -- Clear current line
+         if Is_PID then
+            Append(Log_Line, "PID monitoring: ");
+         else
+            Append(Log_Line, "Application monitoring: ");
+         end if;
+
+         Append(Log_Line, HT & "CPU: ");
+         Append(Log_Line, To_String(PID_Utilization_Percentage));
+         Append(Log_Line, " % (");
+         Append(Log_Line, To_String(Utilization_Percentage));
+         Append(Log_Line, " %) ");
+
+         Append(Log_Line, HT & To_String(PID_Power));
+         Append(Log_Line, " W (");
+         Append(Log_Line, To_String(Power));
+         Append(Log_Line, " W)");
+
+         Logger.Log(Info, Ada.Strings.Unbounded.To_String(Log_Line));
+         Put(ESC & "A"); -- Move cursor up one line to erase prepare to erase last log
     end;
 
 end CSV_Power;

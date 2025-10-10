@@ -32,7 +32,7 @@ package body CPU_STAT_TID is
         Stime : Long_Integer;
         Sum_Time : Long_Integer;
     begin
-        Log(Debug, "Opening stat file for TID " & Integer'Image(TID) & " of PID " & Integer'Image(PID));
+        Logger.Log(Debug, "Opening stat file for TID " & Integer'Image(TID) & " of PID " & Integer'Image(PID));
         Open (F, In_File, File_Name);
         String_Split.Create (
             S => Subs,
@@ -46,7 +46,7 @@ package body CPU_STAT_TID is
         Stime := Long_Integer'Value (String_Split.Slice (Subs, 15));
         Sum_Time := Utime + Stime;
 
-        Log(Debug, "TID " & Integer'Image(TID) & " of PID " & Integer'Image(PID) &
+        Logger.Log(Debug, "TID " & Integer'Image(TID) & " of PID " & Integer'Image(PID) &
                               " Utime=" & Long_Integer'Image(Utime) &
                               " Stime=" & Long_Integer'Image(Stime) &
                               " Sum=" & Long_Integer'Image(Sum_Time));
@@ -54,13 +54,13 @@ package body CPU_STAT_TID is
         return Sum_Time;
     exception
         when NAME_ERROR | STATUS_ERROR =>
-            Log(Error, "Error opening or reading the file: " & File_Name);
+            Logger.Log(Error, "Error opening or reading the file: " & File_Name);
             return 0;
         when DATA_ERROR | NUMERIC_ERROR =>
-            Log(Error, "Error converting data from the file: " & File_Name);
+            Logger.Log(Error, "Error converting data from the file: " & File_Name);
             return 0;
         when others =>
-            Log(Error, "Unknown error processing the file: " & File_Name);
+            Logger.Log(Error, "Unknown error processing the file: " & File_Name);
             return 0;
     end Get_TID_Time;
 
@@ -80,7 +80,7 @@ package body CPU_STAT_TID is
         type TID_Array_Int is array (1..100) of Integer;
         TID_Array : TID_Array_Int; -- Array of all TIDs of the application
     begin
-        Log(Info, "Calculating CPU time for PID: " & Integer'Image(PID_Data.PID_Number));
+        Logger.Log(Info, "Calculating CPU time for PID: " & Integer'Image(PID_Data.PID_Number));
 
         Args := Argument_String_To_List (Command);
         TID_Array := (others => -1);
@@ -104,38 +104,38 @@ package body CPU_STAT_TID is
                 TID_Array(Loop_I) := Integer'Value (String_Split.Slice (Subs, I));
                 TID_Counter := TID_Counter + 1;
             end loop;
-            Log(Debug, "Found " & Integer'Image(TID_Counter) & " TIDs for PID " & Integer'Image(PID_Data.PID_Number));
+            Logger.Log(Debug, "Found " & Integer'Image(TID_Counter) & " TIDs for PID " & Integer'Image(PID_Data.PID_Number));
         end;
 
         for I in 1 .. TID_Counter loop
             if TID_Array(I) /= -1 then
                 TID_Number := TID_Array (I);
-                Log(Debug, "Processing TID: " & Integer'Image(TID_Number));
+                Logger.Log(Debug, "Processing TID: " & Integer'Image(TID_Number));
                 TID_Total_Time := TID_Total_Time + Get_TID_Time (PID_Data.PID_Number, TID_Number);
             end if;
         end loop;
 
         if (Is_Before) then
             PID_Data.Before_Time := TID_Total_Time;
-            Log(Info, "Stored 'Before' time: " & Long_Integer'Image(PID_Data.Before_Time));
+            Logger.Log(Info, "Stored 'Before' time: " & Long_Integer'Image(PID_Data.Before_Time));
         else
             PID_Data.After_Time := TID_Total_Time;
             PID_Data.Monitored_Time := PID_Data.After_Time - PID_Data.Before_Time;
-            Log(Info, "Stored 'After' time: " & Long_Integer'Image(PID_Data.After_Time));
-            Log(Info, "Monitored time difference: " & Long_Integer'Image(PID_Data.Monitored_Time));
+            Logger.Log(Info, "Stored 'After' time: " & Long_Integer'Image(PID_Data.After_Time));
+            Logger.Log(Info, "Monitored time difference: " & Long_Integer'Image(PID_Data.Monitored_Time));
         end if;
     exception
         when NAME_ERROR | STATUS_ERROR =>
-            Log(Error, "Error dealing with files in " & Task_Directory);
+            Logger.Log(Error, "Error dealing with files in " & Task_Directory);
             OS_Exit (0);
         when DATA_ERROR =>
-            Log(Error, "Error related to data formatting or I/O");
+            Logger.Log(Error, "Error related to data formatting or I/O");
             OS_Exit (0);
         when E : NUMERIC_ERROR =>
-            Log(Error, "Arithmetic error encountered: " & Exception_Message (E));
+            Logger.Log(Error, "Arithmetic error encountered: " & Exception_Message (E));
             OS_Exit (0);
         when others =>
-            Log(Error, "Unknown error processing " & Task_Directory);
+            Logger.Log(Error, "Unknown error processing " & Task_Directory);
             OS_Exit (0);
     end Calculate_PID_Time_TID;
 

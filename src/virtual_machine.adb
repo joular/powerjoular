@@ -48,7 +48,7 @@ package body Virtual_Machine is
             return 0.0; -- Return 0 is file is empty
         end if;
     exception
-        when others =>
+        when E : others =>
             Logger.Log(Error, "The file cannot be found, check the path" & Exception_Message (E));
             OS_Exit (0);
     end Read_PowerJoular;
