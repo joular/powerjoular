@@ -15,6 +15,8 @@ with GNAT.OS_Lib; use GNAT.OS_Lib;
 with GNAT.String_Split; use GNAT;
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 
+with Logger; use Logger;
+
 package body Nvidia_SMI is
 
     function Get_Nvidia_SMI_Power return Long_Float is
@@ -55,6 +57,7 @@ package body Nvidia_SMI is
         end;
     exception
         when others =>
+            Logger.Log(Error, "Failed to get NVIDIA SMI power. Returning 0.0");
             return 0.0;
     end;
 
@@ -77,6 +80,7 @@ package body Nvidia_SMI is
         end;
     exception
         when others =>
+            Logger.Log(Error, "Failed to check NVIDIA support.");
             return False;
     end;
 

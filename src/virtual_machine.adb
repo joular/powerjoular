@@ -16,6 +16,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 with GNAT.String_Split; use GNAT;
 with Ada.Exceptions; use Ada.Exceptions;
+with Logger; use Logger;
 
 package body Virtual_Machine is
 
@@ -47,8 +48,8 @@ package body Virtual_Machine is
             return 0.0; -- Return 0 is file is empty
         end if;
     exception
-        when others =>
-            Put_Line (Standard_Error, "The file cannot be found, check the path");
+        when E : others =>
+            Logger.Log(Error, "The file cannot be found, check the path" & Exception_Message (E));
             OS_Exit (0);
     end Read_PowerJoular;
 
@@ -79,14 +80,14 @@ package body Virtual_Machine is
             Result := Long_Float'Value (To_String (Line));
         exception
             when E : others =>
-                Put_Line (Standard_Error, "Failed to convert to long float: " & Exception_Message (E));
+                Logger.Log(Error, "Failed to convert to long float: " & Exception_Message (E));
                 OS_Exit (0);
         end;
 
         return Result;
     exception
         when E : others =>
-            Put_Line (Standard_Error, "Error after reading line: " & Exception_Message (E));
+            Logger.Log(Error, "Error after reading line: " & Exception_Message (E));
             OS_Exit (0);
     end Read_Watts;
 
@@ -124,10 +125,10 @@ package body Virtual_Machine is
 
     exception
         when Invalid_File_Name_Exception =>
-            Put_Line (Standard_Error, "Error: The file name is invalid..");
+            Logger.Log(Error, "Error: The specified power format is not supported.");
             OS_Exit (0);
         when Invalid_Format_Exception    =>
-            Put_Line (Standard_Error, "Error: The specified power format is not supported.");
+            Logger.Log(Error, "Error: The specified power format is not supported.");
             OS_Exit (0);
     end Read_VM_Power;
 

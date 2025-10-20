@@ -16,6 +16,8 @@ with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with GNAT.Expect; use GNAT.Expect;
 with Ada.Environment_Variables; use Ada.Environment_Variables;
 
+with Logger; use Logger;
+
 package body OS_Utils is
        
     function Check_Intel_Supported_System (Platform_Name : in String) return Boolean is
@@ -49,6 +51,7 @@ package body OS_Utils is
         end;
     exception
         when others =>
+            Logger.Log(Error, "Error getting architecture name (uname -m). Returning empty string.");
             return "";
     end;
 
@@ -223,7 +226,7 @@ package body OS_Utils is
         return "";
     exception
         when others =>
-            Put_Line (Standard_Error, "Wrong platform or error reading file: " & File_Name);
+            Logger.Log(Error, "Wrong platform or error reading file: " & File_Name);
             OS_Exit (0);
     end;
 
@@ -277,6 +280,7 @@ package body OS_Utils is
         return Get_Platform_Name_Raspberry;
     exception
         when others =>
+            Logger.Log(Error, "Error getting platform name from /proc/cpuinfo. Returning empty string.");
             return "";
     end;
     

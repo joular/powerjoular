@@ -13,6 +13,8 @@ with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 
+with Logger; use Logger;
+
 package body Intel_RAPL_sysfs is
 
     procedure Calculate_Energy (RAPL_Data : in out Intel_RAPL_Data) is
@@ -46,6 +48,7 @@ package body Intel_RAPL_sysfs is
                 exception
                     when others =>
                         -- Don't exit because we can continue without dram
+                        Logger.Log(Error, "Failed to read DRAM energy, continuing without dram");
                         null;
                 end;
             end if;
@@ -55,7 +58,7 @@ package body Intel_RAPL_sysfs is
     exception
         when others =>
             RAPL_Data.total_energy := 0.0;
-            Put_Line (Standard_Error, "Error reading file. Did you run with root privileges?");
+            Logger.Log(Error, "Error reading energy files.");
             OS_Exit (0);
     end;
 
@@ -89,6 +92,7 @@ package body Intel_RAPL_sysfs is
         Close (F_Name);
     exception
         when others =>
+            Logger.Log(Error, "Failed to read package name: " & Package_Name);
             return; -- When failing to read powercap file, fail without printing messages on terminal
     end;
 
@@ -111,6 +115,7 @@ package body Intel_RAPL_sysfs is
         end if;
     exception
         when others =>
+            Logger.Log(Error, "Failed to read max energy range for package: " & Package_Name);
             return;
     end;
 
