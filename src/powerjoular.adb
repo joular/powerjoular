@@ -30,6 +30,7 @@ with Nvidia_SMI; use Nvidia_SMI;
 with Raspberry_Pi_CPU_Formula; use Raspberry_Pi_CPU_Formula;
 with CPU_STAT_App; use CPU_STAT_App;
 with Virtual_Machine; use Virtual_Machine;
+with Logger; use Logger;
 
 procedure Powerjoular is
     -- Power variables
@@ -59,7 +60,7 @@ procedure Powerjoular is
     -- Data types for Nvidia energy monitoring
     Nvidia_Supported : Boolean; -- If nvidia card, drivers and smi tool are available
 
-    -- Raspberrry Pi model settings
+    -- Raspberry Pi model settings
     Algorithm_Name : Unbounded_String := To_Unbounded_String ("polynomial"); -- Regression model type (by default, polynomial regression model)
 
     -- Data types to monitor CPU cycles
@@ -73,18 +74,18 @@ procedure Powerjoular is
     PID_CPU_Utilization : Long_Float; -- CPU utilization of monitored PID
     App_CPU_Utilization : Long_Float; -- CPU utilization of monitored application
 
-     -- OS name
+    -- OS name
     OS_Name : String := Get_OS_Name;
 
     -- Platform name
     Platform_Name : String := Get_Platform_Name;
 
-   -- CSV filenames
-   CSV_Filename : Unbounded_String; -- CSV filename for entire CPU power data
-   PID_Or_App_CSV_Filename : Unbounded_String; -- CSV filename for monitored PID or application CPU power data
-   VM_File_Name : Unbounded_String; -- Filename containing the power consumption of the VM
-   VM_Power_Format : Unbounded_String; -- Format of the VM power data (currently powerjoualr or watts)
-   Monitor_VM : Boolean := False;
+    -- CSV filenames
+    CSV_Filename : Unbounded_String; -- CSV filename for entire CPU power data
+    PID_Or_App_CSV_Filename : Unbounded_String; -- CSV filename for monitored PID or application CPU power data
+    VM_File_Name : Unbounded_String; -- Filename containing the power consumption of the VM
+    VM_Power_Format : Unbounded_String; -- Format of the VM power data (currently powerjoular or watts)
+    Monitor_VM : Boolean := False;
 
     -- Settings
     Show_Terminal : Boolean := False; -- Show power data on terminal
@@ -98,21 +99,25 @@ procedure Powerjoular is
 
     -- Procedure to capture Ctrl+C to show total energy on exit
     procedure CtrlCHandler is
+
+        -- Fixed-point type with 2 decimal precision
+        type Fixed_Long_Float is delta 0.01 range 0.0 .. 1.0E6;
+
+        -- Helper function to convert Long_Float to string with 2 decimals
+        function To_String(Value : Long_Float) return String is
+        begin
+            return Fixed_Long_Float(Value)'Image;
+        end To_String;
+
+        Log_Line : Unbounded_String := Null_Unbounded_String;
+
     begin
-        New_Line;
-        Put_Line ("--------------------------");
-        Put ("Total energy: ");
-        Put (Total_Energy, Exp => 0, Fore => 0, Aft => 2);
-        Put_Line (" Joules, including:");
-        Put (HT & "CPU energy: ");
-        Put (CPU_Energy, Exp => 0, Fore => 0, Aft => 2);
-        Put_Line (" Joules");
-        Put (HT & "GPU energy: ");
-        Put (GPU_Energy, Exp => 0, Fore => 0, Aft => 2);
-        Put_Line (" Joules");
-        Put_Line ("--------------------------");
-        OS_Exit (0);
+        Logger.log(Logger.Info, "PowerJoular quitting...");
+        Logger.Log(Logger.Info, "Total energy:" & To_String(Total_Energy) & " Joules (CPU:" & To_String(CPU_Energy) & " Joules, GPU:" & To_String(GPU_Energy) & " Joules)");
+        Logger.Close;
+        OS_Exit(0);
     end CtrlCHandler;
+
 
     procedure Manage_OPT is
     begin
@@ -122,7 +127,7 @@ procedure Powerjoular is
                 when 'h' => -- Show help
                     Show_Help;
                     OS_Exit (0);
-                when 'v' => -- Show help
+                when 'v' => -- Show version
                     Show_Version;
                     OS_Exit (0);
                 when 't' => -- Show power data on terminal
@@ -132,7 +137,7 @@ procedure Powerjoular is
                 when 'p' => -- Monitor a particular PID
                     -- PID_Number := Integer'Value (Parameter);
                     CPU_PID_Monitor.PID_Number := Integer'Value (Parameter);
-                    Monitor_PID                := True;
+                    Monitor_PID := True;
                 when 'a' => -- Monitor a particular application by its name
                     CPU_App_Monitor.App_Name :=
                         To_Unbounded_String (Parameter);
@@ -162,7 +167,7 @@ procedure Powerjoular is
         end loop;
         exception
             when Invalid_Switch | Invalid_Parameter =>
-                Put_Line (Standard_Error, "Invalid command line option, or option not used properly.");
+                Logger.Log(Error, "Invalid command line option, or option not used properly.");
                 OS_Exit (0);
     end Manage_OPT;
 
@@ -170,8 +175,13 @@ begin
     -- Capture Ctrl+C and redirect to handler
     Install_Handler(Handler => CtrlCHandler'Unrestricted_Access);
 
+    -- Logger
+    Logger.init;
+
     -- Default CSV filename
     CSV_Filename := To_Unbounded_String ("./powerjoular-power.csv");
+
+    Logger.Log(Logger.Info, "Starting PowerJoular");
 
     -- Check command line arguments
     Manage_OPT;
@@ -182,16 +192,17 @@ begin
 
     -- If platform not supported, then exit program
     if (Platform_Name = "") then
-        Put_Line (Standard_Error, "Platform not supported");
-        Put_Line (OS_Name);
+        Logger.Log(Error, "Platform not supported");
+        Logger.Log(Error, "OS name: " & OS_Name);
         return;
     end if;
 
     if Show_Debug then
-        Put_Line ("System info:");
-        Put_Line (Ada.Characters.Latin_1.HT & "Platform: " & Platform_Name);
+        Logger.Log(Info, "System info:");
+        Logger.Log(Info, HT & "Platform: " & Platform_Name);
     end if;
 
+    -- Intel RAPL
     if Check_Intel_Supported_System (Platform_Name) then
         -- For Intel RAPL, check and populate supported packages first
         Check_Supported_Packages (RAPL_Before, "psys");
@@ -199,7 +210,7 @@ begin
         if RAPL_Before.psys_supported then
             Get_Max_Energy_Range (RAPL_Before, "psys");
             if Show_Debug then
-                Put_Line (Ada.Characters.Latin_1.HT & "Intel RAPL psys: " & Boolean'Image (RAPL_Before.Psys_Supported));
+                Logger.Log(Info, HT & "Intel RAPL psys: " & Boolean'Image(RAPL_Before.Psys_Supported));
             end if;
         end if;
 
@@ -209,13 +220,13 @@ begin
             if RAPL_Before.Pkg_Supported then
                 Get_Max_Energy_Range (RAPL_Before, "pkg");
                 if Show_Debug then
-                    Put_Line (Ada.Characters.Latin_1.HT & "Intel RAPL pkg: " & Boolean'Image (RAPL_Before.pkg_supported));
+                    Logger.Log(Info, HT & "Intel RAPL pkg: " & Boolean'Image(RAPL_Before.pkg_supported));
                 end if;
             end if;
             if RAPL_Before.Dram_Supported then
                 Get_Max_Energy_Range (RAPL_Before, "dram");
                 if Show_Debug then
-                    Put_Line (Ada.Characters.Latin_1.HT & "Intel RAPL dram: " & Boolean'Image (RAPL_Before.Dram_Supported));
+                    Logger.Log(Info, HT & "Intel RAPL dram: " & Boolean'Image(RAPL_Before.Dram_Supported));
                 end if;
             end if;
         end if;
@@ -225,7 +236,7 @@ begin
         -- For now, Nvidia support requiers a PC/server, thus Intel support
         Nvidia_Supported := Check_Nvidia_Supported_System;
         if Nvidia_Supported and Show_Debug then
-            Put_Line (Ada.Characters.Latin_1.HT & "Nvidia supported: " & Boolean'Image (Nvidia_Supported));
+            Logger.Log(Info, HT & "Nvidia supported: " & Boolean'Image(Nvidia_Supported));
         end if;
     end if;
 
@@ -233,7 +244,7 @@ begin
     if Monitor_PID then
         PID_Or_App_CSV_Filename := CSV_Filename & "-" & Trim(Integer'Image (CPU_PID_Monitor.PID_Number), Ada.Strings.Left) & ".csv";
         if Show_Debug then
-            Put_Line ("Monitoring PID: " & Integer'Image (CPU_PID_Monitor.PID_Number));
+            Logger.Log(Info, "Monitoring PID: " & Integer'Image(CPU_PID_Monitor.PID_Number));
         end if;
     end if;
 
@@ -241,7 +252,7 @@ begin
     if Monitor_App then
         PID_Or_App_CSV_Filename := CSV_Filename & "-" & CPU_App_Monitor.App_Name & ".csv";
         if Show_Debug then
-            Put_Line ("Monitoring application: " & To_String (CPU_App_Monitor.App_Name));
+            Logger.Log(Info, "Monitoring application: " & To_String(CPU_App_Monitor.App_Name));
         end if;
     end if;
 
@@ -407,5 +418,7 @@ begin
         if Print_File then
             Save_To_CSV_File (To_String (CSV_Filename), CPU_Utilization, Total_Power, CPU_Power, GPU_Power, Overwrite_Data, Save_Ms);
         end if;
+
     end loop;
+
 end Powerjoular;

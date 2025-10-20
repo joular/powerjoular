@@ -14,16 +14,21 @@ with GNAT.String_Split; use GNAT;
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 
+with Logger; use Logger;
+
 package body CPU_STAT_PID is
 
+    -- Calculate CPU time for a single PID
     procedure Calculate_PID_Time (PID_Data : in out CPU_STAT_PID_Data; Is_Before : in Boolean) is
         F : File_Type; -- File handle
         File_Name : constant String := "/proc/" & Trim(Integer'Image(PID_Data.PID_Number), Ada.Strings.Left) & "/stat"; -- File name /proc/pid/stat
         Subs : String_Split.Slice_Set; -- Used to slice the read data from stat file
-        Seps : constant String := " "; -- Seperator (space) for slicing string
+        Seps : constant String := " "; -- Separator (space) for slicing string
         Utime : Long_Integer; -- User time
         Stime : Long_Integer; -- System time
     begin
+        Logger.Log(Info, "Calculating CPU time for PID: " & Integer'Image(PID_Data.PID_Number));
+
         Open (F, In_File, File_Name);
         String_Split.Create (S          => Subs, -- Store sliced data in Subs
                              From       => Get_Line (F), -- Read data to slice. We only need the first line of the stat file
@@ -40,6 +45,7 @@ package body CPU_STAT_PID is
         -- fscanf(fp, "%*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %lu %lu", &cpu_process_data->utime, &cpu_process_data->stime);
         Utime := Long_Integer'Value (String_Split.Slice (Subs, 14)); -- Index 13 in file. Slice function starts index at 1, so it is 14
         Stime := Long_Integer'Value (String_Split.Slice (Subs, 15)); -- Index 14 in file. Slice function starts index at 1, so it is 15
+
         if (Is_Before) then
             PID_Data.Before_Time := Utime + Stime; -- Total time
         else
@@ -48,7 +54,7 @@ package body CPU_STAT_PID is
         end if;
     exception
         when others =>
-            Put_Line (Standard_Error, "Error reading " & File_Name & " file");
+            Logger.Log(Error, "Error reading " & File_Name & " file");
             OS_Exit (0);
     end;
 
