@@ -112,14 +112,8 @@ procedure Powerjoular is
         Log_Line : Unbounded_String := Null_Unbounded_String;
 
     begin
-        New_Line;
-        Append(Log_Line, ASCII.LF);
-        Append(Log_Line, "--------------------------" & ASCII.LF);
-        Append(Log_Line, "Total energy: " & To_String(Total_Energy) & " Joules, including:" & ASCII.LF);
-        Append(Log_Line, HT & "CPU energy: " & To_String(CPU_Energy) & " Joules" & ASCII.LF);
-        Append(Log_Line, HT & "GPU energy: " & To_String(GPU_Energy) & " Joules" & ASCII.LF);
-        Append(Log_Line, "--------------------------");
-        Logger.Log(Info, Ada.Strings.Unbounded.To_String(Log_Line));
+        Logger.log(Logger.Info, "PowerJoular quitting...");
+        Logger.Log(Logger.Info, "Total energy:" & To_String(Total_Energy) & " Joules (CPU:" & To_String(CPU_Energy) & " Joules, GPU:" & To_String(GPU_Energy) & " Joules)");
         Logger.Close;
         OS_Exit(0);
     end CtrlCHandler;
@@ -187,7 +181,7 @@ begin
     -- Default CSV filename
     CSV_Filename := To_Unbounded_String ("./powerjoular-power.csv");
 
-    Logger.Log (Logger.Info, "Starting program");
+    Logger.Log(Logger.Info, "Starting PowerJoular");
 
     -- Check command line arguments
     Manage_OPT;

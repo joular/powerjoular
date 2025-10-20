@@ -181,16 +181,15 @@ package body CSV_Power is
           Append(Log_Line, ", GPU:");
           Append(Log_Line, To_String(GPU_Power));
        end if;
-          Append(Log_Line, ")");
-
+      
        if Power_Difference >= 0.0 then
-          Append(Log_Line, "/\\ ");
+          Append(Log_Line, " /\ ");
           Append(Log_Line, To_String(Power_Difference));
-          Append(Log_Line, " Watts");
+          Append(Log_Line, " W");
        else
-          Append(Log_Line, "\\/ ");
+          Append(Log_Line, " \/ ");
           Append(Log_Line, To_String(Power_Difference));
-          Append(Log_Line, " Watts");
+          Append(Log_Line, " W");
        end if;
        
        Logger.Log(Info, Ada.Strings.Unbounded.To_String(Log_Line));
