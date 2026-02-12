@@ -232,7 +232,7 @@ package body OS_Utils is
         File_Name : constant String := "/proc/cpuinfo"; -- File to read
         Index_Search : Integer; -- Index of platform name in the searched string
         Line_String : Unbounded_String; -- Variable to store each line of the read file
-        AMD_vendor : Unbounded_String; -- AMD vendor name
+        Is_AMD : Boolean := False; -- AMD vendor flag
     begin
         Open (F_Name, In_File, File_Name);
         -- Loop through file to check if it's one of the supported ones and get its name
@@ -241,38 +241,31 @@ package body OS_Utils is
             
             Index_Search := Index (To_String (Line_String), "GenuineIntel");
             if (Index_Search > 0) then
+                Close (F_Name);
                 return "intel";
             end if;
             
             Index_Search := Index (To_String (Line_String), "AuthenticAMD");
             if (Index_Search > 0) then
-                AMD_vendor := To_Unbounded_String ("amd");
+                Is_AMD := True;
             end if;
 
-        end loop;
-        
-        Close (F_Name);
-        
-        if (AMD_vendor = "amd") then
-            Open (F_Name, In_File, File_Name);
-            
-            while not End_Of_File (F_Name) loop
-                Line_String := To_Unbounded_String (Get_Line (F_Name));
-            
+            if Is_AMD then
                 Index_Search := Index (To_String (Line_String), "Ryzen");
                 if (Index_Search > 0) then
+                    Close (F_Name);
                     return "amd";
                 end if;
 
                 Index_Search := Index (To_String (Line_String), "EPYC");
                 if (Index_Search > 0) then
+                    Close (F_Name);
                     return "amd";
                 end if;
-
-            end loop;
-            
-            Close (F_Name);
-        end if;
+            end if;
+        end loop;
+        
+        Close (F_Name);
 
         return Get_Platform_Name_Raspberry;
     exception
@@ -281,12 +274,34 @@ package body OS_Utils is
     end;
     
     function Get_OS_Name return String is
+        Command    : String          := "uname -s";
+        Args       : Argument_List_Access;
+        Status     : aliased Integer;
     begin
         if (Ada.Environment_Variables.Exists ("OS")) then
             return Ada.Environment_Variables.Value ("OS");
         else
-            return "";
+            -- Fallback to uname -s for Linux/Unix
+             Args := Argument_String_To_List (Command);
+            declare
+                Response : String :=
+                  Get_Command_Output
+                    (Command   => Args (Args'First).all,
+                     Arguments => Args (Args'First + 1 .. Args'Last),
+                     Input     => "",
+                     Status    => Status'Access);
+            begin
+                Free (Args);
+                if Response'Length > 0 and then Response (Response'Last) = ASCII.LF then
+                    return Response (Response'First .. Response'Last - 1);
+                else
+                    return Response;
+                end if;
+            end;
         end if;
+    exception
+        when others =>
+            return "Unknown";
     end;
 
 end OS_Utils;

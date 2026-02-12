@@ -118,7 +118,7 @@ procedure Powerjoular is
     begin
         -- Loop over command line options
         loop
-            case Getopt ("h v t d f: p: a: o: u l m: s: k c") is
+            case Getopt ("h v t d f: p: a: o: l m: s: k c") is
                 when 'h' => -- Show help
                     Show_Help;
                     OS_Exit (0);
@@ -292,7 +292,11 @@ begin
         end if;
 
         -- Calculate entire CPU utilization
-        CPU_Utilization := (Long_Float (CPU_CCI_After.cbusy) - Long_Float (CPU_CCI_Before.cbusy)) / (Long_Float (CPU_CCI_After.ctotal) - Long_Float (CPU_CCI_Before.ctotal));
+        if Long_Float (CPU_CCI_After.ctotal) - Long_Float (CPU_CCI_Before.ctotal) = 0.0 then
+            CPU_Utilization := 0.0;
+        else
+            CPU_Utilization := (Long_Float (CPU_CCI_After.cbusy) - Long_Float (CPU_CCI_Before.cbusy)) / (Long_Float (CPU_CCI_After.ctotal) - Long_Float (CPU_CCI_Before.ctotal));
+        end if;
 
         --Calculate VM consumption
       if Monitor_VM then
@@ -357,8 +361,17 @@ begin
 
         -- If a particular PID is monitored, calculate its CPU time, CPU utilization and CPU power
         if Monitor_PID then
-            PID_CPU_Utilization := (Long_Float (CPU_PID_Monitor.Monitored_Time)) / (Long_Float (CPU_CCI_After.ctotal) - Long_Float (CPU_CCI_Before.ctotal));
-            PID_CPU_Power := (PID_CPU_Utilization * CPU_Power) / CPU_Utilization;
+            if Long_Float (CPU_CCI_After.ctotal) - Long_Float (CPU_CCI_Before.ctotal) = 0.0 then
+                PID_CPU_Utilization := 0.0;
+            else
+                PID_CPU_Utilization := (Long_Float (CPU_PID_Monitor.Monitored_Time)) / (Long_Float (CPU_CCI_After.ctotal) - Long_Float (CPU_CCI_Before.ctotal));
+            end if;
+
+            if CPU_Utilization = 0.0 then
+                PID_CPU_Power := 0.0;
+            else
+                PID_CPU_Power := (PID_CPU_Utilization * CPU_Power) / CPU_Utilization;
+            end if;
 
             -- Show CPU power data on terminal of monitored PID
             if Show_Terminal then
@@ -374,8 +387,17 @@ begin
         -- If a particular application is monitored, calculate its CPU time, CPU utilization and CPU power
         if Monitor_App then
             -- PID_Time := CPU_PID_After.total_time - CPU_PID_Before.total_time;
-            App_CPU_Utilization := (Long_Float (CPU_App_Monitor.Monitored_Time)) / (Long_Float (CPU_CCI_After.ctotal) - Long_Float (CPU_CCI_Before.ctotal));
-            App_CPU_Power := (App_CPU_Utilization * CPU_Power) / CPU_Utilization;
+            if Long_Float (CPU_CCI_After.ctotal) - Long_Float (CPU_CCI_Before.ctotal) = 0.0 then
+                App_CPU_Utilization := 0.0;
+            else
+                App_CPU_Utilization := (Long_Float (CPU_App_Monitor.Monitored_Time)) / (Long_Float (CPU_CCI_After.ctotal) - Long_Float (CPU_CCI_Before.ctotal));
+            end if;
+
+            if CPU_Utilization = 0.0 then
+                App_CPU_Power := 0.0;
+            else
+                App_CPU_Power := (App_CPU_Utilization * CPU_Power) / CPU_Utilization;
+            end if;
 
             -- Show CPU power data on terminal of monitored PID
             if Show_Terminal then

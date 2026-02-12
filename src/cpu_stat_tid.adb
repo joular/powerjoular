@@ -48,7 +48,7 @@ package body CPU_STAT_TID is
         when NAME_ERROR | STATUS_ERROR =>
             Put_Line (Standard_Error, "Error opening or reading the file: " & File_Name);
             return 0;
-        when DATA_ERROR | NUMERIC_ERROR =>
+        when DATA_ERROR | Constraint_Error =>
             Put_Line (Standard_Error, "Error converting data from the file: " & File_Name);
             return 0;
         when others =>
@@ -66,7 +66,6 @@ package body CPU_STAT_TID is
         Subs : String_Split.Slice_Set; -- Used to slice the read data from stat file
         Seps : constant String := String'(1 => Character'Val (10)); -- Newline for slicing string
         Slice_number_count : String_Split.Slice_Number;
-        Loop_I : Integer;
         TID_Number : Integer;
         TID_Counter : Integer := 0;
         TID_Total_Time : Long_Integer := 0;
@@ -91,8 +90,8 @@ package body CPU_STAT_TID is
             Slice_number_count := String_Split.Slice_Count (Subs);
 
             for I in 1 .. Slice_number_count loop
-                Loop_I := Integer'Value (String_Split.Slice_Number'Image (I));
-                TID_Array(Loop_I) := Integer'Value (String_Split.Slice (Subs, I));
+                exit when Integer (I) > TID_Array'Last;
+                TID_Array(Integer (I)) := Integer'Value (String_Split.Slice (Subs, I));
                 TID_Counter := TID_Counter + 1;
             end loop;
         end;
@@ -116,7 +115,7 @@ package body CPU_STAT_TID is
         when DATA_ERROR =>
             Put_Line (Standard_Error, "Error related to data formatting or I/O");
             OS_Exit (0);
-        when E : NUMERIC_ERROR =>
+        when E : Constraint_Error =>
             Put_Line (Standard_Error, "Arithmetic error encountered");
             Put_Line (Exception_Message (E));
             OS_Exit (0);

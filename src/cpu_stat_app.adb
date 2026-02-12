@@ -55,6 +55,9 @@ package body CPU_STAT_App is
     begin
         for I in App_Data.PID_Array'Range loop
             PID_Number := App_Data.PID_Array (I);
+            if PID_Number = 0 then
+                exit;
+            end if;
             Total_Time := Total_Time + Get_PID_Time (PID_Number);
         end loop;
         
@@ -75,6 +78,9 @@ package body CPU_STAT_App is
         Slice_number_count : String_Split.Slice_Number;
         Loop_I : Integer;
     begin
+        -- Reset PID array
+        App_Data.PID_Array := (others => 0);
+        
         Args := Argument_String_To_List (Command);
         declare
             Response : String :=
@@ -92,6 +98,11 @@ package body CPU_STAT_App is
 
             Slice_number_count := String_Split.Slice_Count (Subs);
 
+            -- Limit to 100 PIDs to avoid constraint error
+            if Integer(Slice_number_count) > 100 then
+                Slice_number_count := 100;
+            end if;
+
             for I in 1 .. Slice_number_count loop
                 Loop_I := Integer'Value (String_Split.Slice_Number'Image (I));
                 App_Data.PID_Array(Loop_I) := Integer'Value (String_Split.Slice (Subs, I));
@@ -99,8 +110,9 @@ package body CPU_STAT_App is
         end;
     exception
         when others =>
-            Put_Line (Standard_Error, "Can't find any PID of application: " & To_String (App_Data.App_Name));
-            OS_Exit (0);
+            -- Application not running or no PIDs found. 
+            -- We do not exit anymore, just return empty array (which is already reset)
+            null;
     end;
 
 end CPU_STAT_App;
