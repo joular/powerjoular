@@ -23,7 +23,6 @@ package body Amd_Gpu is
     function Extract_Value (Json_Str : String; Key : String) return Long_Float is
         Start_Index : Integer;
         End_Index   : Integer;
-        Value_Str   : String (1 .. 100); -- Buffer for value
         Result      : Long_Float := 0.0;
         Idx         : Integer := Json_Str'First;
     begin
