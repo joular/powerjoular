@@ -29,6 +29,7 @@ with OS_Utils; use OS_Utils;
 with Nvidia_SMI; use Nvidia_SMI;
 with Raspberry_Pi_CPU_Formula; use Raspberry_Pi_CPU_Formula;
 with CPU_STAT_App; use CPU_STAT_App;
+with Amd_Gpu; use Amd_Gpu;
 with Virtual_Machine; use Virtual_Machine;
 
 procedure Powerjoular is
@@ -58,6 +59,7 @@ procedure Powerjoular is
 
     -- Data types for Nvidia energy monitoring
     Nvidia_Supported : Boolean; -- If nvidia card, drivers and smi tool are available
+    Amd_Supported : Boolean; -- If AMD card, drivers and smi tool are available
 
     -- Raspberrry Pi model settings
     Algorithm_Name : Unbounded_String := To_Unbounded_String ("polynomial"); -- Regression model type (by default, polynomial regression model)
@@ -226,6 +228,13 @@ begin
         Nvidia_Supported := Check_Nvidia_Supported_System;
         if Nvidia_Supported and Show_Debug then
             Put_Line (Ada.Characters.Latin_1.HT & "Nvidia supported: " & Boolean'Image (Nvidia_Supported));
+        else
+            -- Check if AMD card is supported
+            -- For now, AMD support requiers a PC/server, thus Intel support
+            Amd_Supported := Check_Amd_Supported_System;
+            if Amd_Supported and Show_Debug then
+                Put_Line (Ada.Characters.Latin_1.HT & "AMD GPU supported: " & Boolean'Image (Amd_Supported));
+            end if;
         end if;
     end if;
 
@@ -351,13 +360,22 @@ begin
 
       end if;
 
+        -- Reset GPU power for this cycle
+        GPU_Power := 0.0;
+
         if Nvidia_Supported then
             -- Calculate GPU power consumption
-            GPU_Power := Get_Nvidia_SMI_Power;
-            -- Add GPU power to total power
-            -- The total power displayed by PowerJoular is therefore : CPU + GPU power
-            Total_Power := Total_Power + GPU_Power;
+            GPU_Power := GPU_Power + Get_Nvidia_SMI_Power;
         end if;
+
+        if Amd_Supported then
+            -- Calculate AMD GPU power consumption
+            GPU_Power := GPU_Power + Get_Amd_Gpu_Power;
+        end if;
+
+        -- Add GPU power to total power
+        -- The total power displayed by PowerJoular is therefore : CPU + GPU power
+        Total_Power := Total_Power + GPU_Power;
 
         -- If a particular PID is monitored, calculate its CPU time, CPU utilization and CPU power
         if Monitor_PID then
