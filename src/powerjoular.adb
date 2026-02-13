@@ -1,5 +1,5 @@
 --
---  Copyright (c) 2020-2025, Adel Noureddine, Université de Pau et des Pays de l'Adour.
+--  Copyright (c) 2020-2026, Adel Noureddine, Université de Pau et des Pays de l'Adour.
 --  All rights reserved. This program and the accompanying materials
 --  are made available under the terms of the
 --  GNU General Public License v3.0 only (GPL-3.0-only)
@@ -58,8 +58,8 @@ procedure Powerjoular is
     RAPL_Energy : Long_Float; -- Intel RAPL energy difference for monitoring cycle
 
     -- Data types for Nvidia energy monitoring
-    Nvidia_Supported : Boolean; -- If nvidia card, drivers and smi tool are available
-    Amd_Supported : Boolean; -- If AMD card, drivers and smi tool are available
+    Nvidia_Supported : Boolean := False; -- If nvidia card, drivers and smi tool are available
+    Amd_Supported : Boolean := False; -- If AMD card, drivers and smi tool are available
 
     -- Raspberrry Pi model settings
     Algorithm_Name : Unbounded_String := To_Unbounded_String ("polynomial"); -- Regression model type (by default, polynomial regression model)
@@ -228,13 +228,13 @@ begin
         Nvidia_Supported := Check_Nvidia_Supported_System;
         if Nvidia_Supported and Show_Debug then
             Put_Line (Ada.Characters.Latin_1.HT & "Nvidia supported: " & Boolean'Image (Nvidia_Supported));
-        else
-            -- Check if AMD card is supported
-            -- For now, AMD support requiers a PC/server, thus Intel support
-            Amd_Supported := Check_Amd_Supported_System;
-            if Amd_Supported and Show_Debug then
-                Put_Line (Ada.Characters.Latin_1.HT & "AMD GPU supported: " & Boolean'Image (Amd_Supported));
-            end if;
+        end if;
+
+        -- Check if AMD card is supported
+        -- For now, AMD support requiers a PC/server, thus Intel support
+        Amd_Supported := Check_Amd_Supported_System;
+        if Amd_Supported and Show_Debug then
+            Put_Line (Ada.Characters.Latin_1.HT & "AMD GPU supported: " & Boolean'Image (Amd_Supported));
         end if;
     end if;
 
@@ -430,7 +430,7 @@ begin
 
         -- Show total power data on terminal
         if Show_Terminal and then (not Monitor_PID) and then (not Monitor_App) then
-            Show_On_Terminal (CPU_Utilization, Total_Power, Previous_Total_Power, CPU_Power, GPU_Power, Nvidia_Supported);
+            Show_On_Terminal (CPU_Utilization, Total_Power, Previous_Total_Power, CPU_Power, GPU_Power, (Nvidia_Supported or else Amd_Supported));
         end if;
 
         Previous_CPU_Power := CPU_Power;
