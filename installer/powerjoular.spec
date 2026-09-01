@@ -1,10 +1,10 @@
 Name:           powerjoular
-Version:        1.1.1
+Version:        2.0.0
 Release:        1%{?dist}
 Summary:        PowerJoular allows monitoring power consumption of multiple platforms and processes.
 
 License:        GPL-3.0-only
-Source0:        %{_sourcedir}/obj/powerjoular
+Source0:        %{_sourcedir}/powerjoular
 Source1:        %{_sourcedir}/powerjoular.service
 
 %description
@@ -22,6 +22,14 @@ install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/%{_sysconfdir}/systemd/system/%{name}.
 %{_sysconfdir}/systemd/system/%{name}.service
 
 %changelog
+* Mon Aug 31 2026 Adel Noureddine <adel.noureddine@outlook.com> - 2.0.0-1
+- Measure through the Joular Core and CPU Load libraries
+- Add Windows support
+- Add the shared memory ring buffer export (-r)
+- Remove the experimental -k option
+- Remove the -l option: the polynomial power models are now the only ones used
+- The systemd service writes to /run/powerjoular/powerjoular-service.csv instead of /tmp, and runs with reduced privileges
+- The shared memory ring buffer is opened without following symbolic links
 * Fri Sep 19 2025 Adel Noureddine <adel.noureddine@parisnanterre.fr> - 1.1.1-1
 - Fix Incorrect CPU power value after specific domain wrapping.
 * Sat Mar 29 2025 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.1.0-1
