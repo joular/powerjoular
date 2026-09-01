@@ -194,8 +194,15 @@ begin
     -- Nothing at all to measure, which is worth saying rather than writing zeroes for hours on end
     if not Config.Read_VM and then not CPU_Available and then not GPU_Available then
         Put_Line (Standard_Error, "powerjoular: no power source found on this machine.");
+#if PJ_MACOS then
+        Put_Line (Standard_Error,
+                  "On a Mac, reading powermetrics needs root: try 'sudo powerjoular'.");
+        Put_Line (Standard_Error,
+                  "Only the Macs with an Apple Silicon chip are supported, the ones with an Intel processor are not.");
+#else
         Put_Line (Standard_Error,
                   "On a PC or a server, reading RAPL needs root: try 'sudo powerjoular'.");
+#end if;
         Ring_Buffer.Close;
         Joular_Core.Close;
         Set_Exit_Status (Failure);

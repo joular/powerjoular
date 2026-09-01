@@ -35,12 +35,14 @@ package body PowerJoular.Help is
         Put_Line ("It estimates the power consumption every second of:");
         Put_Line (HT & "- Intel (since Sandy Bridge) and AMD (Ryzen, EPYC) processors, through RAPL");
         Put_Line (HT & "- Raspberry Pi and Asus Tinker Board processors, through power models");
+        Put_Line (HT & "- Apple Silicon Macs, the processor and the graphic card of the chip, through powermetrics");
         Put_Line (HT & "- Nvidia and AMD graphic cards, when the card reports its power");
         Put_Line (HT & "- One process, or one application and every process of it");
         Put_Line (Rule);
         Put_Line (Title ("Usage:"));
         Put_Line (HT & "powerjoular.exe (on Windows)");
         Put_Line (HT & "powerjoular (on Raspberry Pi)");
+        Put_Line (HT & "sudo powerjoular (on macOS, as powermetrics needs elevated access. Only the Apple Silicon Macs are supported)");
         Put_Line (HT & "sudo powerjoular (on Linux, as RAPL needs elevated access. Otherwise give read rights to RAPL energy files)");
         Put_Line (Rule);
         Put_Line (Title ("Options:"));
@@ -62,7 +64,7 @@ package body PowerJoular.Help is
         Put_Line ("With -r, the power data of every second is written to a small shared memory area, which any program on the same machine can read with low latency.");
         Put_Line ("It holds a counter of 8 bytes followed by 5 entries of 48 bytes: the time of the measurement, then the CPU, GPU and total power, the CPU usage and the power of the monitored process or application.");
         Put_Line (Rule);
-        Put_Line (Title ("Service:"));
+        Put_Line (Title ("Service (GNU/Linux only):"));
         Put_Line ("A systemd service is installed along with the program. It runs PowerJoular with the -o option, and writes the power data to /run/powerjoular/powerjoular-service.csv.");
         Put_Line ("Start it with: systemctl start powerjoular.service, and have it run on boot with: systemctl enable powerjoular.service");
         Put_Line (Rule);

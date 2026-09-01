@@ -70,6 +70,40 @@ jobs:
         path: bin/powerjoular
         if-no-files-found: error
 
+  # macOS on Apple Silicon, the only Macs supported
+  #
+  # The macos-14 runners and newer are arm64, so nothing is cross compiled
+  macos:
+    name: macOS arm64
+    runs-on: macos-15
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+
+    # Alire brings the GNAT toolchain, fetches the Joular Core and CPU Load libraries, and picks PJ_OS=macos on its own
+    - name: Set up Alire
+      uses: alire-project/setup-alire@v6
+
+    - name: Build
+      run: alr --non-interactive build
+
+    # Only the version and the help are checked: the runners are virtual machines, where powermetrics reports nothing even as root
+    - name: Check the binary runs
+      run: |
+        ./bin/powerjoular -v
+        ./bin/powerjoular -h > /dev/null
+
+    - name: Show what the binary asks of the system
+      run: file bin/powerjoular
+
+    - name: Upload the binary
+      uses: actions/upload-artifact@v7
+      with:
+        name: powerjoular-macos-arm64
+        path: bin/powerjoular
+        if-no-files-found: error
+
   # Windows, 64 bits
   windows:
     name: Windows amd64

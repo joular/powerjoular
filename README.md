@@ -13,6 +13,7 @@ Detailed documentation (including user and reference guides) is available at: [h
 
 - Monitor the power consumption of the CPU and the GPU of PCs and servers
 - Monitor the power consumption of Raspberry Pi and Asus Tinker Board devices
+- Monitor the power consumption of Apple Silicon Macs
 - Monitor the power consumption of one process, or of one application and every process of it
 - Monitor the power consumption from inside a virtual machine
 - Export the power data to the terminal, to CSV files, and to a shared memory ring buffer
@@ -21,17 +22,21 @@ Detailed documentation (including user and reference guides) is available at: [h
 
 ## :satellite: Supported platforms
 
-PowerJoular runs on **GNU/Linux and Windows**, on PCs, servers, and single-board computers.
+PowerJoular runs on **GNU/Linux, macOS and Windows**, on PCs, servers, Macs, and single-board computers.
 
 | Component | Hardware | OS | Method | 
 |---|---|---|---|
 | CPU | Intel (since Sandy Bridge), AMD (Ryzen, EPYC) | Linux | RAPL through the powercap sysfs |
 | CPU | Intel, AMD | Windows | RAPL MSR through [Hubblo's RAPL driver](https://github.com/hubblo-org/windows-rapl-driver) |
 | CPU | Raspberry Pi, Asus Tinker Board | Linux | Research-based regression power models |
+| CPU | Apple Silicon (M series) | macOS | powermetrics, installed with macOS |
 | GPU | Nvidia cards | Linux, Windows | NVML, installed with the Nvidia driver |
 | GPU | AMD cards | Linux | amdgpu hwmon sysfs |
 | GPU | AMD cards | Windows | ADLX, installed with the AMD driver |
-| Whole machine | Any of the above, from inside a virtual machine | Linux, Windows | A file the host writes the power to |
+| GPU | Apple Silicon (M series) | macOS | powermetrics, installed with macOS |
+| Whole machine | Any of the above, from inside a virtual machine | Linux, macOS, Windows | A file the host writes the power to |
+
+On macOS, only the Macs with an Apple Silicon chip are supported: their CPU and the GPU built into the same chip are both read from powermetrics, which reports the power drawn over its last sample. The Macs with an Intel processor are not supported.
 
 The supported single-board computers are the Raspberry Pi models 5B, 400, 4B, 3B+, 3B, 2B, 1B+, 1B and Zero W, and the Asus Tinker Board (S). Every revision of each model is supported, though the power model was trained on one particular revision, on which the accuracy is at its best.
 
@@ -44,6 +49,7 @@ PowerJoular does the energy and CPU usage measuring through two Ada libraries we
 
 - **Linux, PC or server**: reading RAPL files needs elevated on the recent kernels (5.10 and newer), so run `sudo powerjoular`, or giving read rights to the files. See [this issue](https://github.com/joular/powerjoular/issues/1).
 - **Windows**: install [Hubblo's RAPL driver](https://github.com/hubblo-org/windows-rapl-driver). The easiest way to get a signed version installed is through the [Scaphandre installer](https://github.com/hubblo-org/scaphandre/releases).
+- **macOS**: `powermetrics` only runs as the superuser, so run `sudo powerjoular`. Without it, the CPU and the GPU are simply reported as not available. Reading the CPU time of a process belonging to another user also needs root, so `-p` and `-a` on someone else's process need `sudo` too.
 - **Raspberry Pi and GPU readings**: no special privileges needed.
 
 ## :bulb: Usage
@@ -102,6 +108,7 @@ The time of the measurement is a Unix timestamp.
 |---|---|
 | Linux | `/dev/shm/joularcorering` |
 | Windows | `Local\JoularCoreRing` |
+| macOS | `/tmp/joularcorering` |
 | Other | `/tmp/joularcorering` |
 
 The area is 248 bytes, in the byte order of the machine: a counter of 8 bytes, then 5 entries of 48 bytes each.
@@ -158,6 +165,8 @@ Ready-made packages, and easy-to-use installation scripts in the `installer` fol
 - `installer/bash-installer/build-install.sh`: builds the program and installs the binary in `/usr/bin` along with the systemd service.
 - `installer/bash-installer/uninstall.sh`: removes both again.
 
+Those scripts and the packages are for GNU/Linux. On macOS, build the binary as described below and copy it where you want it.
+
 ## :floppy_disk: Compilation
 
 PowerJoular is written in Ada and needs a modern Ada compiler such as GNAT, together with the [Joular Core](https://github.com/joular/joularcore) and [CPU Load](https://github.com/joular/cpuload) libraries.
@@ -180,10 +189,16 @@ Check out the two libraries next to this repository, then point GPRBuild at them
 gprbuild -P powerjoular.gpr -aP../joularcore -aP../cpuload -p
 ```
 
-To build for another OS than the one you are on, set `PJ_OS`:
+To build for another OS than the one you are on, set `PJ_OS` to `linux`, `macos` or `windows`:
 
 ```bash
 gprbuild -P powerjoular.gpr -aP../joularcore -aP../cpuload -XPJ_OS=windows -p
+```
+
+Only Windows is detected on its own, every other OS falling back to Linux, so building on a Mac with GPRBuild directly needs `-XPJ_OS=macos`. Alire picks it on its own and needs nothing.
+
+```bash
+gprbuild -P powerjoular.gpr -aP../joularcore -aP../cpuload -XPJ_OS=macos -p
 ```
 
 ### A binary with no dependencies at all
@@ -196,6 +211,8 @@ gprbuild -P powerjoular.gpr -aP../joularcore -aP../cpuload -XPOWERJOULAR_LINKING
 
 On GNU/Linux, a fully static binary cannot load a library while it runs, so the Nvidia and AMD graphic card readings, which do exactly that, are lost with this option. The processor readings are not affected, and PowerJoular carries on without the GPU rather than failing.
 
+On macOS, Apple ships no static C library, so this option does nothing: the binary is built the same way it is by default, which already carries the Ada runtime and libgcc inside it.
+
 ### Cross-compilation and package generation
 
 `release-version.sh` cross-compiles PowerJoular for several architectures (x86_64 and aarch64 for now, and it can be extended), then builds the RPM and DEB packages for them. It needs an x86_64 and an aarch64 GNAT compiler, Alire, and the `dpkg` and `rpm` packaging tools. On Ubuntu:
@@ -204,7 +221,7 @@ On GNU/Linux, a fully static binary cannot load a library while it runs, so the 
 sudo apt install gnat gnat-12-aarch64-linux-gnu dpkg rpm
 ```
 
-## :hourglass: Systemd service
+## :hourglass: Systemd service (GNU/Linux only)
 
 A systemd service is provided in the `systemd` folder, and is installed by the GNU/Linux packages. It runs PowerJoular with `-o`, writing the latest power data to `/run/powerjoular/powerjoular-service.csv`. The folder is made by systemd when the service starts and removed when it stops, and anyone can read the file in it.
 
@@ -215,7 +232,7 @@ sudo systemctl enable powerjoular.service
 
 ## :sparkles: What changed in version 2
 
-Version 2 does the measuring using the [Joular Core](https://github.com/joular/joularcore) and [CPU Load](https://github.com/joular/cpuload) libraries instead of its own code, which also include Windows support.
+Version 2 does the measuring using the [Joular Core](https://github.com/joular/joularcore) and [CPU Load](https://github.com/joular/cpuload) libraries instead of its own code, which also include macOS and Windows support.
 
 - **New**: `-r` writes the power data to a shared memory ring buffer.
 - **Removed**: `-k`, which measured a process from its threads. It was experimental, and the process readings no longer need it.

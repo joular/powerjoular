@@ -43,6 +43,7 @@ project Powerjoular is
     --   full : nothing at all is left outside, the binary runs on any machine of the same architecture
     --          on GNU/Linux, a fully static binary cannot load a library while it runs, so the Nvidia and
     --          AMD graphic card readings, which do exactly that, are lost. The processor readings are not
+    --          on macOS, Apple ships no static C library, so this option does nothing there
     type Linking_Kind is ("default", "full");
     Linking : Linking_Kind := external ("POWERJOULAR_LINKING", "default");
 
@@ -52,7 +53,14 @@ project Powerjoular is
         when "default" =>
             null;
         when "full" =>
-            Link_Switches := ("-static");
+            case PJ_OS is
+                when "macos" =>
+                    -- Apple ships no static C library, so nothing links fully static on macOS
+                    -- The default switches already carry the Ada runtime and libgcc, which is as much as a Mach-O binary can hold
+                    null;
+                when others =>
+                    Link_Switches := ("-static");
+            end case;
     end case;
 
     for Languages use ("Ada");

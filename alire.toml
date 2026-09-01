@@ -3,7 +3,7 @@ description = "Monitoring the power consumption of multiple platforms and proces
 version = "2.0.0"
 
 long-description = """
-PowerJoular monitors, in real time, the power consumption of hardware components (CPU, GPU), processes and applications, on Windows and Linux.
+PowerJoular monitors, in real time, the power consumption of hardware components (CPU, GPU), processes and applications, on GNU/Linux, macOS and Windows.
 It follows one process or one whole application, and exports power values to the terminal, to CSV files, and to a shared memory ring buffer.
 """
 
@@ -11,7 +11,7 @@ authors = ["Adel Noureddine"]
 maintainers = ["Adel Noureddine <adel.noureddine@outlook.com>"]
 maintainers-logins = ["adelnoureddine"]
 
-tags = ["linux", "windows", "power", "energy", "cpu", "gpu", "monitoring"]
+tags = ["linux", "windows", "macos", "power", "energy", "cpu", "gpu", "monitoring"]
 
 licenses = "GPL-3.0-only"
 website = "https://www.noureddine.org/research/joular/powerjoular"
@@ -19,19 +19,22 @@ website = "https://www.noureddine.org/research/joular/powerjoular"
 executables = ["powerjoular"]
 
 [[depends-on]]
-joularcore = "~0.0.1"
-cpuload = "~0.0.1"
+joularcore = "~0.0.2"
+cpuload = "~0.0.2"
 
 [gpr-externals]
-PJ_OS = ["linux", "windows"]
+PJ_OS = ["linux", "windows", "macos"]
 POWERJOULAR_LINKING = ["default", "full"]
 
 [gpr-set-externals."case(os)".linux]
 PJ_OS = "linux"
 [gpr-set-externals."case(os)".windows]
 PJ_OS = "windows"
+[gpr-set-externals."case(os)".macos]
+PJ_OS = "macos"
 
 [available.'case(os)']
 linux = true
 windows = true
+macos = true
 '...' = false
