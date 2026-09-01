@@ -39,6 +39,12 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v7
 
+    # setup-alire runs part of itself through `github.action_path`, and that path stays the runner's own (/home/runner/work/...) even for a job in a container, where the runner mounts the same directory at /__w. The action then points node at a file the container cannot see. The symlink makes that path resolve.
+    - name: Let the runner's action paths resolve inside the container
+      run: |
+        mkdir -p /home/runner
+        ln -sfn /__w /home/runner/work
+
     # Alire brings the GNAT toolchain, and fetches the Joular Core and CPU Load libraries
     - name: Set up Alire
       uses: alire-project/setup-alire@v6
