@@ -71,22 +71,14 @@ package body PowerJoular.Terminal is
 
     --------------------------------------------------
 
-    procedure Show_Total_Energy (CPU_Energy : in Long_Float;
-                                 GPU_Energy : in Long_Float;
-                                 Total_Energy : in Long_Float) is
+    procedure Close_Line is
     begin
-        -- A measurement is printed without an end of line, so close that line before printing under it
+        -- A measurement is printed without an end of line, so close that line before leaving
         -- There is none to close when the program is stopped before the first measurement lands
         if Line_Left_Open then
             New_Line;
             Line_Left_Open := False;
         end if;
-
-        Put_Line ("--------------------------");
-        Put_Line ("Total energy: " & Image (Total_Energy, Decimals) & " Joules, including:");
-        Put_Line (HT & "CPU energy: " & Image (CPU_Energy, Decimals) & " Joules");
-        Put_Line (HT & "GPU energy: " & Image (GPU_Energy, Decimals) & " Joules");
-        Put_Line ("--------------------------");
-    end Show_Total_Energy;
+    end Close_Line;
 
 end PowerJoular.Terminal;

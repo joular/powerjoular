@@ -9,13 +9,13 @@
 --  Author : Adel Noureddine
 --
 
-with Ada.Calendar;
-with Ada.Calendar.Conversions;
 with Ada.Unchecked_Conversion;
 with Interfaces; use Interfaces;
 with Interfaces.C; use Interfaces.C;
 with System; use System;
 with System.Storage_Elements; use System.Storage_Elements;
+
+with PowerJoular.Formatting;
 
 -- Nothing else is needed: the shared memory comes from the Windows API, or from the C calls,
 -- imported further down in whichever of the two halves of this body is compiled
@@ -97,7 +97,7 @@ package body PowerJoular.Ring_Buffer is
         Position := Natural (Head mod Entry_Count);
 
         Area.Entries (Position) :=
-            (Timestamp => Unsigned_64 (Ada.Calendar.Conversions.To_Unix_Time_64 (Ada.Calendar.Clock)),
+            (Timestamp => Unsigned_64 (PowerJoular.Formatting.Unix_Time),
              CPU_Power => IEEE_Float_64 (Data.CPU_Power),
              GPU_Power => IEEE_Float_64 (Data.GPU_Power),
              Total_Power => IEEE_Float_64 (Data.Total_Power),

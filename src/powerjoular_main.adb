@@ -55,11 +55,6 @@ procedure PowerJoular_Main is
     Data : Cycle;
     Previous_Total_Power : Long_Float := 0.0;
 
-    -- What has been consumed since the program started, in joules
-    CPU_Energy : Long_Float := 0.0;
-    GPU_Energy : Long_Float := 0.0;
-    Total_Energy : Long_Float := 0.0;
-
     -- When the cycle being measured ends
     Deadline : Time;
 
@@ -249,11 +244,6 @@ begin
                 Data.Target_Power := Long_Float'Min (Data.CPU_Power, Data.CPU_Power * Data.Target_Usage / Data.CPU_Usage);
             end if;
 
-            -- Watts drawn over the seconds that went by are the joules spent
-            CPU_Energy := CPU_Energy + Data.CPU_Power * Long_Float (Elapsed);
-            GPU_Energy := GPU_Energy + Data.GPU_Power * Long_Float (Elapsed);
-            Total_Energy := Total_Energy + Data.Total_Power * Long_Float (Elapsed);
-
             if Config.Show_Terminal then
                 Terminal.Show
                     (Data => Data,
@@ -303,10 +293,7 @@ begin
     end loop;
 
     if Config.Show_Terminal then
-        Terminal.Show_Total_Energy
-            (CPU_Energy => CPU_Energy,
-             GPU_Energy => GPU_Energy,
-             Total_Energy => Total_Energy);
+        Terminal.Close_Line;
     end if;
 
     Ring_Buffer.Close;

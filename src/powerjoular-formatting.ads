@@ -15,6 +15,9 @@ package PowerJoular.Formatting is
     -- Decimals is how many digits are kept after the dot
     function Image (Value : in Long_Float; Decimals : in Natural) return String;
 
+    -- The current time as a count of seconds since the first of January 1970
+    function Unix_Time return Long_Long_Integer;
+
     -- The current time as a Unix timestamp
     function Timestamp return String;
 

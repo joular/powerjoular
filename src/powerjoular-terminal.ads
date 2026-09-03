@@ -20,9 +20,8 @@ package PowerJoular.Terminal is
                     Previous_Total_Power : in Long_Float;
                     GPU_Available : in Boolean);
 
-    -- Show the total energy since program started, printed when program exits
-    procedure Show_Total_Energy (CPU_Energy : in Long_Float;
-                                 GPU_Energy : in Long_Float;
-                                 Total_Energy : in Long_Float);
+    -- End the line the last measurement left open, so the shell prompt starts on a line of its own
+    -- Called when the program exits
+    procedure Close_Line;
 
 end PowerJoular.Terminal;
