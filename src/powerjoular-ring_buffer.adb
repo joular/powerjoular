@@ -9,6 +9,7 @@
 --  Author : Adel Noureddine
 --
 
+with Ada.Environment_Variables;
 with Ada.Unchecked_Conversion;
 with Interfaces; use Interfaces;
 with Interfaces.C; use Interfaces.C;
@@ -69,9 +70,11 @@ package body PowerJoular.Ring_Buffer is
     procedure Memory_Barrier;
     pragma Import (Intrinsic, Memory_Barrier, "__sync_synchronize");
 
-    -- Where the area lives, which is not a real file on Windows but the name of a shared memory object
+    -- Where the area lives, a real file on every OS
+    -- On Windows it goes under ProgramData so any user can access it
 #if PJ_WINDOWS then
-    Area_Path : constant String := "Local\JoularCoreRing";
+    Area_Path : constant String :=
+        Ada.Environment_Variables.Value ("PROGRAMDATA", "C:\ProgramData") & "\joularcorering";
 #elsif PJ_LINUX then
     Area_Path : constant String := "/dev/shm/joularcorering";
 #else
@@ -115,14 +118,35 @@ package body PowerJoular.Ring_Buffer is
 
 #if PJ_WINDOWS then
 
-    -- Windows keeps shared memory in named objects backed by the paging file, rather than in files
-
     -- Read and write the memory of the object
     PAGE_READWRITE : constant unsigned := 4;
     FILE_MAP_ALL_ACCESS : constant unsigned := 16#F001F#;
 
-    -- Handing this in place of a file tells Windows to back the object with the paging file
+    -- What CreateFileA hands back when it could not open what was asked
     INVALID_HANDLE_VALUE : constant System.Address := To_Address (Integer_Address'Last);
+
+    -- Flags for opening the file holding the area
+    GENERIC_READ : constant unsigned := 16#8000_0000#;
+    GENERIC_WRITE : constant unsigned := 16#4000_0000#;
+    
+    -- Both share flags matter: without them the reader cannot open the file while we hold it
+    FILE_SHARE_READ : constant unsigned := 16#0000_0001#;
+    FILE_SHARE_WRITE : constant unsigned := 16#0000_0002#;
+    
+    -- Open the file that is already there, or create it when it is not, so a second run carries on in the same one
+    OPEN_ALWAYS : constant unsigned := 4;
+    FILE_ATTRIBUTE_NORMAL : constant unsigned := 16#0000_0080#;
+
+    --  Opens, or creates, the file the area is held in
+    function CreateFileA
+       (lpFileName : System.Address;
+        dwDesiredAccess : unsigned;
+        dwShareMode : unsigned;
+        lpSecurityAttributes : System.Address;
+        dwCreationDisposition : unsigned;
+        dwFlagsAndAttributes : unsigned;
+        hTemplateFile : System.Address) return System.Address;
+    pragma Import (Stdcall, CreateFileA, "CreateFileA");
 
     function CreateFileMappingA
        (hFile : System.Address;
@@ -150,6 +174,9 @@ package body PowerJoular.Ring_Buffer is
     -- The shared memory object, kept until the program stops
     Object : System.Address := System.Null_Address;
 
+    -- The file the area is held in, kept open for as long as the object is
+    File : System.Address := INVALID_HANDLE_VALUE;
+
     --------------------------------------------------
 
     function Open return Boolean is
@@ -160,17 +187,33 @@ package body PowerJoular.Ring_Buffer is
             return True;
         end if;
 
-        -- Creating an object that already exists hands back the one already there, which is what we want: a second run then carries on writing where the first one left off
+        File :=
+            CreateFileA
+                (lpFileName => Name'Address,
+                 dwDesiredAccess => GENERIC_READ or GENERIC_WRITE,
+                 dwShareMode => FILE_SHARE_READ or FILE_SHARE_WRITE,
+                 lpSecurityAttributes => System.Null_Address,
+                 dwCreationDisposition => OPEN_ALWAYS,
+                 dwFlagsAndAttributes => FILE_ATTRIBUTE_NORMAL,
+                 hTemplateFile => System.Null_Address);
+
+        if File = INVALID_HANDLE_VALUE then
+            return False;
+        end if;
+
+        -- Mapping a file shorter than the size asked for grows it to that size, so a file made just above ends up holding the whole area, and one left by an earlier run is already the right size
+        -- The object is left unnamed: the file itself is what a reader looks for
         Object :=
             CreateFileMappingA
-                (hFile => INVALID_HANDLE_VALUE,
+                (hFile => File,
                  lpFileMappingAttributes => System.Null_Address,
                  flProtect => PAGE_READWRITE,
                  dwMaximumSizeHigh => 0,
                  dwMaximumSizeLow => unsigned (Area_Bytes),
-                 lpName => Name'Address);
+                 lpName => System.Null_Address);
 
         if Object = System.Null_Address then
+            Close;
             return False;
         end if;
 
@@ -214,10 +257,17 @@ package body PowerJoular.Ring_Buffer is
             Ignored := CloseHandle (Object);
             Object := System.Null_Address;
         end if;
+
+        -- The file stays behind on purpose, holding the last cycles written, so a reader can still pick them up after PowerJoular has stopped, as it can on Linux
+        if File /= INVALID_HANDLE_VALUE then
+            Ignored := CloseHandle (File);
+            File := INVALID_HANDLE_VALUE;
+        end if;
     exception
         when others =>
             Area := null;
             Object := System.Null_Address;
+            File := INVALID_HANDLE_VALUE;
     end Close;
 
 #else
