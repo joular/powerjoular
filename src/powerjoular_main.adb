@@ -135,6 +135,8 @@ procedure PowerJoular_Main is
     --------------------------------------------------
 
 begin
+    Terminal.Enable_Escape_Sequences;
+
     Parse (Config, Result);
 
     case Result is
@@ -225,6 +227,9 @@ begin
                 Data.Target_Usage := CPU_Load.Process_Usage (Before, After);
             end if;
 
+            Before := After;
+            Taken_Before := Taken_After;
+
             -- Where the power of the processor comes from: the file the host writes when inside a virtual machine,
             -- the hardware itself everywhere else
             if Config.Read_VM then
@@ -270,9 +275,6 @@ begin
                 Ring_Buffer.Write (Data);
             end if;
 
-            -- This sample becomes the one the next cycle is measured against
-            Before := After;
-            Taken_Before := Taken_After;
             Previous_Total_Power := Data.Total_Power;
         exception
             when others =>

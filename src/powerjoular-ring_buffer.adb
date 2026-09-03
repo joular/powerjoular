@@ -246,8 +246,7 @@ package body PowerJoular.Ring_Buffer is
 #end if;
 
     -- Anyone may read the area, only its owner may write to it
-    -- The mode is handed to open below and then set again on the descriptor: open takes it as a variable
-    -- argument, which not every ABI passes the way a plain one is, and an area no reader can open is useless
+    -- The mode is handed to open below and then set again on the descriptor: open only applies it to a file it creates, so an area left behind by an earlier run keeps the mode it already had, and an area no reader can open is useless
     Area_Mode : constant unsigned := 8#644#;
 
     -- What mmap hands back when it fails, which is not the null address but every bit set
@@ -265,8 +264,10 @@ package body PowerJoular.Ring_Buffer is
     function C_Munmap (Address : System.Address; Length : size_t) return int;
     pragma Import (C, C_Munmap, "munmap");
 
+    -- open takes the path and the flags, then the mode as a variable argument, and only when it creates the file
+    -- C_Variadic_2 says as much, so the mode is passed the way a variable argument is passed rather than the way a plain third argument would be: the two differ on Apple Silicon, where variable arguments go on the stack
     function C_Open (Path : in char_array; Flags : in int; Mode : in unsigned) return int;
-    pragma Import (C, C_Open, "open");
+    pragma Import (C_Variadic_2, C_Open, "open");
 
     function C_Ftruncate (Descriptor : in int; Length : in long) return int;
     pragma Import (C, C_Ftruncate, "ftruncate");

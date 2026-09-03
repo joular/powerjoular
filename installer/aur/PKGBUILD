@@ -6,19 +6,25 @@ pkgdesc="PowerJoular allows monitoring power consumption of multiple platforms a
 arch=('x86_64' 'aarch64' 'armv7h')
 url="https://github.com/joular/powerjoular"
 license=('GPL-3.0-only')
-makedepends=('gcc-ada' 'gprbuild' 'alire')
-# Release tags carry no "v" prefix, so the tarball unpacks into powerjoular-$pkgver
-source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/$pkgver.tar.gz")
-# Replace with the real checksum once the tag is pushed: run updpkgsums in this folder
-sha256sums=('SKIP')
+makedepends=('gcc-ada' 'gprbuild' 'git')
+
+source=("$pkgname::git+$url.git#branch=develop"
+        "joularcore::git+https://github.com/joular/joularcore.git#branch=develop"
+        "cpuload::git+https://github.com/joular/cpuload.git#branch=develop")
+sha256sums=('SKIP'
+            'SKIP'
+            'SKIP')
 
 build() {
-    cd "$srcdir/$pkgname-$pkgver"
-    alr --non-interactive build
+    cd "$srcdir/$pkgname"
+    # Each library is checked out into a folder named after it, and is found through the project search path
+    gprbuild -P powerjoular.gpr -p \
+        -aP"$srcdir/joularcore" \
+        -aP"$srcdir/cpuload"
 }
 
 package() {
-    cd "$srcdir/$pkgname-$pkgver"
+    cd "$srcdir/$pkgname"
     install -Dm755 bin/powerjoular "$pkgdir/usr/bin/powerjoular"
-    install -Dm644 systemd/powerjoular.service "$pkgdir/etc/systemd/system/powerjoular.service"
+    install -Dm644 systemd/powerjoular.service "$pkgdir/usr/lib/systemd/system/powerjoular.service"
 }

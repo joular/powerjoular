@@ -16,7 +16,7 @@
 --     cpu usage : 8 bytes, IEEE double, from 0.0 to 1.0
 --     process or application power : 8 bytes, IEEE double, in watts
 -- A cycle is written in the entry the counter points at, and the counter is raised afterwards.
---  A reader follows the counter to know when a new cycle has landed, and the timestamps to know how old each entry is.
+-- A reader follows the counter to know when a new cycle has landed, and the timestamps to know how old each entry is.
 --
 -- The area lives at /dev/shm/joularcorering on Linux, Local\JoularCoreRing on Windows, /tmp/joularcorering elsewhere
 package PowerJoular.Ring_Buffer is
@@ -29,7 +29,8 @@ package PowerJoular.Ring_Buffer is
     procedure Write (Data : in Cycle);
 
     -- Close and free the ring buffer
-    -- The area itself is left behind, so a reader can still pick up the last entries written to it
+    -- On Linux and macOS the area is a file, so it is left behind and a reader can still pick up the last entries written to it
+    -- On Windows it is not a file but a named shared memory object, which lives only as long as a program holds it open: it goes when the last one closes it, and a reader has to be running alongside PowerJoular to see anything
     procedure Close;
 
     -- The path of the ring buffer

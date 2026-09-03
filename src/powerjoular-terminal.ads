@@ -13,6 +13,9 @@
 -- Each measurement is written over the previous one, so the display stays on a single line
 package PowerJoular.Terminal is
 
+    -- Enable escape sequences on old terminals (mainly in Windows)
+    procedure Enable_Escape_Sequences;
+
     -- Show one cycle
     -- Monitoring a process or an application shows that process or application, otherwise the whole system is shown
     procedure Show (Data : in Cycle;

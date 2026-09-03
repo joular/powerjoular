@@ -49,7 +49,7 @@ package body PowerJoular.Help is
         Put_Line (HT & "-h: show this help message");
         Put_Line (HT & "-v: show the version number");
         Put_Line (HT & "-t: print the power data on the terminal");
-        Put_Line (HT & "-d: print what the available hardware components on start up");
+        Put_Line (HT & "-d: print the available hardware components on start up");
         Put_Line (HT & "-p pid: monitor the process with this PID number");
         Put_Line (HT & "-a appName: monitor this application, and every process of it");
         Put_Line (HT & "-f filename: export the power data to this file, in CSV format");

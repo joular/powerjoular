@@ -14,6 +14,11 @@ with Ada.Text_IO; use Ada.Text_IO;
 
 with PowerJoular.Formatting; use PowerJoular.Formatting;
 
+#if PJ_WINDOWS then
+with Interfaces.C; use Interfaces.C;
+with System;
+#end if;
+
 package body PowerJoular.Terminal is
 
     -- Number of digits after the period to print
@@ -25,6 +30,53 @@ package body PowerJoular.Terminal is
     -- Set once a measurement has been written, as that line carries no end of line of its own
     -- and anything printed after it has to start one first
     Line_Left_Open : Boolean := False;
+
+    --------------------------------------------------
+
+#if PJ_WINDOWS then
+
+    -- The console prints the escape sequences as text until it is told to act on them instead
+    ENABLE_VIRTUAL_TERMINAL_PROCESSING : constant unsigned := 16#0004#;
+
+    -- Which of its own handles to ask Windows for, the standard output being the handle numbered -11
+    STD_OUTPUT_HANDLE : constant unsigned := 16#FFFF_FFF5#;
+
+    function GetStdHandle (nStdHandle : unsigned) return System.Address;
+    pragma Import (Stdcall, GetStdHandle, "GetStdHandle");
+
+    function GetConsoleMode (hConsoleHandle : System.Address; lpMode : access unsigned) return int;
+    pragma Import (Stdcall, GetConsoleMode, "GetConsoleMode");
+
+    function SetConsoleMode (hConsoleHandle : System.Address; dwMode : unsigned) return int;
+    pragma Import (Stdcall, SetConsoleMode, "SetConsoleMode");
+
+    procedure Enable_Escape_Sequences is
+        Output : constant System.Address := GetStdHandle (STD_OUTPUT_HANDLE);
+        Mode : aliased unsigned := 0;
+        Ignored : int;
+    begin
+        -- Asking for the mode fails when the output is not a console at all, but a file or a pipe, so we do nothing
+        if GetConsoleMode (Output, Mode'Access) = 0 then
+            return;
+        end if;
+
+        -- If a console refuses to act on the escape sequences, the don't report the refusal as it is just a additional cosmetic thing in PowerJoular
+        -- So on an older Windows terminal, it will shows them as text
+        Ignored := SetConsoleMode (Output, Mode or ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    exception
+        when others =>
+            null;
+    end Enable_Escape_Sequences;
+
+#else
+
+    -- Every other terminal acts on the escape sequences already
+    procedure Enable_Escape_Sequences is
+    begin
+        null;
+    end Enable_Escape_Sequences;
+
+#end if;
 
     --------------------------------------------------
 

@@ -39,7 +39,7 @@ do
     # Create a new directory structure for architecture
     rm -rf $DEB_ARCH
     mkdir -p $DEB_ARCH/powerjoular/usr/bin
-    mkdir -p $DEB_ARCH/powerjoular/etc/systemd/system
+    mkdir -p $DEB_ARCH/powerjoular/usr/lib/systemd/system
     mkdir -p $DEB_ARCH/powerjoular/DEBIAN/
     chmod 755 $DEB_ARCH
 
@@ -53,15 +53,23 @@ do
     fi
 
     # Copy systemd service files
-    cp ../systemd/powerjoular.service $DEB_ARCH/powerjoular/etc/systemd/system/
+    cp ../systemd/powerjoular.service $DEB_ARCH/powerjoular/usr/lib/systemd/system/
 
-    # Create the control 
+    # Create the control
     cat << EOL > $DEB_ARCH/powerjoular/DEBIAN/control
 Package: powerjoular
 Version: $VERSION
-Maintainer: Adel Noureddine
+Maintainer: Adel Noureddine <adel.noureddine@outlook.com>
 Architecture: $DEB_ARCH
-Description: PowerJoular allows monitoring power consumption of multiple platforms and processes.
+Section: utils
+Priority: optional
+Depends: libc6
+Homepage: https://github.com/joular/powerjoular
+Description: Monitor the power consumption of hardware components, processes and software.
+ PowerJoular monitors, in real time, the power consumption of the CPU and the
+ GPU of the machine, and of one process or one application running on it.
+ It exports the power data to the terminal, to CSV files, and to a shared
+ memory ring buffer.
 EOL
 
     cd $DEB_ARCH
