@@ -196,6 +196,12 @@ begin
                   "On a Mac, reading powermetrics needs root: try 'sudo powerjoular'.");
         Put_Line (Standard_Error,
                   "Only the Macs with an Apple Silicon chip are supported, the ones with an Intel processor are not.");
+#elsif PJ_WINDOWS then
+        -- Nothing is installed and no rights are asked for on a machine where Energy Meter Interface (EMI) is used which is shipped by default in Windows 11
+        Put_Line (Standard_Error,
+                  "On Windows, Energy Meter Interface (EMI) was not found or does not measure the processor.");
+        Put_Line (Standard_Error,
+                  "Install the PawnIO driver (https://pawnio.eu) and run this from a terminal with administrative rights, or Hubblo's RAPL driver, which doesn't requires admin rights.");
 #else
         Put_Line (Standard_Error,
                   "On a PC or a server, reading RAPL needs root: try 'sudo powerjoular'.");

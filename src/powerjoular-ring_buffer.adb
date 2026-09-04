@@ -9,7 +9,6 @@
 --  Author : Adel Noureddine
 --
 
-with Ada.Environment_Variables;
 with Ada.Unchecked_Conversion;
 with Interfaces; use Interfaces;
 with Interfaces.C; use Interfaces.C;
@@ -17,6 +16,11 @@ with System; use System;
 with System.Storage_Elements; use System.Storage_Elements;
 
 with PowerJoular.Formatting;
+
+#if PJ_WINDOWS then
+-- Only Windows looks for the folder of the ring buffer
+with Ada.Environment_Variables;
+#end if;
 
 -- Nothing else is needed: the shared memory comes from the Windows API, or from the C calls,
 -- imported further down in whichever of the two halves of this body is compiled

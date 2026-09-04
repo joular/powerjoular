@@ -27,7 +27,7 @@ PowerJoular runs on **GNU/Linux, macOS and Windows**, on PCs, servers, Macs, and
 | Component | Hardware | OS | Method | 
 |---|---|---|---|
 | CPU | Intel (since Sandy Bridge), AMD (Ryzen, EPYC) | Linux | RAPL through the powercap sysfs |
-| CPU | Intel, AMD | Windows | RAPL MSR through [Hubblo's RAPL driver](https://github.com/hubblo-org/windows-rapl-driver) |
+| CPU | Intel, AMD | Windows | RAPL through the [Energy Meter Interface](https://learn.microsoft.com/en-us/windows-hardware/drivers/powermeter/energy-meter-interface) (nothing to install), or the RAPL MSR through [PawnIO](https://pawnio.eu) or [Hubblo's RAPL driver](https://github.com/hubblo-org/windows-rapl-driver) |
 | CPU | Raspberry Pi, Asus Tinker Board | Linux | Research-based regression power models |
 | CPU | Apple Silicon (M series) | macOS | powermetrics, installed with macOS |
 | GPU | Nvidia cards | Linux, Windows | NVML, installed with the Nvidia driver |
@@ -48,9 +48,12 @@ PowerJoular does the energy and CPU usage measuring through two Ada libraries we
 ### Required privileges
 
 - **Linux, PC or server**: reading RAPL files needs elevated on the recent kernels (5.10 and newer), so run `sudo powerjoular`, or giving read rights to the files. See [this issue](https://github.com/joular/powerjoular/issues/1).
-- **Windows**: install [Hubblo's RAPL driver](https://github.com/hubblo-org/windows-rapl-driver). The easiest way to get a signed version installed is through the [Scaphandre installer](https://github.com/hubblo-org/scaphandre/releases).
+- **Windows**: if using [Energy Meter Interface](https://learn.microsoft.com/en-us/windows-hardware/drivers/powermeter/energy-meter-interface) (EMI), then there is no special privileges or driver needed. Otherwise, we need specific RAPL driver, such as [PawnIO](https://pawnio.eu) or [Hubblo's RAPL driver](https://github.com/hubblo-org/windows-rapl-driver). The easiest way to get a signed version installed is through the [PawnIO](https://pawnio.eu) or the [Scaphandre installer](https://github.com/hubblo-org/scaphandre/releases) for Hubblo's driver.
 - **macOS**: `powermetrics` only runs as the superuser, so run `sudo powerjoular`. Without it, the CPU and the GPU are simply reported as not available. Reading the CPU time of a process belonging to another user also needs root, so `-p` and `-a` on someone else's process need `sudo` too.
 - **Raspberry Pi and GPU readings**: no special privileges needed.
+
+PowerJoular uses Joular Core, which, on Windows, tries the Energy Meter Interface first, then PawnIO, then Hubblo's driver, keeping the first that answers. Nothing has to be configured for that.
+Setting `JOULARCORE_WINDOWS_RAPL` environnemental variable picks one instead of trying them in turn. Valid options: `emi`, `pawnio` or `hubblo`.
 
 ## :bulb: Usage
 
