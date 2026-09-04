@@ -76,7 +76,7 @@ project Powerjoular is
     end Builder;
 
     package Compiler is
-        for Switches ("Ada") use ("-O3", "-gnat2012", "-gnatwa") & Defines;
+        for Switches ("Ada") use ("-O2", "-gnat2012", "-gnatwa") & Defines;
     end Compiler;
 
     package Binder is
