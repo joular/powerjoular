@@ -1,12 +1,102 @@
+with "joularcore.gpr";
+with "cpuload.gpr";
+
 project Powerjoular is
-    package Binder is
-        for Switches ("Ada") use ("-static");
-    end Binder;
-    package Compiler is
-	    for Switches ("Ada") use ("-O3");
-    end Compiler;
-    for Create_Missing_Dirs use "True";
+
+    Host_Target := project'Target;
+
+    Default_OS := "linux";
+    case Host_Target is
+        when "aarch64-darwin" | "arm64-darwin" | "x86_64-darwin" | "i686-darwin"
+            => Default_OS := "macos";
+        when "x86_64-windows64" | "x86_64-windows" | "aarch64-windows64" | "i686-windows"
+            => Default_OS := "windows";
+        when others
+            => Default_OS := "linux";
+    end case;
+
+    --  Windows also announces itself in the environment
+    type Host_OS_Kind is ("Windows_NT", "other");
+    Host_OS : Host_OS_Kind := external ("OS", "other");
+
+    case Host_OS is
+        when "Windows_NT"
+            => Default_OS := "windows";
+        when "other"
+            => null;
+    end case;
+
+    -- Symbol to indicate which OS to compile for, the same one the two libraries use
+    -- Build with: gprbuild -XPJ_OS=windows
+    type OS_Platform is ("linux", "windows", "macos", "bsd");
+    PJ_OS : OS_Platform := external ("PJ_OS", Default_OS);
+
+    Defines := ();
+
+    case PJ_OS is
+        when "linux" =>
+            Defines := ("-gnateDPJ_LINUX=True", "-gnateDPJ_WINDOWS=False",
+                        "-gnateDPJ_MACOS=False", "-gnateDPJ_BSD=False");
+        when "windows" =>
+            Defines := ("-gnateDPJ_LINUX=False", "-gnateDPJ_WINDOWS=True",
+                        "-gnateDPJ_MACOS=False", "-gnateDPJ_BSD=False");
+        when "macos" =>
+            Defines := ("-gnateDPJ_LINUX=False", "-gnateDPJ_WINDOWS=False",
+                        "-gnateDPJ_MACOS=True", "-gnateDPJ_BSD=False");
+        when "bsd" =>
+            Defines := ("-gnateDPJ_LINUX=False", "-gnateDPJ_WINDOWS=False",
+                        "-gnateDPJ_MACOS=False", "-gnateDPJ_BSD=True");
+    end case;
+
+    -- How much of the binary is carried inside it
+    --   default : the Ada runtime and libgcc are linked in, the C library is not
+    --             it is the portable choice, and what the released packages are built with
+    --   full : nothing at all is left outside, the binary runs on any machine of the same architecture
+    --          on GNU/Linux, a fully static binary cannot load a library while it runs, so the Nvidia and
+    --          AMD graphic card readings, which do exactly that, are lost. The processor readings are not
+    --          on macOS, Apple ships no static C library, so this option does nothing there
+    type Linking_Kind is ("default", "full");
+    Linking : Linking_Kind := external ("POWERJOULAR_LINKING", "default");
+
+    Link_Switches := ("-static-libgcc");
+
+    case Linking is
+        when "default" =>
+            null;
+        when "full" =>
+            case PJ_OS is
+                when "macos" =>
+                    -- Apple ships no static C library, so nothing links fully static on macOS
+                    -- The default switches already carry the Ada runtime and libgcc, which is as much as a Mach-O binary can hold
+                    null;
+                when others =>
+                    Link_Switches := ("-static");
+            end case;
+    end case;
+
+    for Languages use ("Ada");
     for Source_Dirs use ("src");
     for Object_Dir use "obj";
-    for Main use ("powerjoular.adb");
+    for Exec_Dir use "bin";
+    for Create_Missing_Dirs use "True";
+    for Main use ("powerjoular_main.adb");
+
+    package Builder is
+        -- The program is called powerjoular, whatever the file holding its main procedure is called
+        for Executable ("powerjoular_main.adb") use "powerjoular";
+    end Builder;
+
+    package Compiler is
+        for Switches ("Ada") use ("-O2", "-gnat2012", "-gnatwa") & Defines;
+    end Compiler;
+
+    package Binder is
+        -- Carry the Ada runtime inside the binary, so it runs on a machine that has no GNAT installed
+        for Switches ("Ada") use ("-static");
+    end Binder;
+
+    package Linker is
+        for Switches ("Ada") use Link_Switches;
+    end Linker;
+
 end Powerjoular;

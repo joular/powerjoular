@@ -2,23 +2,133 @@ name: Build
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: [ "main", "develop", "v2" ]
+    tags: [ "*" ]
   pull_request:
     branches: [ "main", "develop" ]
+  workflow_dispatch:
 
 jobs:
-  build:
 
-    runs-on: ubuntu-latest
+  # GNU/Linux and Raspberry Pi, each built on a runner of its own architecture, so nothing is cross compiled
+  #
+  # The build happens inside an Ubuntu 22.04 container rather than on the runner itself, and only for the C library it brings: a binary asks for the glibc it was built against or a newer one, and 22.04 carries 2.35, which Raspberry Pi OS, Debian 12 and Ubuntu 22.04 onwards all have.
+  linux:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    container: ubuntu:22.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux amd64
+            runner: ubuntu-24.04
+            artifact: powerjoular-linux-amd64
+
+          - name: Raspberry Pi aarch64
+            runner: ubuntu-24.04-arm
+            artifact: powerjoular-linux-aarch64
+
+    steps:
+    - name: Prepare the container
+      run: |
+        apt-get update
+        apt-get install -y --no-install-recommends ca-certificates curl unzip git build-essential file
+
+    - name: Checkout
+      uses: actions/checkout@v7
+
+    # setup-alire runs part of itself through `github.action_path`, and that path stays the runner's own (/home/runner/work/...) even for a job in a container, where the runner mounts the same directory at /__w. The action then points node at a file the container cannot see. The symlink makes that path resolve.
+    - name: Let the runner's action paths resolve inside the container
+      run: |
+        mkdir -p /home/runner
+        ln -sfn /__w /home/runner/work
+
+    # Alire brings the GNAT toolchain, and fetches the Joular Core and CPU Load libraries
+    - name: Set up Alire
+      uses: alire-project/setup-alire@v6
+
+    - name: Build
+      run: alr --non-interactive build
+
+    - name: Check the binary runs
+      run: |
+        ./bin/powerjoular -v
+        ./bin/powerjoular -h > /dev/null
+
+    # Printed so the log says outright which systems the binary will start on
+    - name: Show what the binary asks of the system
+      run: |
+        file bin/powerjoular
+        echo "needs at most glibc $(objdump -T bin/powerjoular | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -1)"
+
+    - name: Upload the binary
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ matrix.artifact }}
+        path: bin/powerjoular
+        if-no-files-found: error
+
+  # macOS on Apple Silicon, the only Macs supported
+  #
+  # The macos-14 runners and newer are arm64, so nothing is cross compiled
+  macos:
+    name: macOS arm64
+    runs-on: macos-15
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
-    - name: Set up GNAT toolchain
-      run: >
-        sudo apt-get update &&
-        sudo apt-get install gnat gprbuild libgnatcoll-dev
+    # Alire brings the GNAT toolchain, fetches the Joular Core and CPU Load libraries, and picks PJ_OS=macos on its own
+    - name: Set up Alire
+      uses: alire-project/setup-alire@v6
 
     - name: Build
-      run: gprbuild -j0 -p
+      run: alr --non-interactive build
+
+    # Only the version and the help are checked: the runners are virtual machines, where powermetrics reports nothing even as root
+    - name: Check the binary runs
+      run: |
+        ./bin/powerjoular -v
+        ./bin/powerjoular -h > /dev/null
+
+    - name: Show what the binary asks of the system
+      run: file bin/powerjoular
+
+    - name: Upload the binary
+      uses: actions/upload-artifact@v7
+      with:
+        name: powerjoular-macos-arm64
+        path: bin/powerjoular
+        if-no-files-found: error
+
+  # Windows, 64 bits
+  windows:
+    name: Windows amd64
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+
+    # Alire brings the GNAT toolchain, and fetches the Joular Core and CPU Load libraries
+    - name: Set up Alire
+      uses: alire-project/setup-alire@v6
+
+    - name: Build
+      run: alr --non-interactive build
+
+    - name: Check the binary runs
+      shell: bash
+      run: |
+        ./bin/powerjoular.exe -v
+        ./bin/powerjoular.exe -h > /dev/null
+
+    - name: Upload the binary
+      uses: actions/upload-artifact@v7
+      with:
+        name: powerjoular-windows-amd64
+        path: bin/powerjoular.exe
+        if-no-files-found: error

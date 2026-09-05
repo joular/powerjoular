@@ -1,20 +1,24 @@
 #!/bin/bash
 
-VERSION=1.1.1
+# Stop at the first thing that goes wrong
+# Without this, a cross build that fails carries on to the packaging steps, which then happily
+# produce a package with no binary inside it
+set -euo pipefail
+
+VERSION=2.0.0
 
 # First cross compiler
-
-# Create obj/ folder it not exist
-mkdir -p obj
 
 # Architectures
 ARCHS=("x86_64-linux-gnu" "aarch64-linux-gnu")
 
 for ARCH in "${ARCHS[@]}"
 do
-    gprbuild powerjoular.gpr --target=$ARCH
+    # Fetch the Joular Core and CPU Load libraries, then build against them
+    rm -rf obj bin
+    alr build -- --target=$ARCH
     mkdir -p ./binary/$ARCH
-    cp ./obj/powerjoular ./binary/$ARCH/
+    cp ./bin/powerjoular ./binary/$ARCH/
 done
 
 # Create packages folder
@@ -35,7 +39,7 @@ do
     # Create a new directory structure for architecture
     rm -rf $DEB_ARCH
     mkdir -p $DEB_ARCH/powerjoular/usr/bin
-    mkdir -p $DEB_ARCH/powerjoular/etc/systemd/system
+    mkdir -p $DEB_ARCH/powerjoular/usr/lib/systemd/system
     mkdir -p $DEB_ARCH/powerjoular/DEBIAN/
     chmod 755 $DEB_ARCH
 
@@ -49,15 +53,23 @@ do
     fi
 
     # Copy systemd service files
-    cp ../systemd/powerjoular.service $DEB_ARCH/powerjoular/etc/systemd/system/
+    cp ../systemd/powerjoular.service $DEB_ARCH/powerjoular/usr/lib/systemd/system/
 
-    # Create the control 
+    # Create the control
     cat << EOL > $DEB_ARCH/powerjoular/DEBIAN/control
 Package: powerjoular
 Version: $VERSION
-Maintainer: Adel Noureddine
+Maintainer: Adel Noureddine <adel.noureddine@outlook.com>
 Architecture: $DEB_ARCH
-Description: PowerJoular allows monitoring power consumption of multiple platforms and processes.
+Section: utils
+Priority: optional
+Depends: libc6
+Homepage: https://github.com/joular/powerjoular
+Description: Monitor the power consumption of hardware components, processes and software.
+ PowerJoular monitors, in real time, the power consumption of the CPU and the
+ GPU of the machine, and of one process or one application running on it.
+ It exports the power data to the terminal, to CSV files, and to a shared
+ memory ring buffer.
 EOL
 
     cd $DEB_ARCH
@@ -76,7 +88,8 @@ rm -rf deb-temp
 
 # Create rpm packages
 
-RPM_ARCHITECTURES=("x86_64" "arm64")
+# The names rpm itself uses: a package built for "arm64" is one no aarch64 machine will install
+RPM_ARCHITECTURES=("x86_64" "aarch64")
 
 # Create rpm temporary folder 
 mkdir -p rpm-temp
@@ -99,7 +112,7 @@ do
     if [[ $RPM_ARCH = "x86_64" ]]
     then
         cp ../binary/x86_64-linux-gnu/powerjoular $RPM_ARCH/rpmbuild/SOURCES/
-    elif [[ $RPM_ARCH = "arm64" ]]
+    elif [[ $RPM_ARCH = "aarch64" ]]
     then
         cp ../binary/aarch64-linux-gnu/powerjoular $RPM_ARCH/rpmbuild/SOURCES/
     fi

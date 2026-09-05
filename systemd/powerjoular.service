@@ -1,11 +1,42 @@
 [Unit]
 Description=PowerJoular service
+Documentation=https://github.com/joular/powerjoular
 
 [Service]
 Type=simple
 Restart=always
+# Without a pause, a machine with no readable power source restarts in a tight loop until systemd gives up
+RestartSec=30
+
+# Reading the energy counters of the hardware needs root
 User=root
-ExecStart=/usr/bin/powerjoular -o /tmp/powerjoular-service.csv
+
+# The power data goes in a folder systemd makes on start and removes on stop, owned by root and readable by all
+RuntimeDirectory=powerjoular
+RuntimeDirectoryMode=0755
+ExecStart=/usr/bin/powerjoular -o /run/powerjoular/powerjoular-service.csv
+
+# The service reads the energy counters and the CPU load, and writes one file in its own folder
+# Everything else is taken away from it, so a fault in PowerJoular or in a library it loads reaches no further
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_UNIX
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+# Nothing here needs a capability of its own: the files it reads are root's own
+CapabilityBoundingSet=
 
 [Install]
 WantedBy=multi-user.target
