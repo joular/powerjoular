@@ -198,11 +198,7 @@ To build for another OS than the one you are on, set `PJ_OS` to `linux`, `macos`
 gprbuild -P powerjoular.gpr -aP../joularcore -aP../cpuload -XPJ_OS=windows -p
 ```
 
-Only Windows is detected on its own, every other OS falling back to Linux, so building on a Mac with GPRBuild directly needs `-XPJ_OS=macos`. Alire picks it on its own and needs nothing.
-
-```bash
-gprbuild -P powerjoular.gpr -aP../joularcore -aP../cpuload -XPJ_OS=macos -p
-```
+Linux, macOS and Windows are each detected on their own, from the target GPRBuild identifies.
 
 ### A binary with no dependencies at all
 

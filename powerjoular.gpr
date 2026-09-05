@@ -3,16 +3,27 @@ with "cpuload.gpr";
 
 project Powerjoular is
 
-    --  Windows sets OS=Windows_NT; Linux/macOS/BSD leave it unset
+    Host_Target := project'Target;
+
+    Default_OS := "linux";
+    case Host_Target is
+        when "aarch64-darwin" | "arm64-darwin" | "x86_64-darwin" | "i686-darwin"
+            => Default_OS := "macos";
+        when "x86_64-windows64" | "x86_64-windows" | "aarch64-windows64" | "i686-windows"
+            => Default_OS := "windows";
+        when others
+            => Default_OS := "linux";
+    end case;
+
+    --  Windows also announces itself in the environment
     type Host_OS_Kind is ("Windows_NT", "other");
     Host_OS : Host_OS_Kind := external ("OS", "other");
 
-    Default_OS := "linux";
     case Host_OS is
         when "Windows_NT"
             => Default_OS := "windows";
         when "other"
-            => Default_OS := "linux";
+            => null;
     end case;
 
     -- Symbol to indicate which OS to compile for, the same one the two libraries use
