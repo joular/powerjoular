@@ -109,9 +109,21 @@ package body PowerJoular.Terminal is
                       else "Application monitoring:" & HT));
 
                 -- The load of the process next to the load of the whole machine, then the same for the power
-                Put ("CPU: " & Image (100.0 * Data.Target_Usage, Decimals) & " %");
+                -- A process or an application that could not be read is said to be so, rather than shown as a load and a power that were never measured
+                if Data.Target_Usage < 0.0 then
+                    Put ("CPU: n/a");
+                else
+                    Put ("CPU: " & Image (100.0 * Data.Target_Usage, Decimals) & " %");
+                end if;
+
                 Put (" (" & Image (100.0 * Data.CPU_Usage, Decimals) & " %)" & HT);
-                Put (Image (Data.Target_Power, Decimals) & " Watts");
+
+                if Data.Target_Power < 0.0 then
+                    Put ("n/a");
+                else
+                    Put (Image (Data.Target_Power, Decimals) & " Watts");
+                end if;
+
                 Put (" (" & Image (Data.CPU_Power, Decimals) & " Watts)");
         end case;
 

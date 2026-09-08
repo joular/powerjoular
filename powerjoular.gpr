@@ -3,19 +3,27 @@ with "cpuload.gpr";
 
 project Powerjoular is
 
+    --  The system to build for is picked from the target gprbuild reports, and -XPJ_OS overrides it
     Host_Target := project'Target;
 
     Default_OS := "linux";
     case Host_Target is
-        when "aarch64-darwin" | "arm64-darwin" | "x86_64-darwin" | "i686-darwin"
+        when "aarch64-darwin" | "x86_64-darwin" | "x86-darwin" | "arm-darwin" | "ppc-darwin"
             => Default_OS := "macos";
-        when "x86_64-windows64" | "x86_64-windows" | "aarch64-windows64" | "i686-windows"
+
+        when "x86_64-windows" | "x86-windows"
             => Default_OS := "windows";
+
+        when "x86_64-linux" | "x86-linux" | "aarch64-linux" | "arm-linux" | "armhf-linux"
+           | "ppc-linux" | "ppc64-linux" | "ia64-linux" | "e500v2-linux"
+           | "ppc-wrslinux" | "e500v2-wrslinux" | "x86-elinos" | "ppc-elinos"
+            => Default_OS := "linux";
+
         when others
             => Default_OS := "linux";
     end case;
 
-    --  Windows also announces itself in the environment
+    --  Windows also announces itself in the environment, which settles a target name the list above does not carry
     type Host_OS_Kind is ("Windows_NT", "other");
     Host_OS : Host_OS_Kind := external ("OS", "other");
 
@@ -27,8 +35,10 @@ project Powerjoular is
     end case;
 
     -- Symbol to indicate which OS to compile for, the same one the two libraries use
+    -- The three systems here are the ones CPU Load has a body for, so there is no BSD to ask for: -XPJ_OS=bsd
+    -- would be turned down by that library before anything is compiled
     -- Build with: gprbuild -XPJ_OS=windows
-    type OS_Platform is ("linux", "windows", "macos", "bsd");
+    type OS_Platform is ("linux", "windows", "macos");
     PJ_OS : OS_Platform := external ("PJ_OS", Default_OS);
 
     Defines := ();
@@ -36,16 +46,13 @@ project Powerjoular is
     case PJ_OS is
         when "linux" =>
             Defines := ("-gnateDPJ_LINUX=True", "-gnateDPJ_WINDOWS=False",
-                        "-gnateDPJ_MACOS=False", "-gnateDPJ_BSD=False");
+                        "-gnateDPJ_MACOS=False");
         when "windows" =>
             Defines := ("-gnateDPJ_LINUX=False", "-gnateDPJ_WINDOWS=True",
-                        "-gnateDPJ_MACOS=False", "-gnateDPJ_BSD=False");
+                        "-gnateDPJ_MACOS=False");
         when "macos" =>
             Defines := ("-gnateDPJ_LINUX=False", "-gnateDPJ_WINDOWS=False",
-                        "-gnateDPJ_MACOS=True", "-gnateDPJ_BSD=False");
-        when "bsd" =>
-            Defines := ("-gnateDPJ_LINUX=False", "-gnateDPJ_WINDOWS=False",
-                        "-gnateDPJ_MACOS=False", "-gnateDPJ_BSD=True");
+                        "-gnateDPJ_MACOS=True");
     end case;
 
     -- How much of the binary is carried inside it

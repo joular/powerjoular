@@ -14,7 +14,7 @@
 --     timestamp : 8 bytes, unsigned, Unix time in seconds
 --     cpu power, gpu power, total power : 8 bytes each, IEEE doubles, in watts
 --     cpu usage : 8 bytes, IEEE double, from 0.0 to 1.0
---     process or application power : 8 bytes, IEEE double, in watts
+--     process or application power : 8 bytes, IEEE double, in watts, and -1 when the process or the application could not be read at all
 -- A cycle is written in the entry the counter points at, and the counter is raised afterwards.
 -- A reader follows the counter to know when a new cycle has landed, and the timestamps to know how old each entry is.
 --

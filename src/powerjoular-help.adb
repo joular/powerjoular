@@ -63,6 +63,7 @@ package body PowerJoular.Help is
         Put_Line (Title ("Ring buffer:"));
         Put_Line ("With -r, the power data of every second is written to a small shared memory area, which any program on the same machine can read with low latency.");
         Put_Line ("It holds a counter of 8 bytes followed by 5 entries of 48 bytes: the time of the measurement, then the CPU, GPU and total power, the CPU usage and the power of the monitored process or application.");
+        Put_Line ("That last power is -1 when the process or the application could not be read at all: it has stopped, or this user is not allowed to access the information needed. The terminal shows the same as 'n/a', and the CSV file of the monitored process gives -1 in both of its value columns.");
         Put_Line (Rule);
         Put_Line (Title ("Service (GNU/Linux only):"));
         Put_Line ("A systemd service is installed along with the program. It runs PowerJoular with the -o option, and writes the power data to /run/powerjoular/powerjoular-service.csv.");

@@ -19,8 +19,8 @@ website = "https://www.noureddine.org/research/joular/powerjoular"
 executables = ["powerjoular"]
 
 [[depends-on]]
-joularcore = "~0.0.2"
-cpuload = "~0.0.2"
+joularcore = "~0.0.3"
+cpuload = "~0.0.3"
 
 [gpr-externals]
 PJ_OS = ["linux", "windows", "macos"]

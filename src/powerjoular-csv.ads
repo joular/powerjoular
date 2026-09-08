@@ -21,6 +21,7 @@ package PowerJoular.CSV is
 
     -- Write the power of the monitored process or application
     -- Columns: Timestamp, CPU Usage, CPU Power
+    -- Both carry -1 for a cycle where the process or the application could not be read at all, which is not the same as a load and a power of zero: see Unreadable in PowerJoular
     procedure Save_Target (Filename : in String;
                            Data : in Cycle;
                            Overwrite : in Boolean);

@@ -231,6 +231,11 @@ begin
 
             if Config.Target /= Whole_System then
                 Data.Target_Usage := CPU_Load.Process_Usage (Before, After);
+
+                -- CPU Load gives a negative load when the process or the application could not be read at all
+                if Data.Target_Usage < 0.0 then
+                    Data.Target_Usage := Unreadable;
+                end if;
             end if;
 
             Before := After;
@@ -251,7 +256,10 @@ begin
             Data.Total_Power := Data.CPU_Power + Data.GPU_Power;
 
             -- The power of the processor shared out in proportion to how much of the machine the process took
-            if Data.CPU_Usage > 0.0 then
+            -- A load that could not be read is no share at all: dividing it out would report watts below zero, which reads as a measurement rather than as the absence of one
+            if Data.Target_Usage < 0.0 then
+                Data.Target_Power := Unreadable;
+            elsif Data.CPU_Usage > 0.0 then
                 Data.Target_Power := Long_Float'Min (Data.CPU_Power, Data.CPU_Power * Data.Target_Usage / Data.CPU_Usage);
             end if;
 

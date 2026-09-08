@@ -103,6 +103,9 @@ Timestamp,CPU Usage,CPU Power
 
 The time of the measurement is a Unix timestamp.
 
+Both value columns hold `-1` for a second where the monitored process or application could not be read at all: it has stopped, it was never running, or the system does not let us get the information needed.
+That is not the same as `0`, which means a process that was read and used no CPU time.
+
 ### Exporting to a shared memory ring buffer
 
 `-r` writes every measurement to a shared memory ring buffer, that any program on the same machine can read with low latency.
@@ -123,7 +126,7 @@ The area is 248 bytes, in the byte order of the machine: a counter of 8 bytes, t
 | `gpu_power` | IEEE double | GPU power in watts |
 | `total_power` | IEEE double | CPU plus GPU power in watts |
 | `cpu_usage` | IEEE double | Load of the machine, from 0.0 to 1.0 |
-| `pid_app_power` | IEEE double | Power of the monitored process or application in watts, zero when none is monitored |
+| `pid_app_power` | IEEE double | Power of the monitored process or application in watts, zero when none is monitored, and `-1` when the one monitored could not be read |
 
 A measurement goes in the entry the counter points at (`counter mod 5`), and the counter is raised afterwards. A reader follows the counter to know when a new measurement has landed, and the timestamps to know how old each entry is.
 

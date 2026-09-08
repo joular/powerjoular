@@ -20,6 +20,11 @@ package PowerJoular is
     -- Time between two measurements
     Cycle_Interval : constant Duration := 1.0;
 
+    -- What a load or a power is set to when the monitored process or application could not be read at all: it has stopped, it was never running, or the system does not allow us to get the information needed
+    -- The CPU Load library tells that apart from a load of zero on purpose, and PowerJoular carries the distinction
+    -- The terminal shows it as "n/a", and the CSV files and the ring buffer provide the value itself
+    Unreadable : constant Long_Float := -1.0;
+
     -- What we monitor (the whole system is always monitored)
     type Target_Kind is
        (Whole_System, -- Entire system and nothing else
@@ -34,7 +39,7 @@ package PowerJoular is
             CPU_Usage : Long_Float := 0.0;
 
             -- CPU usage of the monitored process or application
-            -- Always zero when only the whole system is monitored
+            -- Always zero when only the whole system is monitored, and Unreadable when it could not be read
             Target_Usage : Long_Float := 0.0;
 
             -- Power drawn over the cycle, in watts
@@ -43,7 +48,8 @@ package PowerJoular is
             Total_Power : Long_Float := 0.0;
 
             -- CPU power consumption of the monitored process or application
-            -- Always zero when only the whole system is monitored
+            -- Always zero when only the whole system is monitored, and Unreadable when the load it is
+            -- worked out from could not be read
             Target_Power : Long_Float := 0.0;
         end record;
 
