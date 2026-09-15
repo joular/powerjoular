@@ -18,6 +18,7 @@ package PowerJoular.Terminal is
 
     -- Show one cycle
     -- Monitoring a process or an application shows that process or application, otherwise the whole system is shown
+    -- A load or a power that could not be read, Unreadable in PowerJoular, is shown as "n/a"
     procedure Show (Data : in Cycle;
                     Target : in Target_Kind;
                     Previous_Total_Power : in Long_Float;

@@ -22,8 +22,10 @@ package PowerJoular is
 
     -- What a load or a power is set to when the monitored process or application could not be read at all: it has stopped, it was never running, or the system does not allow us to get the information needed
     -- The CPU Load library tells that apart from a load of zero on purpose, and PowerJoular carries the distinction
-    -- The terminal shows it as "n/a", and the CSV files and the ring buffer provide the value itself
     Unreadable : constant Long_Float := -1.0;
+
+    -- Whether a load or a power is unreadable
+    function Is_Unreadable (Value : in Long_Float) return Boolean is (Value <= Unreadable);
 
     -- What we monitor (the whole system is always monitored)
     type Target_Kind is

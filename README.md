@@ -103,8 +103,8 @@ Timestamp,CPU Usage,CPU Power
 
 The time of the measurement is a Unix timestamp.
 
-Both value columns hold `-1` for a second where the monitored process or application could not be read at all: it has stopped, it was never running, or the system does not let us get the information needed.
-That is not the same as `0`, which means a process that was read and used no CPU time.
+Both value columns hold `-1.0000` for a second where the monitored process or application could not be read at all: it has stopped, it was never running, or the system does not let us get the information needed.
+That is not the same as `0.0000`, which means a process that was read and used no CPU time.
 
 ### Exporting to a shared memory ring buffer
 

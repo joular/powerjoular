@@ -31,6 +31,17 @@ package body PowerJoular.Terminal is
     -- and anything printed after it has to start one first
     Line_Left_Open : Boolean := False;
 
+    -- Show not available when a reading cannot be read
+    Not_Available : constant String := "n/a";
+
+    -- Transform one reading into a String ready to print: the value followed by its unit, or Not_Available when it could not be read
+    -- Scale multiplies the value first, which is how a load of 0.0 to 1.0 is printed as a percentage
+    function Reading (Value : in Long_Float;
+                      Unit : in String;
+                      Scale : in Long_Float := 1.0) return String is
+       (if Is_Unreadable (Value) then Not_Available
+        else Image (Scale * Value, Decimals) & Unit);
+
     --------------------------------------------------
 
 #if PJ_WINDOWS then
@@ -109,21 +120,9 @@ package body PowerJoular.Terminal is
                       else "Application monitoring:" & HT));
 
                 -- The load of the process next to the load of the whole machine, then the same for the power
-                -- A process or an application that could not be read is said to be so, rather than shown as a load and a power that were never measured
-                if Data.Target_Usage < 0.0 then
-                    Put ("CPU: n/a");
-                else
-                    Put ("CPU: " & Image (100.0 * Data.Target_Usage, Decimals) & " %");
-                end if;
-
+                Put ("CPU: " & Reading (Data.Target_Usage, " %", Scale => 100.0));
                 Put (" (" & Image (100.0 * Data.CPU_Usage, Decimals) & " %)" & HT);
-
-                if Data.Target_Power < 0.0 then
-                    Put ("n/a");
-                else
-                    Put (Image (Data.Target_Power, Decimals) & " Watts");
-                end if;
-
+                Put (Reading (Data.Target_Power, " Watts"));
                 Put (" (" & Image (Data.CPU_Power, Decimals) & " Watts)");
         end case;
 

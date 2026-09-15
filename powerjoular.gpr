@@ -14,13 +14,9 @@ project Powerjoular is
         when "x86_64-windows" | "x86-windows"
             => Default_OS := "windows";
 
-        when "x86_64-linux" | "x86-linux" | "aarch64-linux" | "arm-linux" | "armhf-linux"
-           | "ppc-linux" | "ppc64-linux" | "ia64-linux" | "e500v2-linux"
-           | "ppc-wrslinux" | "e500v2-wrslinux" | "x86-elinos" | "ppc-elinos"
-            => Default_OS := "linux";
-
+        --  GNU/Linux, and every target neither list above carries, keeps the default set before the case
         when others
-            => Default_OS := "linux";
+            => null;
     end case;
 
     --  Windows also announces itself in the environment, which settles a target name the list above does not carry
