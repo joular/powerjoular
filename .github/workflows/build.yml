@@ -121,12 +121,20 @@ jobs:
 
     steps:
     # gcc-gnat and gprbuild live in EPEL, and EPEL builds some of its packages against CRB
+    #
+    # gprbuild ships the gprconfig program but not the knowledge base it reads to recognise a compiler, and that base is a package of its own
     - name: Prepare the container
       run: |
         dnf install -y epel-release
-        dnf install -y --enablerepo=crb gcc-gnat gprbuild git tar findutils binutils
-        gnatmake --version | head -1
+        dnf install -y --enablerepo=crb gcc-gnat gprbuild gprconfig-kb git tar findutils binutils
+
+        gnatls --version | head -1
         gprbuild --version | head -1
+
+        # Say so here, rather than half way through the build, if the pieces are not all in place
+        # gnat.xml is what tells gprconfig to look for a GNAT by running gnatls
+        test -s /usr/share/gprconfig/gnat.xml \
+          || { echo "the gprconfig knowledge base is missing, gprbuild will not find the Ada compiler" >&2; exit 1; }
 
     - name: Checkout
       uses: actions/checkout@v7
