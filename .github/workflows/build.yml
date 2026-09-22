@@ -98,43 +98,36 @@ jobs:
   # the Ubuntu build above carries. That build does not start on RHEL 9, AlmaLinux 9 or Rocky 9, whose
   # glibc is 2.34, and this one does, as well as on everything newer.
   #
-  # Alire is not used here, and cannot be: its GNAT is itself built on Ubuntu 22.04 and asks for a newer
-  # C library than this container has, so it would not start. The compiler comes from EPEL instead, and
-  # the two libraries are checked out next to the project and found through the project search path,
-  # which is exactly how the Arch package builds them
+  # x86_64 only: the servers that run Enterprise Linux are, and the pieces below are published for it.
+  # An aarch64 machine takes the Ubuntu build, which covers Raspberry Pi OS and Debian from 12 onwards.
+  #
+  # The toolchain is pinned, and to the newest that actually runs here, which is older than the newest there is. Everything from GNAT 15 and GPRbuild 25 onwards is built on Ubuntu 22.04 and asks for glibc 2.35, so it does not start in this container. GNAT 14.2 is built on Ubuntu 20.04 and asks for 2.25, and GPRbuild 22 on Ubuntu 18.04.
+  #
+  # setup-alire is not used: it installs the newest toolchain before anything can pin it, so alr is fetched directly instead. alr itself asks only for glibc 2.34, so it runs here.
   linux-el9:
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.runner }}
+    name: AlmaLinux 9 amd64
+    runs-on: ubuntu-24.04
     container: almalinux:9
 
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: AlmaLinux 9 amd64
-            runner: ubuntu-24.04
-            artifact: powerjoular-el9-amd64
-
-          - name: AlmaLinux 9 aarch64
-            runner: ubuntu-24.04-arm
-            artifact: powerjoular-el9-aarch64
+    env:
+      ALIRE_VERSION: "2.1.1"
+      GNAT_VERSION: "14.2.1"
+      GPRBUILD_VERSION: "22.0.1"
 
     steps:
-    # gcc-gnat and gprbuild live in EPEL, and EPEL builds some of its packages against CRB
-    #
-    # gprbuild ships the gprconfig program but not the knowledge base it reads to recognise a compiler, and that base is a package of its own
+    # gcc brings the C library headers, the start up files and the linker that the Ada compiler links through
+    # The Ada compiler itself comes from Alire, and carries its own assembler and binutils
+    # curl replaces the curl-minimal the image ships, which is what --allowerasing is for
     - name: Prepare the container
       run: |
-        dnf install -y epel-release
-        dnf install -y --enablerepo=crb gcc-gnat gprbuild gprconfig-kb git tar findutils binutils
+        dnf install -y --allowerasing gcc git tar unzip findutils binutils ca-certificates curl
 
-        gnatls --version | head -1
-        gprbuild --version | head -1
-
-        # Say so here, rather than half way through the build, if the pieces are not all in place
-        # gnat.xml is what tells gprconfig to look for a GNAT by running gnatls
-        test -s /usr/share/gprconfig/gnat.xml \
-          || { echo "the gprconfig knowledge base is missing, gprbuild will not find the Ada compiler" >&2; exit 1; }
+    - name: Install Alire
+      run: |
+        curl -fsSL -o /tmp/alr.zip \
+          "https://github.com/alire-project/alire/releases/download/v${ALIRE_VERSION}/alr-${ALIRE_VERSION}-bin-x86_64-linux.zip"
+        unzip -q /tmp/alr.zip -d /opt/alire
+        echo "/opt/alire/bin" >> "$GITHUB_PATH"
 
     - name: Checkout
       uses: actions/checkout@v7
@@ -143,23 +136,15 @@ jobs:
     - name: Let git work on the checkout
       run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-    # The versions the Alire manifest asks for, so this build uses the same libraries as the Alire one
-    - name: Check out the two libraries
+    # Pinned rather than left to Alire, which would take the newest and land on one that cannot run here
+    - name: Pin the toolchain to one this container can run
       run: |
-        JOULARCORE=$(sed -n 's/^joularcore *= *"~\([0-9.]*\)".*/\1/p' alire.toml | head -1)
-        CPULOAD=$(sed -n 's/^cpuload *= *"~\([0-9.]*\)".*/\1/p' alire.toml | head -1)
-
-        if [ -z "$JOULARCORE" ] || [ -z "$CPULOAD" ]; then
-          echo "could not read the library versions out of alire.toml" >&2
-          exit 1
-        fi
-
-        echo "joularcore $JOULARCORE, cpuload $CPULOAD"
-        git clone --depth 1 --branch "$JOULARCORE" https://github.com/joular/joularcore.git ../joularcore
-        git clone --depth 1 --branch "$CPULOAD" https://github.com/joular/cpuload.git ../cpuload
+        alr --non-interactive toolchain --select "gnat_native=${GNAT_VERSION}"
+        alr --non-interactive toolchain --select "gprbuild=${GPRBUILD_VERSION}"
+        alr --non-interactive toolchain
 
     - name: Build
-      run: gprbuild -P powerjoular.gpr -p -aP../joularcore -aP../cpuload
+      run: alr --non-interactive build
 
     - name: Check the binary runs
       run: |
@@ -182,13 +167,21 @@ jobs:
         if [ -z "$GLIBC" ]; then GLIBC=static; fi
 
         echo "needs glibc $GLIBC or newer"
+
+        # The whole point of this job: anything above 2.34 would not start on RHEL 9 and its rebuilds, so it is caught here rather than shipped as a package that cannot run
+        if [ "$GLIBC" != "static" ] \
+           && [ "$(printf '%s\n' "$GLIBC" 2.34 | sort -V | tail -1)" != "2.34" ]; then
+          echo "this build needs glibc $GLIBC, newer than the 2.34 of Enterprise Linux 9" >&2
+          exit 1
+        fi
+
         mv bin/powerjoular "bin/powerjoular-glibc-$GLIBC"
         echo "glibc=$GLIBC" >> "$GITHUB_OUTPUT"
 
     - name: Upload the binary
       uses: actions/upload-artifact@v7
       with:
-        name: ${{ matrix.artifact }}-glibc-${{ steps.naming.outputs.glibc }}
+        name: powerjoular-el9-amd64-glibc-${{ steps.naming.outputs.glibc }}
         path: bin/powerjoular-glibc-${{ steps.naming.outputs.glibc }}
         if-no-files-found: error
 

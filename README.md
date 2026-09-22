@@ -182,12 +182,12 @@ Those scripts and the packages are for Linux. On macOS, build the binary as desc
 
 ### Which Linux build to use
 
-PowerJoular binary runs on the glibc version it was build on or a new one (but not and older one), so two builds are published for each architecture and every file says which glibc version was used:
+PowerJoular binary runs on the glibc version it was build on or a new one (but not and older one), so more than one build is published and every file says which glibc version was used:
 
-| File | Runs on |
-|---|---|
-| `powerjoular-glibc-2.35`, `powerjoular-glibc-2.35_*.deb`, `powerjoular-glibc-2.35-*.rpm` | Ubuntu 22.04 and newer, Debian 12 and newer, Raspberry Pi OS bookworm and newer, Fedora 36 and newer |
-| `powerjoular-glibc-2.34`, `powerjoular-glibc-2.34_*.deb`, `powerjoular-glibc-2.34-*.rpm` | The same, and also RHEL 9, AlmaLinux 9, Rocky 9 and CentOS Stream 9 |
+| File | Architectures | Runs on |
+|---|---|---|
+| `powerjoular-glibc-2.35`, `powerjoular-glibc-2.35_*.deb`, `powerjoular-glibc-2.35-*.rpm` | x86_64 and aarch64 | Ubuntu 22.04 and newer, Debian 12 and newer, Raspberry Pi OS bookworm and newer, Fedora 36 and newer |
+| `powerjoular-glibc-2.34`, `powerjoular-glibc-2.34_*.deb`, `powerjoular-glibc-2.34-*.rpm` | x86_64 only | The same, and also RHEL 9, AlmaLinux 9, Rocky 9 and CentOS Stream 9 |
 
 Take the `2.34` build if you are unsure, or if the other version gives you an `version 'GLIBC_2.35' not found`. Both are the exact same program with the only difference being the C library (glibc) they were linked against.
 
