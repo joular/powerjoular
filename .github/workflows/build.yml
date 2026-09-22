@@ -57,17 +57,182 @@ jobs:
         ./bin/powerjoular -v
         ./bin/powerjoular -h > /dev/null
 
-    # Printed so the log says outright which systems the binary will start on
-    - name: Show what the binary asks of the system
+        # The version is written down in alire.toml and again in src/powerjoular.ads, which the plain gprbuild and AUR builds need, so nothing but this keeps the two from drifting apart
+        MANIFEST=$(sed -n 's/^version *= *"\(.*\)"/\1/p' alire.toml | head -1)
+        BINARY=$(./bin/powerjoular -v)
+        if [ "$MANIFEST" != "$BINARY" ]; then
+          echo "alire.toml says $MANIFEST but the binary says $BINARY" >&2
+          exit 1
+        fi
+
+        # Redirected to a file, the help text must carry no escape sequences
+        if ./bin/powerjoular -h | grep -q "$(printf '\033')"; then
+          echo "the help text carries escape sequences when redirected" >&2
+          exit 1
+        fi
+
+    # A binary runs against the C library it was built with or a newer one, and no older, so the
+    # version it needs is what says which machines it starts on. It goes in the name of the file and
+    # of everything made from it, and it is read back out of the binary rather than assumed, so the
+    # name stays right whatever this job is built on
+    - name: Name the binary after the C library it needs
+      id: naming
       run: |
         file bin/powerjoular
-        echo "needs at most glibc $(objdump -T bin/powerjoular | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -1)"
+
+        GLIBC=$(objdump -T bin/powerjoular | grep -o 'GLIBC_[0-9][0-9.]*' | sed 's/GLIBC_//' | sort -V | tail -1)
+        if [ -z "$GLIBC" ]; then GLIBC=static; fi
+
+        echo "needs glibc $GLIBC or newer"
+        mv bin/powerjoular "bin/powerjoular-glibc-$GLIBC"
+        echo "glibc=$GLIBC" >> "$GITHUB_OUTPUT"
 
     - name: Upload the binary
       uses: actions/upload-artifact@v7
       with:
-        name: ${{ matrix.artifact }}
-        path: bin/powerjoular
+        name: ${{ matrix.artifact }}-glibc-${{ steps.naming.outputs.glibc }}
+        path: bin/powerjoular-glibc-${{ steps.naming.outputs.glibc }}
+        if-no-files-found: error
+
+  # The same program built against the C library of Enterprise Linux 9, which is older than the one
+  # the Ubuntu build above carries. That build does not start on RHEL 9, AlmaLinux 9 or Rocky 9, whose
+  # glibc is 2.34, and this one does, as well as on everything newer.
+  #
+  # Alire is not used here, and cannot be: its GNAT is itself built on Ubuntu 22.04 and asks for a newer
+  # C library than this container has, so it would not start. The compiler comes from EPEL instead, and
+  # the two libraries are checked out next to the project and found through the project search path,
+  # which is exactly how the Arch package builds them
+  linux-el9:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    container: almalinux:9
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: AlmaLinux 9 amd64
+            runner: ubuntu-24.04
+            artifact: powerjoular-el9-amd64
+
+          - name: AlmaLinux 9 aarch64
+            runner: ubuntu-24.04-arm
+            artifact: powerjoular-el9-aarch64
+
+    steps:
+    # gcc-gnat and gprbuild live in EPEL, and EPEL builds some of its packages against CRB
+    - name: Prepare the container
+      run: |
+        dnf install -y epel-release
+        dnf install -y --enablerepo=crb gcc-gnat gprbuild git tar findutils binutils
+        gnatmake --version | head -1
+        gprbuild --version | head -1
+
+    - name: Checkout
+      uses: actions/checkout@v7
+
+    # The checkout lands owned by another user as far as the container's git is concerned
+    - name: Let git work on the checkout
+      run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+    # The versions the Alire manifest asks for, so this build uses the same libraries as the Alire one
+    - name: Check out the two libraries
+      run: |
+        JOULARCORE=$(sed -n 's/^joularcore *= *"~\([0-9.]*\)".*/\1/p' alire.toml | head -1)
+        CPULOAD=$(sed -n 's/^cpuload *= *"~\([0-9.]*\)".*/\1/p' alire.toml | head -1)
+
+        if [ -z "$JOULARCORE" ] || [ -z "$CPULOAD" ]; then
+          echo "could not read the library versions out of alire.toml" >&2
+          exit 1
+        fi
+
+        echo "joularcore $JOULARCORE, cpuload $CPULOAD"
+        git clone --depth 1 --branch "$JOULARCORE" https://github.com/joular/joularcore.git ../joularcore
+        git clone --depth 1 --branch "$CPULOAD" https://github.com/joular/cpuload.git ../cpuload
+
+    - name: Build
+      run: gprbuild -P powerjoular.gpr -p -aP../joularcore -aP../cpuload
+
+    - name: Check the binary runs
+      run: |
+        ./bin/powerjoular -v
+        ./bin/powerjoular -h > /dev/null
+
+        MANIFEST=$(sed -n 's/^version *= *"\(.*\)"/\1/p' alire.toml | head -1)
+        BINARY=$(./bin/powerjoular -v)
+        if [ "$MANIFEST" != "$BINARY" ]; then
+          echo "alire.toml says $MANIFEST but the binary says $BINARY" >&2
+          exit 1
+        fi
+
+    - name: Name the binary after the C library it needs
+      id: naming
+      run: |
+        file bin/powerjoular || true
+
+        GLIBC=$(objdump -T bin/powerjoular | grep -o 'GLIBC_[0-9][0-9.]*' | sed 's/GLIBC_//' | sort -V | tail -1)
+        if [ -z "$GLIBC" ]; then GLIBC=static; fi
+
+        echo "needs glibc $GLIBC or newer"
+        mv bin/powerjoular "bin/powerjoular-glibc-$GLIBC"
+        echo "glibc=$GLIBC" >> "$GITHUB_OUTPUT"
+
+    - name: Upload the binary
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ matrix.artifact }}-glibc-${{ steps.naming.outputs.glibc }}
+        path: bin/powerjoular-glibc-${{ steps.naming.outputs.glibc }}
+        if-no-files-found: error
+
+  # The GNU/Linux packages, built from every binary the Linux jobs produced
+  #
+  # They are packaged on a plain Ubuntu runner rather than inside the containers the binaries were built in: dpkg-deb and rpmbuild only wrap files that are already compiled, so the C library of the machine doing the wrapping never reaches the package
+  # Every architecture and every C library version is packaged here, on one x86_64 runner: each binary goes in untouched, and release-version.sh reads what it is out of the binary itself
+  packages:
+    name: Linux packages (deb and rpm)
+    needs: [linux, linux-el9]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+
+    - name: Install the packaging tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends dpkg-dev rpm binutils
+
+    # Each artifact lands in a folder named after it, and release-version.sh only looks at the
+    # binaries inside, so it picks up every architecture and C library version on its own
+    - name: Download the Linux binaries
+      uses: actions/download-artifact@v7
+      with:
+        pattern: powerjoular-*-glibc-*
+        path: artifacts
+
+    - name: Build the deb and rpm packages
+      run: ./release-version.sh artifacts
+
+    # Printed so the log says outright what went into each package
+    - name: Show what the packages hold
+      run: |
+        for DEB in packages/*.deb; do
+          echo "== $DEB"
+          dpkg-deb --info "$DEB" | sed 's/^/    /'
+          dpkg-deb --contents "$DEB" | sed 's/^/    /'
+        done
+
+        for RPM in packages/*.rpm; do
+          echo "== $RPM"
+          rpm -qip "$RPM" | sed 's/^/    /'
+          rpm -qlp "$RPM" | sed 's/^/    /'
+        done
+
+    - name: Upload the packages
+      uses: actions/upload-artifact@v7
+      with:
+        name: powerjoular-linux-packages
+        path: packages/*
         if-no-files-found: error
 
   # macOS on Apple Silicon, the only Macs supported
@@ -93,6 +258,20 @@ jobs:
       run: |
         ./bin/powerjoular -v
         ./bin/powerjoular -h > /dev/null
+
+        # The version is written down in alire.toml and again in src/powerjoular.ads, which the plain gprbuild and AUR builds need, so nothing but this keeps the two from drifting apart
+        MANIFEST=$(sed -n 's/^version *= *"\(.*\)"/\1/p' alire.toml | head -1)
+        BINARY=$(./bin/powerjoular -v)
+        if [ "$MANIFEST" != "$BINARY" ]; then
+          echo "alire.toml says $MANIFEST but the binary says $BINARY" >&2
+          exit 1
+        fi
+
+        # Redirected to a file, the help text must carry no escape sequences
+        if ./bin/powerjoular -h | grep -q "$(printf '\033')"; then
+          echo "the help text carries escape sequences when redirected" >&2
+          exit 1
+        fi
 
     - name: Show what the binary asks of the system
       run: file bin/powerjoular
@@ -125,6 +304,13 @@ jobs:
       run: |
         ./bin/powerjoular.exe -v
         ./bin/powerjoular.exe -h > /dev/null
+
+        MANIFEST=$(sed -n 's/^version *= *"\(.*\)"/\1/p' alire.toml | head -1)
+        BINARY=$(./bin/powerjoular.exe -v | tr -d '\r')
+        if [ "$MANIFEST" != "$BINARY" ]; then
+          echo "alire.toml says $MANIFEST but the binary says $BINARY" >&2
+          exit 1
+        fi
 
     - name: Upload the binary
       uses: actions/upload-artifact@v7

@@ -22,6 +22,10 @@ package PowerJoular.Virtual_Machine is
     -- 'watts' is a single column with only the power consumption
     function Is_Known_Format (Name : in String) return Boolean;
 
+    -- Whether the shared file holds a power value that can be read in the given format
+    -- Checked once before the monitoring starts, so a file pointed at with the wrong format is turned down directly
+    function Can_Read (File_Name : in String; Format : in String) return Boolean;
+
     -- The power of this machine, in watts, read from the shared file
     -- A file that can't be read keeps the value of the previous cycle, and is reported once
     function Power (File_Name : in String; Format : in String) return Long_Float;

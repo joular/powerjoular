@@ -54,8 +54,8 @@ package body PowerJoular.Ring_Buffer is
         end record
         with Convention => C, Size => (8 + Entry_Count * 48) * 8;
 
-    -- Size of the buffer in bytes
-    Area_Bytes : constant := 8 + Entry_Count * 48;
+    -- Size of the buffer in bytes, taken from the layout of the Shared_Area
+    Area_Bytes : constant Natural := Shared_Area'Size / System.Storage_Unit;
 
     type Area_Access is access all Shared_Area;
 
@@ -64,8 +64,7 @@ package body PowerJoular.Ring_Buffer is
     -- The area once it is mapped, null while it isn't
     Area : Area_Access := null;
 
-    -- How many cycles have been written, held here rather than in the area itself
-    -- Any user of the machine can write to the area, so nothing sitting in it is trusted:
+    -- How many cycles have been written, held here rather than read back out of the area every cycle:
     -- the counter that says where the next cycle goes is kept on our side and only ever published outwards
     Head : Unsigned_64 := 0;
 
@@ -75,7 +74,7 @@ package body PowerJoular.Ring_Buffer is
     pragma Import (Intrinsic, Memory_Barrier, "__sync_synchronize");
 
     -- Where the area lives, a real file on every OS
-    -- On Windows it goes under ProgramData so any user can access it
+    -- On Windows it goes under ProgramData, which is the folder any user can read
 #if PJ_WINDOWS then
     Area_Path : constant String :=
         Ada.Environment_Variables.Value ("PROGRAMDATA", "C:\ProgramData") & "\joularcorering";
@@ -132,13 +131,14 @@ package body PowerJoular.Ring_Buffer is
     -- Flags for opening the file holding the area
     GENERIC_READ : constant unsigned := 16#8000_0000#;
     GENERIC_WRITE : constant unsigned := 16#4000_0000#;
-    
+
     -- Both share flags matter: without them the reader cannot open the file while we hold it
     FILE_SHARE_READ : constant unsigned := 16#0000_0001#;
     FILE_SHARE_WRITE : constant unsigned := 16#0000_0002#;
-    
-    -- Open the file that is already there, or create it when it is not, so a second run carries on in the same one
-    OPEN_ALWAYS : constant unsigned := 4;
+
+    -- Make the file ourselves first, and fall back to the one already there, so a second run carries on in the same one
+    CREATE_NEW : constant unsigned := 1;
+    OPEN_EXISTING : constant unsigned := 3;
     FILE_ATTRIBUTE_NORMAL : constant unsigned := 16#0000_0080#;
 
     --  Opens, or creates, the file the area is held in
@@ -191,15 +191,29 @@ package body PowerJoular.Ring_Buffer is
             return True;
         end if;
 
+        -- Making the file rather than opening whatever is there is what keeps it ours: a file we made is one nobody else had a chance to make first, and it inherits the rights of the folder
         File :=
             CreateFileA
                 (lpFileName => Name'Address,
                  dwDesiredAccess => GENERIC_READ or GENERIC_WRITE,
                  dwShareMode => FILE_SHARE_READ or FILE_SHARE_WRITE,
                  lpSecurityAttributes => System.Null_Address,
-                 dwCreationDisposition => OPEN_ALWAYS,
+                 dwCreationDisposition => CREATE_NEW,
                  dwFlagsAndAttributes => FILE_ATTRIBUTE_NORMAL,
                  hTemplateFile => System.Null_Address);
+
+        if File = INVALID_HANDLE_VALUE then
+            -- There is already a file there, most often the one an earlier run left behind
+            File :=
+                CreateFileA
+                    (lpFileName => Name'Address,
+                     dwDesiredAccess => GENERIC_READ or GENERIC_WRITE,
+                     dwShareMode => FILE_SHARE_READ or FILE_SHARE_WRITE,
+                     lpSecurityAttributes => System.Null_Address,
+                     dwCreationDisposition => OPEN_EXISTING,
+                     dwFlagsAndAttributes => FILE_ATTRIBUTE_NORMAL,
+                     hTemplateFile => System.Null_Address);
+        end if;
 
         if File = INVALID_HANDLE_VALUE then
             return False;
@@ -262,7 +276,7 @@ package body PowerJoular.Ring_Buffer is
             Object := System.Null_Address;
         end if;
 
-        -- The file stays behind on purpose, holding the last cycles written, so a reader can still pick them up after PowerJoular has stopped, as it can on Linux
+        -- The file stays behind on purpose, holding the last cycles written, so a reader can still pick them up after PowerJoular has stopped, the same as on Linux
         if File /= INVALID_HANDLE_VALUE then
             Ignored := CloseHandle (File);
             File := INVALID_HANDLE_VALUE;
@@ -292,10 +306,12 @@ package body PowerJoular.Ring_Buffer is
 
 #if PJ_LINUX then
     O_CREAT : constant int := 8#100#;
+    O_EXCL : constant int := 8#200#;
     O_NOFOLLOW : constant int := 8#400000#;
 #else
     -- macOS and the BSDs
     O_CREAT : constant int := 16#0200#;
+    O_EXCL : constant int := 16#0800#;
     O_NOFOLLOW : constant int := 16#0100#;
 #end if;
 
@@ -332,6 +348,16 @@ package body PowerJoular.Ring_Buffer is
     function C_Fchmod (Descriptor : in int; Mode : in unsigned) return int;
     pragma Import (C, C_Fchmod, "fchmod");
 
+    -- Who we are running as, and taking a file over so it is ours and no one else's
+    -- Handing fchown a group of every bit set is how it is told to leave the group alone
+    function C_Geteuid return unsigned;
+    pragma Import (C, C_Geteuid, "geteuid");
+
+    function C_Fchown (Descriptor : in int; Owner : in unsigned; Group : in unsigned) return int;
+    pragma Import (C, C_Fchown, "fchown");
+
+    Leave_Group_Alone : constant unsigned := unsigned'Last;
+
     --------------------------------------------------
 
     function Open return Boolean is
@@ -344,15 +370,26 @@ package body PowerJoular.Ring_Buffer is
             return True;
         end if;
 
-        -- Take the file already there when there is one, so a second run carries on writing where the first left off, and make it when there isn't
+        -- Make the area ourselves first, and only ours: the folder it sits in is one every user of the machine can write to, and a file made here is one nobody else had a chance to make first
         -- O_NOFOLLOW turns a symbolic link left in its place into a plain failure rather than a write through it
-        Descriptor := C_Open (Name, O_RDWR + O_CREAT + O_NOFOLLOW, Area_Mode);
+        Descriptor := C_Open (Name, O_RDWR + O_CREAT + O_EXCL + O_NOFOLLOW, Area_Mode);
 
         if Descriptor < 0 then
-            return False;
+            -- There is already a file there, most often the one an earlier run left behind
+            -- It is taken over rather than used as it is found: an area someone else owns is one they can keep writing to while we publish into it, so it is claimed first and given up on when it cannot be. Running as root the claim always goes through, and running as ourselves it goes through on a file that is already ours
+            Descriptor := C_Open (Name, O_RDWR + O_NOFOLLOW, Area_Mode);
+
+            if Descriptor < 0 then
+                return False;
+            end if;
+
+            if C_Fchown (Descriptor, C_Geteuid, Leave_Group_Alone) /= 0 then
+                Ignored := C_Close (Descriptor);
+                return False;
+            end if;
         end if;
 
-        -- Make sure the area really carries the mode asked for above, so other programs can read it
+        -- Make sure the area really carries the mode asked for above, so other programs can read it and no one but us can write to it, whatever mode a file found in place happened to use
         Ignored := C_Fchmod (Descriptor, Area_Mode);
 
         -- The file has to be as big as the area before it is mapped, or reading the mapping would fault

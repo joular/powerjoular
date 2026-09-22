@@ -145,6 +145,15 @@ package body PowerJoular.Options is
                 Refuse ("-s takes either 'powerjoular' or 'watts' as the format of the power file.");
                 return;
             end if;
+
+            -- Read the file once here, so a file pointed at with the wrong format is turned down now rather than reported once and then reported as no power at all for as long as the run lasts
+            if not Virtual_Machine.Can_Read (To_String (Config.VM_File),
+                                             To_String (Config.VM_Format))
+            then
+                Refuse ("no power value could be read from " & To_String (Config.VM_File)
+                        & " in the '" & To_String (Config.VM_Format) & "' format.");
+                return;
+            end if;
         end if;
 
         -- If not CSV or ring buffer, and not terminal option provided, then show power values on the terminal

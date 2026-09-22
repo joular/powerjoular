@@ -77,6 +77,9 @@ alire
 config
 binary
 packages
+artifacts
+deb-temp
+rpm-temp
 
 .vscode/
 .DS_Store

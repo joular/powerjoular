@@ -6,11 +6,12 @@ pkgdesc="PowerJoular allows monitoring power consumption of multiple platforms a
 arch=('x86_64' 'aarch64' 'armv7h')
 url="https://github.com/joular/powerjoular"
 license=('GPL-3.0-only')
+depends=('glibc')
 makedepends=('gcc-ada' 'gprbuild' 'git')
 
-source=("$pkgname::git+$url.git#branch=develop"
-        "joularcore::git+https://github.com/joular/joularcore.git#branch=develop"
-        "cpuload::git+https://github.com/joular/cpuload.git#branch=develop")
+source=("$pkgname::git+$url.git#branch=main"
+        "joularcore::git+https://github.com/joular/joularcore.git#branch=main"
+        "cpuload::git+https://github.com/joular/cpuload.git#branch=main")
 sha256sums=('SKIP'
             'SKIP'
             'SKIP')

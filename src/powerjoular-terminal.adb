@@ -11,11 +11,11 @@
 
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 with Ada.Text_IO; use Ada.Text_IO;
+with Interfaces.C; use Interfaces.C;
 
 with PowerJoular.Formatting; use PowerJoular.Formatting;
 
 #if PJ_WINDOWS then
-with Interfaces.C; use Interfaces.C;
 with System;
 #end if;
 
@@ -33,6 +33,13 @@ package body PowerJoular.Terminal is
 
     -- Show not available when a reading cannot be read
     Not_Available : constant String := "n/a";
+
+    -- Whether the standard output is a terminal that acts on the escape sequences, worked out once on start up
+    -- False until then, so nothing prints a sequence before the question has been asked
+    Escapes_Usable : Boolean := False;
+
+    function Escapes_Enabled return Boolean is
+       (Escapes_Usable);
 
     -- Transform one reading into a String ready to print: the value followed by its unit, or Not_Available when it could not be read
     -- Scale multiplies the value first, which is how a load of 0.0 to 1.0 is printed as a percentage
@@ -64,27 +71,39 @@ package body PowerJoular.Terminal is
     procedure Enable_Escape_Sequences is
         Output : constant System.Address := GetStdHandle (STD_OUTPUT_HANDLE);
         Mode : aliased unsigned := 0;
-        Ignored : int;
     begin
+        Escapes_Usable := False;
+
         -- Asking for the mode fails when the output is not a console at all, but a file or a pipe, so we do nothing
         if GetConsoleMode (Output, Mode'Access) = 0 then
             return;
         end if;
 
-        -- If a console refuses to act on the escape sequences, the don't report the refusal as it is just a additional cosmetic thing in PowerJoular
-        -- So on an older Windows terminal, it will shows them as text
-        Ignored := SetConsoleMode (Output, Mode or ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+        -- An older console refuses to act on the escape sequences and would show them as text instead
+        -- The refusal is not worth reporting, the display simply falls back to a line per measurement
+        Escapes_Usable :=
+            SetConsoleMode (Output, Mode or ENABLE_VIRTUAL_TERMINAL_PROCESSING) /= 0;
     exception
         when others =>
-            null;
+            Escapes_Usable := False;
     end Enable_Escape_Sequences;
 
 #else
 
-    -- Every other terminal acts on the escape sequences already
+    -- Tells a terminal apart from a file or a pipe, the standard output being the descriptor numbered 1
+    function C_Isatty (Descriptor : in int) return int;
+    pragma Import (C, C_Isatty, "isatty");
+
+    Standard_Output : constant int := 1;
+
+    -- Every other terminal acts on the escape sequences already, so there is nothing to turn on
+    -- Check whether there is a terminal or not
     procedure Enable_Escape_Sequences is
     begin
-        null;
+        Escapes_Usable := C_Isatty (Standard_Output) /= 0;
+    exception
+        when others =>
+            Escapes_Usable := False;
     end Enable_Escape_Sequences;
 
 #end if;
@@ -99,7 +118,10 @@ package body PowerJoular.Terminal is
         Difference : constant Long_Float := Data.Total_Power - Previous_Total_Power;
         Arrow : constant String := (if Difference >= 0.0 then "/\ " else "\/ ");
     begin
-        Put (Clear_Line);
+        -- On a terminal this measurement is written over the previous one
+        if Escapes_Usable then
+            Put (Clear_Line);
+        end if;
 
         case Target is
             when Whole_System =>
@@ -126,10 +148,14 @@ package body PowerJoular.Terminal is
                 Put (" (" & Image (Data.CPU_Power, Decimals) & " Watts)");
         end case;
 
-        -- The line carries no end of line, so it has to be pushed out by hand to show up at once
-        Flush;
-
-        Line_Left_Open := True;
+        if Escapes_Usable then
+            -- The line carries no end of line, so it has to be pushed out by hand to show up at once
+            Flush;
+            Line_Left_Open := True;
+        else
+            -- Nothing is going to be written over, so we print a new line
+            New_Line;
+        end if;
     end Show;
 
     --------------------------------------------------

@@ -48,6 +48,9 @@ procedure PowerJoular_Main is
     Before, After : CPU_Load.Sample;
     Taken_Before, Taken_After : Time;
 
+    -- The previous sample of the cycle that just closed. Useful so the cycle can be closed as soon as it is read and worked out afterwards
+    Previous : CPU_Load.Sample;
+
     -- What the hardware reported this cycle
     Measurements : Joular_Core.Reading;
 
@@ -185,7 +188,9 @@ begin
             (CPU_Available => CPU_Available,
              GPU_Available => GPU_Available,
              Ring_Buffer_Path => Ring_Buffer.Path,
-             Using_Ring_Buffer => Config.Write_Ring_Buffer);
+             Using_Ring_Buffer => Config.Write_Ring_Buffer,
+             Reading_VM_File => Config.Read_VM,
+             VM_File => To_String (Config.VM_File));
     end if;
 
     -- Nothing at all to measure, which is worth saying rather than writing zeroes for hours on end
@@ -226,20 +231,23 @@ begin
 
             Elapsed := To_Duration (Taken_After - Taken_Before);
 
+            -- The cycle is closed here, before anything is calculated or used from it
+            -- Leaving the sample and the time of the previous one in place would have the cycle after this one divide one cycle worth of joules by two cycles worth of seconds, and report half the watts actually drawn
+            Previous := Before;
+            Before := After;
+            Taken_Before := Taken_After;
+
             Data := (others => <>);
-            Data.CPU_Usage := CPU_Load.System_Usage (Before, After);
+            Data.CPU_Usage := CPU_Load.System_Usage (Previous, After);
 
             if Config.Target /= Whole_System then
-                Data.Target_Usage := CPU_Load.Process_Usage (Before, After);
+                Data.Target_Usage := CPU_Load.Process_Usage (Previous, After);
 
                 -- CPU Load answers with a negative load, whatever its size, when the process or the application could not be read at all
                 if Data.Target_Usage < 0.0 then
                     Data.Target_Usage := Unreadable;
                 end if;
             end if;
-
-            Before := After;
-            Taken_Before := Taken_After;
 
             -- Where the power of the processor comes from: the file the host writes when inside a virtual machine,
             -- the hardware itself everywhere else

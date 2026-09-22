@@ -22,7 +22,7 @@ Detailed documentation (including user and reference guides) is available at: [h
 
 ## :satellite: Supported platforms
 
-PowerJoular runs on **GNU/Linux, macOS and Windows**, on PCs, servers, Macs, and single-board computers.
+PowerJoular runs on **Linux, macOS and Windows**, on PCs, servers, Macs, and single-board computers.
 
 | Component | Hardware | OS | Method | 
 |---|---|---|---|
@@ -47,13 +47,13 @@ PowerJoular does the energy and CPU usage measuring through two Ada libraries we
 
 ### Required privileges
 
-- **Linux, PC or server**: reading RAPL files needs elevated on the recent kernels (5.10 and newer), so run `sudo powerjoular`, or giving read rights to the files. See [this issue](https://github.com/joular/powerjoular/issues/1).
+- **Linux, PC or server**: reading RAPL files needs elevated privileges on the recent kernels (5.10 and newer), so run `sudo powerjoular`, or give read rights to the files. See [this issue](https://github.com/joular/powerjoular/issues/1).
 - **Windows**: if using [Energy Meter Interface](https://learn.microsoft.com/en-us/windows-hardware/drivers/powermeter/energy-meter-interface) (EMI), then there is no special privileges or driver needed. Otherwise, we need specific RAPL driver, such as [PawnIO](https://pawnio.eu) or [Hubblo's RAPL driver](https://github.com/hubblo-org/windows-rapl-driver). The easiest way to get a signed version installed is through the [PawnIO](https://pawnio.eu) or the [Scaphandre installer](https://github.com/hubblo-org/scaphandre/releases) for Hubblo's driver.
 - **macOS**: `powermetrics` only runs as the superuser, so run `sudo powerjoular`. Without it, the CPU and the GPU are simply reported as not available. Reading the CPU time of a process belonging to another user also needs root, so `-p` and `-a` on someone else's process need `sudo` too.
 - **Raspberry Pi and GPU readings**: no special privileges needed.
 
 PowerJoular uses Joular Core, which, on Windows, tries the Energy Meter Interface first, then PawnIO, then Hubblo's driver, keeping the first that answers. Nothing has to be configured for that.
-Setting `JOULARCORE_WINDOWS_RAPL` environnemental variable picks one instead of trying them in turn. Valid options: `emi`, `pawnio` or `hubblo`.
+Setting the `JOULARCORE_WINDOWS_RAPL` environment variable picks one instead of trying them in turn. Valid options: `emi`, `pawnio` or `hubblo`.
 
 ## :bulb: Usage
 
@@ -103,8 +103,10 @@ Timestamp,CPU Usage,CPU Power
 
 The time of the measurement is a Unix timestamp.
 
-Both value columns hold `-1.0000` for a second where the monitored process or application could not be read at all: it has stopped, it was never running, or the system does not let us get the information needed.
+Both value columns hold `-1.0000` for a second where the monitored process could not be read at all: it has stopped, it was never running, or the system does not let us get the information needed.
 That is not the same as `0.0000`, which means a process that was read and used no CPU time.
+
+`-a` is the exception: an application with no running process at all is reported as `0.0000` and not as `-1.0000`, because we can't tell apart a name that matches nothing from a name whose processes did not use any CPU time. `-1.0000` still appears for `-a` when a process is found but the system does not let us read it.
 
 ### Exporting to a shared memory ring buffer
 
@@ -113,7 +115,7 @@ That is not the same as `0.0000`, which means a process that was read and used n
 | OS | Where the area lives |
 |---|---|
 | Linux | `/dev/shm/joularcorering` |
-| Windows | `Local\JoularCoreRing` |
+| Windows | `%PROGRAMDATA%\joularcorering`, i.e. `C:\ProgramData\joularcorering` |
 | macOS | `/tmp/joularcorering` |
 | Other | `/tmp/joularcorering` |
 
@@ -129,6 +131,9 @@ The area is 248 bytes, in the byte order of the machine: a counter of 8 bytes, t
 | `pid_app_power` | IEEE double | Power of the monitored process or application in watts, zero when none is monitored, and `-1` when the one monitored could not be read |
 
 A measurement goes in the entry the counter points at (`counter mod 5`), and the counter is raised afterwards. A reader follows the counter to know when a new measurement has landed, and the timestamps to know how old each entry is.
+
+Only one PowerJoular should write to the ring buffer at the same time. Two runs using `-r` at once each keep a counter of their own, so a reader sees the entries of both interleaved and the counter moving backwards.
+The ring buffer is created for the user running PowerJoular, readable by everyone and writable only by its owner. A buffer left behind by an earlier run is taken over rather than used as it is found, and PowerJoular carries on without the ring buffer when it cannot be taken over.
 
 ### Monitoring inside a virtual machine
 
@@ -166,12 +171,25 @@ powerjoular -m /shared/vm-power.txt -s watts -t
 
 PowerJoular is one binary that can be copied to any machine of the same architecture and run as it is.
 
-Ready-made packages, and easy-to-use installation scripts in the `installer` folder:
+Ready-made packages (binaries, RPM and DEB packages) are released in our repository release page and in the build workflow.
+
+Easy-to-use installation scripts are also available in the `installer` folder:
 
 - `installer/bash-installer/build-install.sh`: builds the program and installs the binary in `/usr/bin` along with the systemd service.
 - `installer/bash-installer/uninstall.sh`: removes both again.
 
-Those scripts and the packages are for GNU/Linux. On macOS, build the binary as described below and copy it where you want it.
+Those scripts and the packages are for Linux. On macOS, build the binary as described below and copy it where you want it.
+
+### Which Linux build to use
+
+PowerJoular binary runs on the glibc version it was build on or a new one (but not and older one), so two builds are published for each architecture and every file says which glibc version was used:
+
+| File | Runs on |
+|---|---|
+| `powerjoular-glibc-2.35`, `powerjoular-glibc-2.35_*.deb`, `powerjoular-glibc-2.35-*.rpm` | Ubuntu 22.04 and newer, Debian 12 and newer, Raspberry Pi OS bookworm and newer, Fedora 36 and newer |
+| `powerjoular-glibc-2.34`, `powerjoular-glibc-2.34_*.deb`, `powerjoular-glibc-2.34-*.rpm` | The same, and also RHEL 9, AlmaLinux 9, Rocky 9 and CentOS Stream 9 |
+
+Take the `2.34` build if you are unsure, or if the other version gives you an `version 'GLIBC_2.35' not found`. Both are the exact same program with the only difference being the C library (glibc) they were linked against.
 
 ## :floppy_disk: Compilation
 
@@ -211,21 +229,14 @@ By default the Ada runtime and libgcc are carried inside the binary, which is en
 gprbuild -P powerjoular.gpr -aP../joularcore -aP../cpuload -XPOWERJOULAR_LINKING=full -p
 ```
 
-On GNU/Linux, a fully static binary cannot load a library while it runs, so the Nvidia and AMD graphic card readings, which do exactly that, are lost with this option. The processor readings are not affected, and PowerJoular carries on without the GPU rather than failing.
+On Linux, a fully static binary cannot load a library while it runs, so the Nvidia and AMD graphic card readings, which do exactly that, are lost with this option. The processor readings are not affected, and PowerJoular carries on without the GPU rather than failing.
 
 On macOS, Apple ships no static C library, so this option does nothing: the binary is built the same way it is by default, which already carries the Ada runtime and libgcc inside it.
 
-### Cross-compilation and package generation
 
-`release-version.sh` cross-compiles PowerJoular for several architectures (x86_64 and aarch64 for now, and it can be extended), then builds the RPM and DEB packages for them. It needs an x86_64 and an aarch64 GNAT compiler, Alire, and the `dpkg` and `rpm` packaging tools. On Ubuntu:
+## :hourglass: Systemd service (Linux only)
 
-```bash
-sudo apt install gnat gnat-12-aarch64-linux-gnu dpkg rpm
-```
-
-## :hourglass: Systemd service (GNU/Linux only)
-
-A systemd service is provided in the `systemd` folder, and is installed by the GNU/Linux packages. It runs PowerJoular with `-o`, writing the latest power data to `/run/powerjoular/powerjoular-service.csv`. The folder is made by systemd when the service starts and removed when it stops, and anyone can read the file in it.
+A systemd service is provided in the `systemd` folder, and is installed by the Linux packages. It runs PowerJoular with `-o`, writing the latest power data to `/run/powerjoular/powerjoular-service.csv`. The folder is made by systemd when the service starts and removed when it stops, and anyone can read the file in it.
 
 ```bash
 sudo systemctl start powerjoular.service
@@ -242,7 +253,7 @@ Version 2 does the measuring using the [Joular Core](https://github.com/joular/j
 
 Other main differences:
 
-- The CSV files hold four digits after the dot instead of the fourteen. The columns and the header are have been renamed, with Timestamp and CPU Usage.
+- The CSV files hold four digits after the dot instead of the fourteen. The columns and the header have been renamed, with Timestamp and CPU Usage.
 - The energy a RAPL processor reports is divided by how long the cycle actually took, rather than assumed to be exactly one second. On a machine running late, the watts reported are now the watts drawn.
 - A file that cannot be written to, a power source that stops answering, or a ring buffer that cannot be opened is reported once and the monitoring continues.
 

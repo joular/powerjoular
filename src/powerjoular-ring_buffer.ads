@@ -18,7 +18,10 @@
 -- A cycle is written in the entry the counter points at, and the counter is raised afterwards.
 -- A reader follows the counter to know when a new cycle has landed, and the timestamps to know how old each entry is.
 --
--- The area lives at /dev/shm/joularcorering on Linux, Local\JoularCoreRing on Windows, /tmp/joularcorering elsewhere
+-- The area lives at /dev/shm/joularcorering on Linux, %PROGRAMDATA%\joularcorering on Windows
+-- (C:\ProgramData\joularcorering unless the machine puts ProgramData elsewhere), and /tmp/joularcorering elsewhere
+--
+-- Only one PowerJoular should write to the ring buffer at a time. Two runs writing to it at once each keep a counter of their own, so a reader sees the entries of both interleaved and the counter moving backwards
 package PowerJoular.Ring_Buffer is
 
     -- Create the shared memory ring, or use one if already there, and map it
@@ -29,8 +32,7 @@ package PowerJoular.Ring_Buffer is
     procedure Write (Data : in Cycle);
 
     -- Close and free the ring buffer
-    -- On Linux and macOS the area is a file, so it is left behind and a reader can still pick up the last entries written to it
-    -- On Windows it is not a file but a named shared memory object, which lives only as long as a program holds it open: it goes when the last one closes it, and a reader has to be running alongside PowerJoular to see anything
+    -- The ring buffer is a real file on every system, so it is left behind and a reader can still pick up the last entries written to it after PowerJoular has stopped
     procedure Close;
 
     -- The path of the ring buffer

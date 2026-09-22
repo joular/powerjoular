@@ -11,10 +11,16 @@
 
 -- Print the power data on the terminal
 -- Each measurement is written over the previous one, so the display stays on a single line
+-- Without a terminal to write over, each measurement is printed on a line of its own instead
 package PowerJoular.Terminal is
 
-    -- Enable escape sequences on old terminals (mainly in Windows)
+    -- Enable escape sequences on old terminals (mainly in Windows), and work out whether they can be used at all
+    -- Called once before anything is printed
     procedure Enable_Escape_Sequences;
+
+    -- Whether the standard output is a terminal that acts on the escape sequences
+    -- Redirected to a file or through a pipe there is no terminal to act on them, and printing them would leave the sequences themselves in the output as text
+    function Escapes_Enabled return Boolean;
 
     -- Show one cycle
     -- Monitoring a process or an application shows that process or application, otherwise the whole system is shown

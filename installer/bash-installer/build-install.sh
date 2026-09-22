@@ -19,4 +19,4 @@ fi
 sudo cp ./bin/powerjoular /usr/bin/
 
 # Install the systemd service
-sudo cp ./systemd/powerjoular.service /etc/systemd/system/
+sudo install -Dm644 ./systemd/powerjoular.service /usr/lib/systemd/system/powerjoular.service

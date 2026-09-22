@@ -3,31 +3,43 @@ with "cpuload.gpr";
 
 project Powerjoular is
 
-    --  The system to build for is picked from the target gprbuild reports, and -XPJ_OS overrides it
+    --  Which system to build for is chosen, by order:
+    --    1. -XPJ_OS, passed manually or by Alire
+    --    2. the target gprbuild reports
+    --    3. the OS environment variable
     Host_Target := project'Target;
 
     Default_OS := "linux";
+
+    --  Check if we know the target (useful for cross-building, mainly from Windows systems)
+    type Known_Kind is ("yes", "no");
+    Target_Known : Known_Kind := "no";
+
     case Host_Target is
         when "aarch64-darwin" | "x86_64-darwin" | "x86-darwin" | "arm-darwin" | "ppc-darwin"
             => Default_OS := "macos";
-
+               Target_Known := "yes";
         when "x86_64-windows" | "x86-windows"
             => Default_OS := "windows";
-
-        --  GNU/Linux, and every target neither list above carries, keeps the default set before the case
+               Target_Known := "yes";
         when others
             => null;
     end case;
 
-    --  Windows also announces itself in the environment, which settles a target name the list above does not carry
+    --  If target cannot still be identified, check the environmental variable on Windows
     type Host_OS_Kind is ("Windows_NT", "other");
     Host_OS : Host_OS_Kind := external ("OS", "other");
 
-    case Host_OS is
-        when "Windows_NT"
-            => Default_OS := "windows";
-        when "other"
+    case Target_Known is
+        when "yes"
             => null;
+        when "no"
+            => case Host_OS is
+                   when "Windows_NT"
+                       => Default_OS := "windows";
+                   when "other"
+                       => null;
+               end case;
     end case;
 
     -- Symbol to indicate which OS to compile for, the same one the two libraries use

@@ -37,7 +37,14 @@ package body PowerJoular.Formatting is
         return Trim (Buffer, Left);
     exception
         when others =>
-            return "0.0";
+            -- A value too large to be written in plain digits does not fit the buffer above
+            -- It is written in the exponent notation instead
+            begin
+                return Trim (Long_Float'Image (Value), Left);
+            exception
+                when others =>
+                    return "nan";
+            end;
     end Image;
 
     --------------------------------------------------

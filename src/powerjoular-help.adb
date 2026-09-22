@@ -15,13 +15,16 @@ with Ada.Text_IO; use Ada.Text_IO;
 with CPU_Load;
 with Joular_Core;
 
+with PowerJoular.Terminal;
+
 package body PowerJoular.Help is
 
     -- Make the text in yellow and the terminal back to normal color
+    -- Written out plainly when there is no terminal to colour it, so a redirected help text carries no escape sequences
     function Title (Text : in String) return String is
-        (ESC & "[93m" & Text & ESC & "[0m");
+        (if Terminal.Escapes_Enabled then ESC & "[93m" & Text & ESC & "[0m" else Text);
 
-    -- A constant variable with a line to be reused
+    -- The line printed between the sections of the help text
     Rule : constant String := "--------------------------";
 
     --------------------------------------------------
@@ -89,12 +92,21 @@ package body PowerJoular.Help is
     procedure Show_System_Info (CPU_Available : in Boolean;
                                 GPU_Available : in Boolean;
                                 Ring_Buffer_Path : in String;
-                                Using_Ring_Buffer : in Boolean) is
+                                Using_Ring_Buffer : in Boolean;
+                                Reading_VM_File : in Boolean;
+                                VM_File : in String) is
     begin
         Put_Line ("PowerJoular " & Version);
         Put_Line (HT & "Joular Core library: " & Joular_Core.Version);
         Put_Line (HT & "CPU Load library: " & CPU_Load.Version);
-        Put_Line (HT & "CPU power: " & (if CPU_Available then "available" else "not available"));
+
+        -- Inside a virtual machine the processor is not read at all, the host writes its power to a file instead
+        if Reading_VM_File then
+            Put_Line (HT & "CPU power: read from " & VM_File);
+        else
+            Put_Line (HT & "CPU power: " & (if CPU_Available then "available" else "not available"));
+        end if;
+
         Put_Line (HT & "GPU power: " & (if GPU_Available then "available" else "not available"));
 
         if Using_Ring_Buffer then

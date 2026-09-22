@@ -31,6 +31,9 @@ package body PowerJoular.Virtual_Machine is
     -- Set once the file could not be read
     Reported_A_Failure : Boolean := False;
 
+    -- Whether a power value was ever read out of the file, so a file that never gave one is not reported as keeping a last value it never had
+    Ever_Read : Boolean := False;
+
     --------------------------------------------------
 
     function Is_Known_Format (Name : in String) return Boolean is
@@ -65,9 +68,17 @@ package body PowerJoular.Virtual_Machine is
 
     --------------------------------------------------
 
-    function Power (File_Name : in String; Format : in String) return Long_Float is
+    -- Read the power out of the file, and say whether it could be read at all
+    -- Both the check made before the monitoring starts and every cycle of the monitoring itself go through here
+    procedure Read_Value (File_Name : in String;
+                          Format : in String;
+                          Value : out Long_Float;
+                          Read_It : out Boolean) is
         Input : File_Type;
     begin
+        Value := 0.0;
+        Read_It := False;
+
         Open (Input, In_File, File_Name);
 
         declare
@@ -75,22 +86,16 @@ package body PowerJoular.Virtual_Machine is
             Line : constant String := Trim (Get_Line (Input), Blanks, Blanks);
 
             -- The power on its own in the watts format, the third column in the PowerJoular one
-            Value : constant String :=
+            Text : constant String :=
                 (if Format = Watts_Format then Line else Trim (Field (Line, 3), Blanks, Blanks));
         begin
             Close (Input);
-            Last_Known := Long_Float'Value (Value);
+            Value := Long_Float'Value (Text);
+            Read_It := True;
         end;
-
-        return Last_Known;
     exception
         when others =>
-            -- The file may be halfway through being rewritten by the host, in this case the next cycle reads it fine, so for now we can report the last known reading
-            if not Reported_A_Failure then
-                Reported_A_Failure := True;
-                Put_Line (Standard_Error,
-                          "powerjoular: cannot read the power of this machine from " & File_Name & ", keeping the last value read.");
-            end if;
+            Read_It := False;
 
             begin
                 if Is_Open (Input) then
@@ -100,8 +105,53 @@ package body PowerJoular.Virtual_Machine is
                 when others =>
                     null;
             end;
+    end Read_Value;
 
+    --------------------------------------------------
+
+    function Can_Read (File_Name : in String; Format : in String) return Boolean is
+        Value : Long_Float;
+        Read_It : Boolean;
+    begin
+        Read_Value (File_Name, Format, Value, Read_It);
+
+        -- What was read here is kept, so the first cycle already has a value even if the file happens to be halfway through being rewritten by the host at that moment
+        if Read_It then
+            Last_Known := Value;
+            Ever_Read := True;
+        end if;
+
+        return Read_It;
+    end Can_Read;
+
+    --------------------------------------------------
+
+    function Power (File_Name : in String; Format : in String) return Long_Float is
+        Value : Long_Float;
+        Read_It : Boolean;
+    begin
+        Read_Value (File_Name, Format, Value, Read_It);
+
+        if Read_It then
+            Last_Known := Value;
+            Ever_Read := True;
             return Last_Known;
+        end if;
+
+        -- The file may be halfway through being rewritten by the host, in this case the next cycle reads it fine, so for now we can report the last known reading
+        if not Reported_A_Failure then
+            Reported_A_Failure := True;
+
+            if Ever_Read then
+                Put_Line (Standard_Error,
+                          "powerjoular: cannot read the power of this machine from " & File_Name & ", keeping the last value read.");
+            else
+                Put_Line (Standard_Error,
+                          "powerjoular: cannot read the power of this machine from " & File_Name & ", reporting no power until it can be read.");
+            end if;
+        end if;
+
+        return Last_Known;
     end Power;
 
 end PowerJoular.Virtual_Machine;

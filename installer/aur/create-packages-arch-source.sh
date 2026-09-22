@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Stop at the first thing that goes wrong, so a failed makepkg does not carry on
+set -euo pipefail
+
 # Function to check user permissions to write to current directory
 if [ ! -w "$(pwd)" ]; then
     echo "ERROR: You don't have write permission on the directory $(pwd)."
@@ -15,10 +18,10 @@ mkdir -p $PKG_DIR $OUTPUT_DIR
 # Copy the PKGBUILD file to the build directory
 cp PKGBUILD $PKG_DIR/
 
-# Changer de répertoire pour PKGBUILD
+# Change directory to PKGBUILD
 cd $PKG_DIR
 
-# Change directory to PKGBUILD
+# Build the package
 makepkg
 
 #  Move the generated package to the output directory

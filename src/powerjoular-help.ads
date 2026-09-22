@@ -18,9 +18,12 @@ package PowerJoular.Help is
     procedure Show_Version;
 
     -- Print what the machine offers and which libraries are used, for the -d option
+    -- Reading_VM_File says the power of the processor comes from the file the host writes, and not from the hardware
     procedure Show_System_Info (CPU_Available : in Boolean;
                                 GPU_Available : in Boolean;
                                 Ring_Buffer_Path : in String;
-                                Using_Ring_Buffer : in Boolean);
+                                Using_Ring_Buffer : in Boolean;
+                                Reading_VM_File : in Boolean;
+                                VM_File : in String);
 
 end PowerJoular.Help;
