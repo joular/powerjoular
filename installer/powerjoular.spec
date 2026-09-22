@@ -1,11 +1,14 @@
 Name:           powerjoular
-Version:        1.1.1
+Version:        2.0.0
 Release:        1%{?dist}
 Summary:        PowerJoular allows monitoring power consumption of multiple platforms and processes.
 
 License:        GPL-3.0-only
-Source0:        %{_sourcedir}/obj/powerjoular
+URL:            https://github.com/joular/powerjoular
+Source0:        %{_sourcedir}/powerjoular
 Source1:        %{_sourcedir}/powerjoular.service
+
+%{!?_unitdir: %global _unitdir %{_prefix}/lib/systemd/system}
 
 %description
 PowerJoular allows monitoring power consumption of multiple platforms and processes.
@@ -13,15 +16,23 @@ PowerJoular allows monitoring power consumption of multiple platforms and proces
 %install
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/%{_bindir}
-mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/systemd/system/
+mkdir -p $RPM_BUILD_ROOT/%{_unitdir}
 install -m 755 %{SOURCE0} $RPM_BUILD_ROOT/%{_bindir}/%{name}
-install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/%{_sysconfdir}/systemd/system/%{name}.service
+install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/%{_unitdir}/%{name}.service
 
 %files
 %{_bindir}/%{name}
-%{_sysconfdir}/systemd/system/%{name}.service
+%{_unitdir}/%{name}.service
 
 %changelog
+* Mon Aug 31 2026 Adel Noureddine <adel.noureddine@outlook.com> - 2.0.0-1
+- Measure through the Joular Core and CPU Load libraries
+- Add Windows and macOS support
+- Add the shared memory ring buffer export (-r)
+- Remove the experimental -k option
+- Remove the -l option: the polynomial power models are now the only ones used
+- The systemd service writes to /run/powerjoular/powerjoular-service.csv instead of /tmp, and runs with reduced privileges
+- The systemd service is installed in /usr/lib/systemd/system
 * Fri Sep 19 2025 Adel Noureddine <adel.noureddine@parisnanterre.fr> - 1.1.1-1
 - Fix Incorrect CPU power value after specific domain wrapping.
 * Sat Mar 29 2025 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.1.0-1
