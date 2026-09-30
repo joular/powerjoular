@@ -11,23 +11,23 @@
 --
 
 -- Read the power of this machine when it is a virtual machine
--- As no hardware energy is available directly inside the VM, we read a shared file between host and guest which indicated the CPU power of the VM machine
+-- The hardware can't be measured from inside a VM, so the host writes the power of the VM to a file shared with the guest
 package PowerJoular.Virtual_Machine is
 
-    -- Whether the given name is one of the formats the shared file can be in
-    -- 'powerjoular' is the 3 column CSV that PowerJoular writes with the -o option for a monitored process,
-    --   timestamp, CPU load and power, the power being the third column
-    --   It is the file carrying the process number, the one holding the power of the virtual machine, and not
-    --   the file of the whole host machine, whose third column is the total power of the host instead
-    -- 'watts' is a single column with only the power consumption
-    function Is_Known_Format (Name : in String) return Boolean;
+    -- PowerJoular_CSV : the 3 column CSV that -o writes for a monitored process, the one carrying the PID of the VM on the host
+    -- Watts : the power only
+    type File_Format is (PowerJoular_CSV, Watts);
 
-    -- Whether the shared file holds a power value that can be read in the given format
-    -- Checked once before the monitoring starts, so a file pointed at with the wrong format is turned down directly
-    function Can_Read (File_Name : in String; Format : in String) return Boolean;
+    -- The format named Name on the command line ('powerjoular' or 'watts')
+    -- Returns False if Name is not a known format
+    function Format_Of (Name : in String; Format : out File_Format) return Boolean;
 
-    -- The power of this machine, in watts, read from the shared file
-    -- A file that can't be read keeps the value of the previous cycle, and is reported once
-    function Power (File_Name : in String; Format : in String) return Long_Float;
+    -- Read the power, in watts, from the file
+    -- Returns False if the file can't be opened, or doesn't hold a power value (a negative value counts as none)
+    function Read (File_Name : in String; Format : in File_Format; Power : out Long_Float) return Boolean;
+
+    -- The power read from the file
+    -- A file that can't be read gives the last power read (zero if none) and is reported once, as the host may be rewriting it
+    function Power (File_Name : in String; Format : in File_Format) return Long_Float;
 
 end PowerJoular.Virtual_Machine;

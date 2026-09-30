@@ -10,25 +10,17 @@
 --
 
 with Ada.Directories;
-with Ada.Strings; use Ada.Strings;
-with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.Command_Line; use GNAT.Command_Line;
 
 with PowerJoular.Help;
-with PowerJoular.Virtual_Machine;
 
 package body PowerJoular.Options is
 
-    -- Where the power data goes when no filename is given
-    Default_CSV_File : constant String := "./powerjoular-power.csv";
-
-    -- The command line parameters
-    Switch_List : constant String := "h v t d f: o: p: a: m: s: r";
+    Switches : constant String := "h v t d f: o: p: a: m: s: r";
 
     --------------------------------------------------
 
-    -- Print why the command line can't be used
     procedure Refuse (Reason : in String) is
     begin
         Put_Line (Standard_Error, "powerjoular: " & Reason);
@@ -40,13 +32,48 @@ package body PowerJoular.Options is
     procedure Parse (Config : out Settings; Result : out Outcome) is
         Asked_For_Process : Boolean := False;
         Asked_For_Application : Boolean := False;
+        Format_Name : Unbounded_String;
+        Format_Known : Boolean := False;
+
+        -- The first reason the options can't be used, or an empty string if they can
+        function Problem return String is
+            Extra : constant String := Get_Argument;
+            VM_File : constant String := To_String (Config.VM_File);
+            Ignored : Long_Float;
+        begin
+            if Extra /= "" then
+                return "unexpected argument: " & Extra;
+            elsif Asked_For_Process and then Asked_For_Application then
+                return "monitor either a process (-p) or an application (-a), not both.";
+            elsif Asked_For_Process and then Config.PID = 0 then
+                return "-p takes the number of a running process, and 0 is not one.";
+            elsif Asked_For_Application and then Config.App = Null_Unbounded_String then
+                return "-a needs the name of an application to monitor.";
+            elsif Config.Write_CSV and then Config.CSV_File = Null_Unbounded_String then
+                return "-f and -o need the path of a file to write to.";
+            elsif not Config.Read_VM then
+                return "";
+            elsif VM_File = "" then
+                return "-m needs the path of the file the host writes the power of this machine to.";
+            elsif not Ada.Directories.Exists (VM_File) then
+                return "no such file: " & VM_File;
+            elsif not Format_Known then
+                return "-m needs -s with either 'powerjoular' or 'watts' as the format of the power file.";
+            -- Read the file once now, so a file with the wrong format is refused at once
+            elsif not Virtual_Machine.Read (VM_File, Config.VM_Format, Ignored) then
+                return "no power value could be read from " & VM_File
+                       & " in the '" & To_String (Format_Name) & "' format.";
+            else
+                return "";
+            end if;
+        end Problem;
+
     begin
         Config := (others => <>);
-        Config.CSV_File := To_Unbounded_String (Default_CSV_File);
         Result := Rejected;
 
         loop
-            case Getopt (Switch_List) is
+            case Getopt (Switches) is
                 when 'h' =>
                     Help.Show_Help;
                     Result := Finished;
@@ -67,23 +94,30 @@ package body PowerJoular.Options is
                     Config.Write_Ring_Buffer := True;
 
                 when 'f' =>
-                    Config.CSV_File := To_Unbounded_String (Parameter);
                     Config.Write_CSV := True;
+                    Config.CSV_File := To_Unbounded_String (Parameter);
                     Config.Overwrite := False;
 
                 when 'o' =>
-                    Config.CSV_File := To_Unbounded_String (Parameter);
                     Config.Write_CSV := True;
+                    Config.CSV_File := To_Unbounded_String (Parameter);
                     Config.Overwrite := True;
 
                 when 'p' =>
+                    begin
+                        Config.PID := CPU_Load.Process_ID'Value (Parameter);
+                    exception
+                        when Constraint_Error =>
+                            Refuse ("-p takes the number of a process to monitor.");
+                            return;
+                    end;
+
                     Config.Target := One_Process;
-                    Config.PID := CPU_Load.Process_ID'Value (Parameter);
                     Asked_For_Process := True;
 
                 when 'a' =>
-                    Config.Target := One_Application;
                     Config.App := To_Unbounded_String (Parameter);
+                    Config.Target := One_Application;
                     Asked_For_Application := True;
 
                 when 'm' =>
@@ -91,7 +125,8 @@ package body PowerJoular.Options is
                     Config.Read_VM := True;
 
                 when 's' =>
-                    Config.VM_Format := To_Unbounded_String (Parameter);
+                    Format_Name := To_Unbounded_String (Parameter);
+                    Format_Known := Virtual_Machine.Format_Of (Parameter, Config.VM_Format);
                     Config.Read_VM := True;
 
                 when others =>
@@ -99,68 +134,17 @@ package body PowerJoular.Options is
             end case;
         end loop;
 
-        -- Check verifications
-
         declare
-            Extra : constant String := Get_Argument;
+            Reason : constant String := Problem;
         begin
-            if Extra /= "" then
-                Refuse ("unexpected argument: " & Extra);
+            if Reason /= "" then
+                Refuse (Reason);
                 return;
             end if;
         end;
 
-        if Asked_For_Process and then Asked_For_Application then
-            Refuse ("monitor either a process (-p) or an application (-a), not both.");
-            return;
-        end if;
-
-        if Asked_For_Process and then Config.PID = 0 then
-            Refuse ("-p takes the number of a running process, and 0 is not one.");
-            return;
-        end if;
-
-        if Asked_For_Application and then Config.App = Null_Unbounded_String then
-            Refuse ("-a needs the name of an application to monitor.");
-            return;
-        end if;
-
-        if Config.Write_CSV and then Config.CSV_File = Null_Unbounded_String then
-            Refuse ("-f and -o need the path of a file to write to.");
-            return;
-        end if;
-
-        if Config.Read_VM then
-            if Config.VM_File = Null_Unbounded_String then
-                Refuse ("-m needs the path of the file the host writes the power of this machine to.");
-                return;
-            end if;
-
-            if not Ada.Directories.Exists (To_String (Config.VM_File)) then
-                Refuse ("no such file: " & To_String (Config.VM_File));
-                return;
-            end if;
-
-            if not Virtual_Machine.Is_Known_Format (To_String (Config.VM_Format)) then
-                Refuse ("-s takes either 'powerjoular' or 'watts' as the format of the power file.");
-                return;
-            end if;
-
-            -- Read the file once here, so a file pointed at with the wrong format is turned down now rather than reported once and then reported as no power at all for as long as the run lasts
-            if not Virtual_Machine.Can_Read (To_String (Config.VM_File),
-                                             To_String (Config.VM_Format))
-            then
-                Refuse ("no power value could be read from " & To_String (Config.VM_File)
-                        & " in the '" & To_String (Config.VM_Format) & "' format.");
-                return;
-            end if;
-        end if;
-
-        -- If not CSV or ring buffer, and not terminal option provided, then show power values on the terminal
-        if not Config.Show_Terminal
-           and then not Config.Write_CSV
-           and then not Config.Write_Ring_Buffer
-        then
+        -- With no output asked for, print on the terminal
+        if not Config.Write_CSV and then not Config.Write_Ring_Buffer then
             Config.Show_Terminal := True;
         end if;
 
@@ -171,45 +155,6 @@ package body PowerJoular.Options is
 
         when Invalid_Parameter =>
             Refuse ("option -" & Full_Switch & " needs a value.");
-
-        when Constraint_Error =>
-            -- Only -p converts its parameter to a number, so this means PID given was not a number
-            Refuse ("-p takes the number of a process to monitor.");
     end Parse;
-
-    --------------------------------------------------
-
-    -- The name of an application ends up inside a filename, and a name is free to hold anything at all
-    -- Folder separators are taken out of it, so the file lands where the given path says and nowhere else
-    function As_Filename_Part (Name : in String) return String is
-        Result : String := Name;
-    begin
-        for I in Result'Range loop
-            if Result (I) = '/' or else Result (I) = '\' then
-                Result (I) := '_';
-            end if;
-        end loop;
-
-        return Result;
-    end As_Filename_Part;
-
-    --------------------------------------------------
-
-    function Target_CSV_File (Config : in Settings) return String is
-        Base : constant String := To_String (Config.CSV_File);
-    begin
-        case Config.Target is
-            when Whole_System =>
-                return Base;
-
-            when One_Process =>
-                return Base & "-"
-                       & Trim (CPU_Load.Process_ID'Image (Config.PID), Left)
-                       & ".csv";
-
-            when One_Application =>
-                return Base & "-" & As_Filename_Part (To_String (Config.App)) & ".csv";
-        end case;
-    end Target_CSV_File;
 
 end PowerJoular.Options;

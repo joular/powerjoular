@@ -11,40 +11,43 @@
 --
 
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
-with Ada.Strings; use Ada.Strings;
+with Ada.Directories;
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with Ada.Strings.Maps; use Ada.Strings.Maps;
 with Ada.Text_IO; use Ada.Text_IO;
 
+with PowerJoular.Terminal;
+
 package body PowerJoular.Virtual_Machine is
 
-    -- The two formats the shared file can be in
-    PowerJoular_Format : constant String := "powerjoular";
-    Watts_Format : constant String := "watts";
+    use type Ada.Directories.File_Kind;
 
-    -- Spaces and end of line characters that surround the value, the file being written by a tool on another machine which may be another OS with different line endings
+    -- The host may run another OS, with other line endings
     Blanks : constant Character_Set := To_Set (" " & CR & LF & HT);
 
-    -- The power of the previous cycle, kept so a file that can't be read for a moment doesn't read as no power at all
-    Last_Known : Long_Float := 0.0;
+    -- A power value never needs that many characters, a longer line is not one
+    Max_Line_Length : constant := 256;
 
-    -- Set once the file could not be read
-    Reported_A_Failure : Boolean := False;
-
-    -- Whether a power value was ever read out of the file, so a file that never gave one is not reported as keeping a last value it never had
+    Last_Power : Long_Float := 0.0;
     Ever_Read : Boolean := False;
 
+    -- The host may be rewriting the file, so one failed read is not reported, and a lasting failure only once
+    Failed_Last : Boolean := False;
+    Reported_Failure : Boolean := False;
+
     --------------------------------------------------
 
-    function Is_Known_Format (Name : in String) return Boolean is
-        (Name in PowerJoular_Format | Watts_Format);
+    function Format_Of (Name : in String; Format : out File_Format) return Boolean is
+    begin
+        Format := (if Name = "powerjoular" then PowerJoular_CSV else Watts);
+        return Name = "powerjoular" or else Name = "watts";
+    end Format_Of;
 
     --------------------------------------------------
 
-    -- The comma separated field of the given position, counting from one
-    -- Returns an empty string when the line doesn't have that many fields
+    -- The comma separated field at Position (from 1), or an empty string if the line has fewer fields
     function Field (Line : in String; Position : in Positive) return String is
-        First : Natural := Line'First;
+        First : Positive := Line'First;
         Count : Positive := 1;
     begin
         for I in Line'Range loop
@@ -58,100 +61,73 @@ package body PowerJoular.Virtual_Machine is
             end if;
         end loop;
 
-        -- The last field of the line has no comma after it
-        if Count = Position then
-            return Line (First .. Line'Last);
-        end if;
-
-        return "";
+        return (if Count = Position then Line (First .. Line'Last) else "");
     end Field;
 
     --------------------------------------------------
 
-    -- Read the power out of the file, and say whether it could be read at all
-    -- Both the check made before the monitoring starts and every cycle of the monitoring itself go through here
-    procedure Read_Value (File_Name : in String;
-                          Format : in String;
-                          Value : out Long_Float;
-                          Read_It : out Boolean) is
+    function Read (File_Name : in String; Format : in File_Format; Power : out Long_Float) return Boolean is
         Input : File_Type;
+        Line : String (1 .. Max_Line_Length);
+        Last : Natural;
     begin
-        Value := 0.0;
-        Read_It := False;
+        Power := 0.0;
 
+        -- A named pipe or a device would block Open until someone writes to it
+        if Ada.Directories.Kind (File_Name) /= Ada.Directories.Ordinary_File then
+            return False;
+        end if;
+
+        -- The host writes the latest power on the first line
         Open (Input, In_File, File_Name);
+        Get_Line (Input, Line, Last);
+        Close (Input);
+
+        if Last = Line'Last then
+            return False;
+        end if;
 
         declare
-            -- The host writes the latest power on the first line
-            Line : constant String := Trim (Get_Line (Input), Blanks, Blanks);
-
-            -- The power on its own in the watts format, the third column in the PowerJoular one
             Text : constant String :=
-                (if Format = Watts_Format then Line else Trim (Field (Line, 3), Blanks, Blanks));
+                (case Format is
+                    when Watts => Line (1 .. Last),
+                    when PowerJoular_CSV => Field (Line (1 .. Last), 3));
         begin
-            Close (Input);
-            Value := Long_Float'Value (Text);
-            Read_It := True;
+            Power := Long_Float'Value (Trim (Text, Blanks, Blanks));
         end;
+
+        -- PowerJoular writes -1 for a process it could not read
+        return Power >= 0.0;
     exception
         when others =>
-            Read_It := False;
-
-            begin
-                if Is_Open (Input) then
-                    Close (Input);
-                end if;
-            exception
-                when others =>
-                    null;
-            end;
-    end Read_Value;
-
-    --------------------------------------------------
-
-    function Can_Read (File_Name : in String; Format : in String) return Boolean is
-        Value : Long_Float;
-        Read_It : Boolean;
-    begin
-        Read_Value (File_Name, Format, Value, Read_It);
-
-        -- What was read here is kept, so the first cycle already has a value even if the file happens to be halfway through being rewritten by the host at that moment
-        if Read_It then
-            Last_Known := Value;
-            Ever_Read := True;
-        end if;
-
-        return Read_It;
-    end Can_Read;
-
-    --------------------------------------------------
-
-    function Power (File_Name : in String; Format : in String) return Long_Float is
-        Value : Long_Float;
-        Read_It : Boolean;
-    begin
-        Read_Value (File_Name, Format, Value, Read_It);
-
-        if Read_It then
-            Last_Known := Value;
-            Ever_Read := True;
-            return Last_Known;
-        end if;
-
-        -- The file may be halfway through being rewritten by the host, in this case the next cycle reads it fine, so for now we can report the last known reading
-        if not Reported_A_Failure then
-            Reported_A_Failure := True;
-
-            if Ever_Read then
-                Put_Line (Standard_Error,
-                          "powerjoular: cannot read the power of this machine from " & File_Name & ", keeping the last value read.");
-            else
-                Put_Line (Standard_Error,
-                          "powerjoular: cannot read the power of this machine from " & File_Name & ", reporting no power until it can be read.");
+            if Is_Open (Input) then
+                Close (Input);
             end if;
+
+            return False;
+    end Read;
+
+    --------------------------------------------------
+
+    function Power (File_Name : in String; Format : in File_Format) return Long_Float is
+        Value : Long_Float;
+    begin
+        if Read (File_Name, Format, Value) then
+            Last_Power := Value;
+            Ever_Read := True;
+            Failed_Last := False;
+        elsif not Failed_Last then
+            Failed_Last := True;
+        elsif not Reported_Failure then
+            Reported_Failure := True;
+            Terminal.Close_Line;
+            Put_Line (Standard_Error,
+                      "powerjoular: cannot read the power of this machine from " & File_Name
+                      & (if Ever_Read then ", keeping the last value read."
+                         else ", reporting no power until it can be read."));
         end if;
 
-        return Last_Known;
+        return Last_Power;
     end Power;
 
 end PowerJoular.Virtual_Machine;

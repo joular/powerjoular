@@ -13,13 +13,15 @@ with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
 with CPU_Load;
 
--- Read the command line into one record that the rest of the program can use
+with PowerJoular.Virtual_Machine;
+
+-- Read the command line
 package PowerJoular.Options is
 
     -- Everything the command line can set
     type Settings is
         record
-            -- What is monitored: the whole system, and which process or application
+            -- What is monitored on top of the whole system
             Target : Target_Kind := Whole_System;
             PID : CPU_Load.Process_ID := 0;
             App : Unbounded_String;
@@ -29,7 +31,7 @@ package PowerJoular.Options is
             Show_Debug : Boolean := False;
 
             -- Write the power data to a CSV file
-            -- Overwrite keeps only the latest measurement in the file instead of adding to it
+            -- Overwrite keeps only the latest measurement in the file
             Write_CSV : Boolean := False;
             CSV_File : Unbounded_String;
             Overwrite : Boolean := False;
@@ -37,25 +39,19 @@ package PowerJoular.Options is
             -- Write the power data to a shared memory ring buffer
             Write_Ring_Buffer : Boolean := False;
 
-            -- Read the power of the machine from a file written by the host, when running inside a virtual machine
+            -- Inside a virtual machine, read the CPU power from a file written by the host
             Read_VM : Boolean := False;
             VM_File : Unbounded_String;
-            VM_Format : Unbounded_String;
+            VM_Format : Virtual_Machine.File_Format := Virtual_Machine.Watts;
         end record;
 
-    -- What the program should do once the command line is read
+    -- What to do once the command line is read
     type Outcome is
        (Run, -- Start monitoring
-        Finished, -- Nothing left to do
-        Rejected -- If there is any error in the command line, the error will be on the standard error
+        Finished, -- Nothing left to do (help or version printed)
+        Rejected -- The command line is wrong, and the error was printed on the standard error
        );
 
-    -- Read the command line into Config
     procedure Parse (Config : out Settings; Result : out Outcome);
-
-    -- Path of the CSV file the monitored process or application is written to
-    -- It is the main CSV filename with the process number or the application name added to it
-    -- Returns the main CSV filename when only the whole system is monitored
-    function Target_CSV_File (Config : in Settings) return String;
 
 end PowerJoular.Options;

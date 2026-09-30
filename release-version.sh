@@ -1,32 +1,17 @@
 #!/bin/bash
 
-# Build the Linux packages (deb and rpm) from binaries built elsewhere
+# Build the deb and rpm packages from the binaries of the build workflow (nothing is compiled here)
+# A binary runs only on the glibc it was built against or newer, so each one is packaged
+# under the newest GLIBC_ symbol it uses, read with objdump
 #
-# Nothing is compiled here. The binaries come from the build workflow, which compiles each
-# architecture on a runner of that architecture, so nothing is cross compiled and nothing
-# depends on a cross toolchain being installed on this machine.
-#
-# PowerJoular is built against more than one C library: a binary runs on the version of glibc it was built against or a newer one, and no older, so the build made on the newest system does not start on an older one. Every binary carries the version it needs in its name, and so do the packages made from it, and this script works that version out of the binary itself rather than being told: whatever the workflow was built on, the name says what the file actually needs.
-#
-# Usage:
-#   ./release-version.sh [dir]
-#
-# [dir] holds one folder per build, laid out the way the build workflow uploads them:
+# Usage: ./release-version.sh [dir]   (default: artifacts)
+#   gh run download <run-id> --pattern 'powerjoular-*-glibc-*' --dir artifacts
+# The folder holds one subfolder per build, as the workflow uploads them:
 #   <dir>/powerjoular-linux-amd64-glibc-2.35/powerjoular-glibc-2.35
 #   <dir>/powerjoular-linux-aarch64-glibc-2.35/powerjoular-glibc-2.35
-#   <dir>/powerjoular-linux-amd64-glibc-2.34/powerjoular-glibc-2.34
-#   <dir>/powerjoular-linux-aarch64-glibc-2.34/powerjoular-glibc-2.34
-# It defaults to ./artifacts
-#
-# The folder is only searched for binaries: how the folders are named and how many C library
-# versions are in there is worked out from what is found, so adding another build needs no change here
-#
-# Download them from a run of the build workflow with the GitHub CLI:
-#   gh run download <run-id> --pattern 'powerjoular-linux-*' --dir artifacts
+#   <dir>/powerjoular-el9-amd64-glibc-2.34/powerjoular-glibc-2.34
 
-# Stop at the first thing that goes wrong
-# Without this, a missing binary carries on to the packaging steps, which then happily
-# produce a package with nothing inside it
+# Stop at the first thing that goes wrong, so a missing binary never becomes an empty package
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -36,7 +21,7 @@ BINARIES_DIR="${1:-artifacts}"
 
 # Check what is needed is here
 
-# objdump reads the architecture and the C library versions out of a binary, and comes with binutils
+# objdump comes with binutils
 for TOOL in dpkg-deb rpmbuild objdump; do
     if ! command -v "$TOOL" > /dev/null 2>&1; then
         echo "ERROR: $TOOL is not installed." >&2
@@ -50,16 +35,14 @@ if [[ ! -d "$BINARIES_DIR" ]]; then
     echo "ERROR: no such folder: $BINARIES_DIR" >&2
     echo "Usage: $0 [dir]   (default: artifacts)" >&2
     echo "It holds the binary folders the build workflow uploads, one per architecture and C library." >&2
-    echo "Download them with: gh run download <run-id> --pattern 'powerjoular-linux-*' --dir artifacts" >&2
+    echo "Download them with: gh run download <run-id> --pattern 'powerjoular-*-glibc-*' --dir artifacts" >&2
     exit 1
 fi
 
 
 # The version
 
-# The one place the version is written down is the Alire manifest, and the rpm spec carries its own
-# copy that rpmbuild reads straight out of the file, so the two are checked against each other here
-# rather than left to drift into a release where the deb and the rpm disagree
+# The rpm spec and the PKGBUILD have their own copy of the version, so check they match alire.toml
 VERSION=$(sed -n 's/^version *= *"\(.*\)"/\1/p' alire.toml | head -1)
 
 if [[ -z "$VERSION" ]]; then
@@ -75,11 +58,18 @@ if [[ "$SPEC_VERSION" != "$VERSION" ]]; then
     exit 1
 fi
 
+PKGBUILD_VERSION=$(sed -n 's/^pkgver=//p' installer/aur/PKGBUILD | head -1)
+
+if [[ "$PKGBUILD_VERSION" != "$VERSION" ]]; then
+    echo "ERROR: alire.toml says $VERSION but installer/aur/PKGBUILD says $PKGBUILD_VERSION" >&2
+    exit 1
+fi
+
 
 # What each binary is
 
 # The architecture the binary was built for, in the names rpm uses
-# GNU binutils and the LLVM objdump word this differently, hence the two spellings of the same thing
+# GNU and LLVM objdump word it differently, hence two spellings
 architecture_of () {
     case "$(objdump -f "$1" 2> /dev/null | sed -n 's/.*architecture: *\([^,]*\).*/\1/p')" in
         i386:x86-64 | x86_64) echo "x86_64" ;;
@@ -88,8 +78,7 @@ architecture_of () {
     esac
 }
 
-# The oldest C library the binary runs against, which is the newest version any of its symbols asks for
-# A binary linked fully static asks for none at all, and runs anywhere
+# The oldest glibc the binary runs on: the newest version any of its symbols asks for, none when fully static
 c_library_of () {
     local FOUND
     FOUND=$(objdump -T "$1" 2> /dev/null | grep -o 'GLIBC_[0-9][0-9.]*' | sed 's/GLIBC_//' | sort -V | tail -1)
@@ -101,7 +90,7 @@ c_library_of () {
     fi
 }
 
-# Whether the file is a binary at all, rather than a readme or a checksum sitting next to one
+# Skips a readme or a checksum sitting next to a binary
 is_elf () {
     [[ "$(head -c 4 "$1" 2> /dev/null | od -An -tx1 | tr -d ' \n')" == "7f454c46" ]]
 }
@@ -146,7 +135,6 @@ fi
 
 echo "Packaging PowerJoular $VERSION"
 
-# Create packages folder
 rm -rf packages
 mkdir -p packages
 
@@ -158,13 +146,13 @@ while read -r GLIBC ARCH; do
 
     BIN="$PWD/binary/$GLIBC/$ARCH/powerjoular"
 
-    # The name every file of this build carries, so a machine can be given the one that runs on it
+    # Carried by every package file of this build, to tell the builds apart when downloading
     LABEL="powerjoular-glibc-$GLIBC"
 
 
     # The deb package
 
-    # The names dpkg itself uses: a package built for "aarch64" is one no arm64 machine will install
+    # dpkg's own names: no arm64 machine installs a package built for "aarch64"
     case "$ARCH" in
         x86_64) DEB_ARCH="amd64" ;;
         aarch64) DEB_ARCH="arm64" ;;
@@ -177,20 +165,17 @@ while read -r GLIBC ARCH; do
     mkdir -p "$STAGE/powerjoular/DEBIAN"
     chmod 755 "$STAGE"
 
-    # The binary is installed under its plain name: the C library version belongs on the file being downloaded, to tell the builds apart, and not on the command the machine ends up running
+    # Installed as plain powerjoular; the glibc label is only in the package file name
     install -m 755 "$BIN" "$STAGE/powerjoular/usr/bin/powerjoular"
     install -m 644 systemd/powerjoular.service "$STAGE/powerjoular/usr/lib/systemd/system/"
 
-    # What the package asks of the machine is what the binary itself asks of it
-    # A fully static binary asks for no C library at all
     if [[ "$GLIBC" == "static" ]]; then
         LIBC_DEPENDS="Depends: "
     else
         LIBC_DEPENDS="Depends: libc6 (>= $GLIBC)"
     fi
 
-    # The package is called powerjoular whichever build it came from, so it installs, upgrades and
-    # is removed the usual way, and two of these can never sit on one machine fighting over /usr/bin/powerjoular
+    # Same package name for every build, so they replace each other on upgrade
     cat << EOL > "$STAGE/powerjoular/DEBIAN/control"
 Package: powerjoular
 Version: $VERSION
@@ -231,7 +216,6 @@ EOL
     done
 done <<< "$FOUND_LIST"
 
-# Remove temp folders
 rm -rf deb-temp rpm-temp
 
 echo

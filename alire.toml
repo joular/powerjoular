@@ -3,7 +3,7 @@ description = "Monitoring the power consumption of multiple platforms and proces
 version = "2.0.0"
 
 long-description = """
-PowerJoular monitors, in real time, the power consumption of hardware components (CPU, GPU), processes and applications, on GNU/Linux, macOS and Windows.
+PowerJoular monitors, in real time, the power consumption of hardware components (CPU, GPU), processes and applications, on Linux, macOS and Windows.
 It follows one process or one whole application, and exports power values to the terminal, to CSV files, and to a shared memory ring buffer.
 """
 
@@ -19,8 +19,8 @@ website = "https://www.noureddine.org/research/joular/powerjoular"
 executables = ["powerjoular"]
 
 [[depends-on]]
-joularcore = "~0.0.3"
-cpuload = "~0.0.3"
+joularcore = "~0.0.4"
+cpuload = "~0.0.4"
 
 [gpr-externals]
 PJ_OS = ["linux", "windows", "macos"]

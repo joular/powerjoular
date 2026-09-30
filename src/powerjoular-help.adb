@@ -10,21 +10,21 @@
 --
 
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
+with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Text_IO; use Ada.Text_IO;
 
 with CPU_Load;
 with Joular_Core;
 
+with PowerJoular.Ring_Buffer;
 with PowerJoular.Terminal;
 
 package body PowerJoular.Help is
 
-    -- Make the text in yellow and the terminal back to normal color
-    -- Written out plainly when there is no terminal to colour it, so a redirected help text carries no escape sequences
+    -- Section title in yellow, or plain when the output is not a terminal
     function Title (Text : in String) return String is
         (if Terminal.Escapes_Enabled then ESC & "[93m" & Text & ESC & "[0m" else Text);
 
-    -- The line printed between the sections of the help text
     Rule : constant String := "--------------------------";
 
     --------------------------------------------------
@@ -38,14 +38,14 @@ package body PowerJoular.Help is
         Put_Line ("It estimates the power consumption every second of:");
         Put_Line (HT & "- Intel (since Sandy Bridge) and AMD (Ryzen, EPYC) processors, through RAPL");
         Put_Line (HT & "- Raspberry Pi and Asus Tinker Board processors, through power models");
-        Put_Line (HT & "- Apple Silicon Macs, the processor and the graphic card of the chip, through powermetrics");
+        Put_Line (HT & "- Macs, through powermetrics: the processor and the graphic card of the chip on Apple Silicon, the processor on Intel");
         Put_Line (HT & "- Nvidia and AMD graphic cards, when the card reports its power");
         Put_Line (HT & "- One process, or one application and every process of it");
         Put_Line (Rule);
         Put_Line (Title ("Usage:"));
         Put_Line (HT & "powerjoular.exe (on Windows)");
         Put_Line (HT & "powerjoular (on Raspberry Pi)");
-        Put_Line (HT & "sudo powerjoular (on macOS, as powermetrics needs elevated access. Only the Apple Silicon Macs are supported)");
+        Put_Line (HT & "sudo powerjoular (on macOS, as powermetrics needs elevated access)");
         Put_Line (HT & "sudo powerjoular (on Linux, as RAPL needs elevated access. Otherwise give read rights to RAPL energy files)");
         Put_Line (Rule);
         Put_Line (Title ("Options:"));
@@ -68,7 +68,7 @@ package body PowerJoular.Help is
         Put_Line ("It holds a counter of 8 bytes followed by 5 entries of 48 bytes: the time of the measurement, then the CPU, GPU and total power, the CPU usage and the power of the monitored process or application.");
         Put_Line ("That last power is -1 when the process or the application could not be read at all: it has stopped, or this user is not allowed to access the information needed. The terminal shows the same as 'n/a', and the CSV file of the monitored process gives -1.0000 in both of its value columns.");
         Put_Line (Rule);
-        Put_Line (Title ("Service (GNU/Linux only):"));
+        Put_Line (Title ("Service (Linux only):"));
         Put_Line ("A systemd service is installed along with the program. It runs PowerJoular with the -o option, and writes the power data to /run/powerjoular/powerjoular-service.csv.");
         Put_Line ("Start it with: systemctl start powerjoular.service, and have it run on boot with: systemctl enable powerjoular.service");
         Put_Line (Rule);
@@ -89,28 +89,28 @@ package body PowerJoular.Help is
 
     --------------------------------------------------
 
-    procedure Show_System_Info (CPU_Available : in Boolean;
-                                GPU_Available : in Boolean;
-                                Ring_Buffer_Path : in String;
-                                Using_Ring_Buffer : in Boolean;
-                                Reading_VM_File : in Boolean;
-                                VM_File : in String) is
+    procedure Show_System_Info (Config : in Options.Settings;
+                                CPU_Available : in Boolean;
+                                GPU_Available : in Boolean) is
+
+        function Availability (Available : in Boolean) return String is
+            (if Available then "available" else "not available");
     begin
         Put_Line ("PowerJoular " & Version);
         Put_Line (HT & "Joular Core library: " & Joular_Core.Version);
         Put_Line (HT & "CPU Load library: " & CPU_Load.Version);
 
-        -- Inside a virtual machine the processor is not read at all, the host writes its power to a file instead
-        if Reading_VM_File then
-            Put_Line (HT & "CPU power: read from " & VM_File);
+        -- Inside a virtual machine, the CPU is not measured and the host writes its power to a file
+        if Config.Read_VM then
+            Put_Line (HT & "CPU power: read from " & To_String (Config.VM_File));
         else
-            Put_Line (HT & "CPU power: " & (if CPU_Available then "available" else "not available"));
+            Put_Line (HT & "CPU power: " & Availability (CPU_Available));
         end if;
 
-        Put_Line (HT & "GPU power: " & (if GPU_Available then "available" else "not available"));
+        Put_Line (HT & "GPU power: " & Availability (GPU_Available));
 
-        if Using_Ring_Buffer then
-            Put_Line (HT & "Ring buffer: " & Ring_Buffer_Path);
+        if Config.Write_Ring_Buffer then
+            Put_Line (HT & "Ring buffer: " & Ring_Buffer.Path);
         end if;
     end Show_System_Info;
 

@@ -9,163 +9,148 @@
 --  Author : Adel Noureddine
 --
 
-with Ada.Containers.Indefinite_Ordered_Sets;
+with Ada.Directories;
+with Ada.Strings; use Ada.Strings;
+with Ada.Strings.Fixed; use Ada.Strings.Fixed;
+with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Text_IO; use Ada.Text_IO;
-with Interfaces.C; use Interfaces.C;
-with System;
+
+with CPU_Load;
 
 with PowerJoular.Formatting; use PowerJoular.Formatting;
+with PowerJoular.Platform;
+with PowerJoular.Terminal;
 
 package body PowerJoular.CSV is
 
-    -- How many digits are kept after the dot
-    Load_Decimals : constant := 4;
-    Power_Decimals : constant := 4;
+    use type Ada.Directories.File_Size;
 
-    -- The files that could not be written to, so each one is reported once and on its own name
-    -- Monitoring a process writes two files, and trouble with one of them says nothing about the other
-    package Name_Sets is new Ada.Containers.Indefinite_Ordered_Sets (String);
+    Decimals : constant := 4;
 
-    Reported : Name_Sets.Set;
+    System_Header : constant String := "Timestamp,CPU Usage,Total Power,CPU Power,GPU Power";
+    Target_Header : constant String := "Timestamp,CPU Usage,CPU Power";
+
+    type Output_File is
+        record
+            Name : Unbounded_String;
+            Reported : Boolean := False; -- A failure to write was already reported
+        end record;
+
+    System_File : Output_File;
+    Target_File : Output_File;
+    Has_Target_File : Boolean := False;
+
+    -- Keep only the latest row
+    Overwrite : Boolean := False;
 
     --------------------------------------------------
 
-    -- Say something about a file once, and never again about that same file
-    procedure Report_Once (Filename : in String; Message : in String) is
+    -- Folder separators and ':' (NTFS streams) are replaced, so the file lands in the folder given
+    function File_Name_Part (Name : in String) return String is
+        Result : String := Name;
     begin
-        if not Reported.Contains (Filename) then
-            Reported.Insert (Filename);
-            Put_Line (Standard_Error, Message);
+        for C of Result loop
+            if C = '/' or else C = '\' or else C = ':' then
+                C := '_';
+            end if;
+        end loop;
+
+        return Result;
+    end File_Name_Part;
+
+    --------------------------------------------------
+
+    procedure Start (Config : in Options.Settings) is
+        Base : constant String := To_String (Config.CSV_File);
+    begin
+        Overwrite := Config.Overwrite;
+        System_File := (Name => Config.CSV_File, Reported => False);
+        Has_Target_File := Config.Target /= Whole_System;
+
+        case Config.Target is
+            when Whole_System =>
+                null;
+
+            when One_Process =>
+                Target_File.Name :=
+                    To_Unbounded_String (Base & "-" & Trim (CPU_Load.Process_ID'Image (Config.PID), Left) & ".csv");
+
+            when One_Application =>
+                Target_File.Name :=
+                    To_Unbounded_String (Base & "-" & File_Name_Part (To_String (Config.App)) & ".csv");
+        end case;
+    end Start;
+
+    --------------------------------------------------
+
+    procedure Report (File : in out Output_File; Message : in String) is
+    begin
+        if not File.Reported then
+            File.Reported := True;
+            Terminal.Close_Line;
+            Put_Line (Standard_Error, "powerjoular: " & Message & ", the monitoring goes on without the file.");
         end if;
-    end Report_Once;
+    end Report;
 
     --------------------------------------------------
 
-#if PJ_WINDOWS then
-
-    -- A symbolic link and a junction are both reparse points as far as Windows is concerned
-    FILE_ATTRIBUTE_REPARSE_POINT : constant unsigned := 16#0000_0400#;
-
-    -- What GetFileAttributesA hands back when it could not look at the path, a path that is not there included
-    INVALID_FILE_ATTRIBUTES : constant unsigned := 16#FFFF_FFFF#;
-
-    function GetFileAttributesA (lpFileName : System.Address) return unsigned;
-    pragma Import (Stdcall, GetFileAttributesA, "GetFileAttributesA");
-
-    function Is_Symbolic_Link (Filename : in String) return Boolean is
-        Name : aliased constant char_array := To_C (Filename);
-        Attributes : constant unsigned := GetFileAttributesA (Name'Address);
-    begin
-        -- A path that is not there yet is not a link, and is the usual case the first time round
-        if Attributes = INVALID_FILE_ATTRIBUTES then
-            return False;
-        end if;
-
-        return (Attributes and FILE_ATTRIBUTE_REPARSE_POINT) /= 0;
-    exception
-        when others =>
-            return False;
-    end Is_Symbolic_Link;
-
-#else
-
-    -- readlink is what tells a symbolic link apart from what it points at, and unlike lstat it needs nothing known about the shape of a system structure: it only succeeds on a link, and fails on anything else, a path that is not there at all included
-    function C_Readlink (Path : in char_array;
-                         Buffer : in System.Address;
-                         Size : in size_t) return long;
-    pragma Import (C, C_Readlink, "readlink");
-
-    function Is_Symbolic_Link (Filename : in String) return Boolean is
-        Name : constant char_array := To_C (Filename);
-        Scratch : char_array (1 .. 1) := (others => nul);
-    begin
-        return C_Readlink (Name, Scratch'Address, 1) >= 0;
-    exception
-        when others =>
-            return False;
-    end Is_Symbolic_Link;
-
-#end if;
-
-    --------------------------------------------------
-
-    -- Add one row to the file, and create it if not exist
-    -- In overwrite mode the file is rewritten from scratch every time, so it holds the latest row only and carries no header
-    procedure Write_Row (Filename : in String;
-                         Header : in String;
-                         Row : in String;
-                         Overwrite : in Boolean) is
+    -- Add Row to the file, and start a new or empty file with Header
+    -- In overwrite mode, the file is rewritten with Row only
+    procedure Write_Row (File : in out Output_File; Header : in String; Row : in String) is
+        Name : constant String := To_String (File.Name);
         Output : File_Type;
     begin
-        -- PowerJoular is usually run as root, and the power data often goes to a folder shared with others
-        -- A symbolic link left in the place of the file would have us write through it into someone else's file, so the file is written only where the path itself says
-        -- The ring buffer is guarded the same way, with O_NOFOLLOW
-        if Is_Symbolic_Link (Filename) then
-            Report_Once (Filename,
-                         "powerjoular: " & Filename & " is a symbolic link and is not written to, the monitoring goes on without the file.");
+        -- PowerJoular often runs as root, so refuse a link that may point at a system file (not race free, see the README)
+        if Platform.Is_Symbolic_Link (Name) then
+            Report (File, Name & " is a symbolic link and is not written to");
             return;
         end if;
 
         if Overwrite then
-            Create (Output, Out_File, Filename);
+            Create (Output, Out_File, Name);
+        elsif Ada.Directories.Exists (Name) and then Ada.Directories.Size (Name) > 0 then
+            Open (Output, Append_File, Name);
         else
-            begin
-                Open (Output, Append_File, Filename);
-            exception
-                when Name_Error =>
-                    -- The file doesn't exist, so create it and start it with the header
-                    Create (Output, Out_File, Filename);
-                    Put_Line (Output, Header);
-            end;
+            Create (Output, Out_File, Name);
+            Put_Line (Output, Header);
         end if;
 
         Put_Line (Output, Row);
         Close (Output);
     exception
         when others =>
-            Report_Once (Filename,
-                         "powerjoular: cannot write to " & Filename & ", the monitoring goes on without the file.");
+            Report (File, "cannot write to " & Name);
 
-            begin
-                if Is_Open (Output) then
+            if Is_Open (Output) then
+                begin
                     Close (Output);
-                end if;
-            exception
-                when others =>
-                    null;
-            end;
+                exception
+                    when others =>
+                        null;
+                end;
+            end if;
     end Write_Row;
 
     --------------------------------------------------
 
-    procedure Save_System (Filename : in String;
-                           Data : in Cycle;
-                           Overwrite : in Boolean) is
+    procedure Write (Data : in Cycle) is
+        Time : constant String := Trim (Long_Long_Integer'Image (Data.Time), Left);
     begin
-        Write_Row
-            (Filename => Filename,
-             Header => "Timestamp,CPU Usage,Total Power,CPU Power,GPU Power",
-             Row => Timestamp
-                    & "," & Image (Data.CPU_Usage, Load_Decimals)
-                    & "," & Image (Data.Total_Power, Power_Decimals)
-                    & "," & Image (Data.CPU_Power, Power_Decimals)
-                    & "," & Image (Data.GPU_Power, Power_Decimals),
-             Overwrite => Overwrite);
-    end Save_System;
+        Write_Row (System_File,
+                   Header => System_Header,
+                   Row => Time
+                          & "," & Image (Data.CPU_Usage, Decimals)
+                          & "," & Image (Data.Total_Power, Decimals)
+                          & "," & Image (Data.CPU_Power, Decimals)
+                          & "," & Image (Data.GPU_Power, Decimals));
 
-    --------------------------------------------------
-
-    procedure Save_Target (Filename : in String;
-                           Data : in Cycle;
-                           Overwrite : in Boolean) is
-    begin
-        Write_Row
-            (Filename => Filename,
-             Header => "Timestamp,CPU Usage,CPU Power",
-             Row => Timestamp
-                    & "," & Image (Data.Target_Usage, Load_Decimals)
-                    & "," & Image (Data.Target_Power, Power_Decimals),
-             Overwrite => Overwrite);
-    end Save_Target;
+        if Has_Target_File then
+            Write_Row (Target_File,
+                       Header => Target_Header,
+                       Row => Time
+                              & "," & Image (Data.Target_Usage, Decimals)
+                              & "," & Image (Data.Target_Power, Decimals));
+        end if;
+    end Write;
 
 end PowerJoular.CSV;

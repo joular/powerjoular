@@ -4,7 +4,6 @@ set -e
 # Go to the top of the repository, wherever this script was called from
 cd "$(dirname "$0")/../.."
 
-# Build the program
 # Alire fetches the Joular Core and CPU Load libraries on its own
 if command -v alr > /dev/null 2>&1; then
     alr build
@@ -14,9 +13,10 @@ else
     gprbuild -P powerjoular.gpr -aP../joularcore -aP../cpuload -p
 fi
 
-# Install the binary in /usr/bin
-# Requires sudo or root access
 sudo cp ./bin/powerjoular /usr/bin/
 
-# Install the systemd service
 sudo install -Dm644 ./systemd/powerjoular.service /usr/lib/systemd/system/powerjoular.service
+
+if command -v systemctl > /dev/null 2>&1; then
+    sudo systemctl daemon-reload
+fi

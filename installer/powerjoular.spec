@@ -25,7 +25,7 @@ install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/%{_unitdir}/%{name}.service
 %{_unitdir}/%{name}.service
 
 %changelog
-* Mon Aug 31 2026 Adel Noureddine <adel.noureddine@outlook.com> - 2.0.0-1
+* Wed Sep 30 2026 Adel Noureddine <adel.noureddine@outlook.com> - 2.0.0-1
 - Measure through the Joular Core and CPU Load libraries
 - Add Windows and macOS support
 - Add the shared memory ring buffer export (-r)

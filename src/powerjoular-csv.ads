@@ -9,21 +9,19 @@
 --  Author : Adel Noureddine
 --
 
+with PowerJoular.Options;
+
 -- Write the power data to CSV files
--- A file that can't be written to is reported once
+-- Monitoring a process or an application writes a second file: the CSV file name followed by the PID or the application name
 package PowerJoular.CSV is
 
-    -- Write the power of the whole system
-    -- Columns: Timestamp, CPU Usage, Total Power, CPU Power, GPU Power
-    procedure Save_System (Filename : in String;
-                           Data : in Cycle;
-                           Overwrite : in Boolean);
+    -- Set the files to write to, from the command line
+    procedure Start (Config : in Options.Settings);
 
-    -- Write the power of the monitored process or application
-    -- Columns: Timestamp, CPU Usage, CPU Power
-    -- Both carry the value itself, and not a blank, for a cycle that could not be read: see Unreadable in PowerJoular
-    procedure Save_Target (Filename : in String;
-                           Data : in Cycle;
-                           Overwrite : in Boolean);
+    -- Add one row to each file, or replace their content in overwrite mode
+    -- Columns of the system file: Timestamp, CPU Usage, Total Power, CPU Power, GPU Power
+    -- Columns of the process or application file: Timestamp, CPU Usage, CPU Power (-1.0000 in both when unreadable)
+    -- A file that can't be written to is skipped, and reported once
+    procedure Write (Data : in Cycle);
 
 end PowerJoular.CSV;

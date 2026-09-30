@@ -9,6 +9,8 @@
 --  Author : Adel Noureddine
 --
 
+with PowerJoular.Options;
+
 package PowerJoular.Help is
 
     -- Print help information on the terminal
@@ -17,13 +19,9 @@ package PowerJoular.Help is
     -- Print only the version number
     procedure Show_Version;
 
-    -- Print what the machine offers and which libraries are used, for the -d option
-    -- Reading_VM_File says the power of the processor comes from the file the host writes, and not from the hardware
-    procedure Show_System_Info (CPU_Available : in Boolean;
-                                GPU_Available : in Boolean;
-                                Ring_Buffer_Path : in String;
-                                Using_Ring_Buffer : in Boolean;
-                                Reading_VM_File : in Boolean;
-                                VM_File : in String);
+    -- Print the versions and what the machine offers, for the -d option
+    procedure Show_System_Info (Config : in Options.Settings;
+                                CPU_Available : in Boolean;
+                                GPU_Available : in Boolean);
 
 end PowerJoular.Help;

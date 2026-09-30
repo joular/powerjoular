@@ -5,7 +5,7 @@
 
 ![PowerJoular Logo](powerjoular.png)
 
-PowerJoular is a command line tool that monitors, in real time, the power consumption of the machine and of the software running on it.
+PowerJoular is a command line tool that monitors, in real time, the power consumption of  hardware components, processes and software, on Windows, Linux and macOS.
 
 Detailed documentation (including user and reference guides) is available at: [https://joular.github.io/powerjoular/](https://joular.github.io/powerjoular/).
 
@@ -13,7 +13,7 @@ Detailed documentation (including user and reference guides) is available at: [h
 
 - Monitor the power consumption of the CPU and the GPU of PCs and servers
 - Monitor the power consumption of Raspberry Pi and Asus Tinker Board devices
-- Monitor the power consumption of Apple Silicon Macs
+- Monitor the power consumption of Macs, Apple Silicon and Intel
 - Monitor the power consumption of one process, or of one application and every process of it
 - Monitor the power consumption from inside a virtual machine
 - Export the power data to the terminal, to CSV files, and to a shared memory ring buffer
@@ -29,14 +29,14 @@ PowerJoular runs on **Linux, macOS and Windows**, on PCs, servers, Macs, and sin
 | CPU | Intel (since Sandy Bridge), AMD (Ryzen, EPYC) | Linux | RAPL through the powercap sysfs |
 | CPU | Intel, AMD | Windows | RAPL through the [Energy Meter Interface](https://learn.microsoft.com/en-us/windows-hardware/drivers/powermeter/energy-meter-interface) (nothing to install), or the RAPL MSR through [PawnIO](https://pawnio.eu) or [Hubblo's RAPL driver](https://github.com/hubblo-org/windows-rapl-driver) |
 | CPU | Raspberry Pi, Asus Tinker Board | Linux | Research-based regression power models |
-| CPU | Apple Silicon (M series) | macOS | powermetrics, installed with macOS |
+| CPU | Apple Silicon (M series), Intel Macs | macOS | powermetrics, installed with macOS |
 | GPU | Nvidia cards | Linux, Windows | NVML, installed with the Nvidia driver |
 | GPU | AMD cards | Linux | amdgpu hwmon sysfs |
 | GPU | AMD cards | Windows | ADLX, installed with the AMD driver |
 | GPU | Apple Silicon (M series) | macOS | powermetrics, installed with macOS |
 | Whole machine | Any of the above, from inside a virtual machine | Linux, macOS, Windows | A file the host writes the power to |
 
-On macOS, only the Macs with an Apple Silicon chip are supported: their CPU and the GPU built into the same chip are both read from powermetrics, which reports the power drawn over its last sample. The Macs with an Intel processor are not supported.
+On macOS, both chips are read from powermetrics, which reports the power drawn over its last sample. Apple Silicon Macs give their CPU and the GPU built into the same chip. Intel Macs give the CPU only.
 
 The supported single-board computers are the Raspberry Pi models 5B, 400, 4B, 3B+, 3B, 2B, 1B+, 1B and Zero W, and the Asus Tinker Board (S). Every revision of each model is supported, though the power model was trained on one particular revision, on which the accuracy is at its best.
 
@@ -49,7 +49,7 @@ PowerJoular does the energy and CPU usage measuring through two Ada libraries we
 
 - **Linux, PC or server**: reading RAPL files needs elevated privileges on the recent kernels (5.10 and newer), so run `sudo powerjoular`, or give read rights to the files. See [this issue](https://github.com/joular/powerjoular/issues/1).
 - **Windows**: if using [Energy Meter Interface](https://learn.microsoft.com/en-us/windows-hardware/drivers/powermeter/energy-meter-interface) (EMI), then there is no special privileges or driver needed. Otherwise, we need specific RAPL driver, such as [PawnIO](https://pawnio.eu) or [Hubblo's RAPL driver](https://github.com/hubblo-org/windows-rapl-driver). The easiest way to get a signed version installed is through the [PawnIO](https://pawnio.eu) or the [Scaphandre installer](https://github.com/hubblo-org/scaphandre/releases) for Hubblo's driver.
-- **macOS**: `powermetrics` only runs as the superuser, so run `sudo powerjoular`. Without it, the CPU and the GPU are simply reported as not available. Reading the CPU time of a process belonging to another user also needs root, so `-p` and `-a` on someone else's process need `sudo` too.
+- **macOS**: `powermetrics` only runs as the superuser, so run `sudo powerjoular`. Without it, the sources are simply reported as not available. Reading the CPU time of a process belonging to another user also needs root, so `-p` and `-a` on someone else's process need `sudo` too.
 - **Raspberry Pi and GPU readings**: no special privileges needed.
 
 PowerJoular uses Joular Core, which, on Windows, tries the Energy Meter Interface first, then PawnIO, then Hubblo's driver, keeping the first that answers. Nothing has to be configured for that.
@@ -92,7 +92,7 @@ Timestamp,CPU Usage,Total Power,CPU Power,GPU Power
 1756681930,0.2460,18.4500,15.2000,3.2500
 ```
 
-The file of a monitored process or application holds the load and the power of that process or application:
+The file of a monitored process or application have the CPU usage and the power of that process or application:
 
 ```
 Timestamp,CPU Usage,CPU Power
@@ -101,7 +101,9 @@ Timestamp,CPU Usage,CPU Power
 
 `-o` writes the latest measurement only: the file is rewritten every second and carries no header, which is a good option for another program polling it for the current value.
 
-The time of the measurement is a Unix timestamp.
+The time of the measurement is a Unix timestamp, the same one written to the ring buffer.
+
+PowerJoular refuses to write a CSV file if a symbolic link is already at its path. This is a basic check, not a guarantee, as the link can still be swapped in after the check. When running PowerJoular as root, write the CSV files to a folder only root can write to (such as `/run/powerjoular` for the service), not to a shared folder such as `/tmp`.
 
 Both value columns hold `-1.0000` for a second where the monitored process could not be read at all: it has stopped, it was never running, or the system does not let us get the information needed.
 That is not the same as `0.0000`, which means a process that was read and used no CPU time.
@@ -114,10 +116,9 @@ That is not the same as `0.0000`, which means a process that was read and used n
 
 | OS | Where the area lives |
 |---|---|
-| Linux | `/dev/shm/joularcorering` |
-| Windows | `%PROGRAMDATA%\joularcorering`, i.e. `C:\ProgramData\joularcorering` |
-| macOS | `/tmp/joularcorering` |
-| Other | `/tmp/joularcorering` |
+| Linux | `/dev/shm/powerjoular` |
+| Windows | `%PROGRAMDATA%\powerjoular`, i.e. `C:\ProgramData\powerjoular` |
+| macOS | `/tmp/powerjoular` |
 
 The area is 248 bytes, in the byte order of the machine: a counter of 8 bytes, then 5 entries of 48 bytes each.
 
@@ -133,7 +134,7 @@ The area is 248 bytes, in the byte order of the machine: a counter of 8 bytes, t
 A measurement goes in the entry the counter points at (`counter mod 5`), and the counter is raised afterwards. A reader follows the counter to know when a new measurement has landed, and the timestamps to know how old each entry is.
 
 Only one PowerJoular should write to the ring buffer at the same time. Two runs using `-r` at once each keep a counter of their own, so a reader sees the entries of both interleaved and the counter moving backwards.
-The ring buffer is created for the user running PowerJoular, readable by everyone and writable only by its owner. A buffer left behind by an earlier run is taken over rather than used as it is found, and PowerJoular carries on without the ring buffer when it cannot be taken over.
+The ring buffer is created every time PowerJoular starts: a file left at that path, by an earlier run or by anyone else, is deleted first, so PowerJoular never writes into a file it did not create. It is readable by everyone and writable only by the user running PowerJoular. A reader that mapped the file has to map it again when PowerJoular restarts. When the file cannot be created, PowerJoular carries on without the ring buffer.
 
 ### Monitoring inside a virtual machine
 
@@ -149,13 +150,15 @@ The two formats `-s` takes:
 
 `-s` says what is inside the file, so it goes together with the program the host runs.
 
+A negative power in the file, such as the `-1.0000` PowerJoular writes for a process it cannot read, is ignored: the last power read is kept, as it is when the file cannot be read at all.
+
 **With PowerJoular on the host.** Monitor the specific process of the virtual machine, and not the whole system:
 
 ```bash
 powerjoular -p 1234 -o /shared/vm-power.csv
 ```
 
-This writes two files, and the one to share is the one carrying the process number: it alone holds the power of the virtual machine, while the other one holds the power of the whole host.
+This writes two files, and the one to share is the one with the process number: it alone holds the power of the virtual machine, while the other one holds the power of the whole host.
 
 ```bash
 powerjoular -m /shared/vm-power.csv-1234.csv -s powerjoular -t
@@ -178,7 +181,7 @@ Easy-to-use installation scripts are also available in the `installer` folder:
 - `installer/bash-installer/build-install.sh`: builds the program and installs the binary in `/usr/bin` along with the systemd service.
 - `installer/bash-installer/uninstall.sh`: removes both again.
 
-Those scripts and the packages are for Linux. On macOS, build the binary as described below and copy it where you want it.
+Those scripts and the packages are for Linux. On macOS, the build workflow publishes one binary per chip, `powerjoular-macos-arm64` for Apple Silicon and `powerjoular-macos-x86_64` for Intel Macs: take the one of your Mac and copy it where you want it, or build it as described below.
 
 ### Which Linux build to use
 
@@ -232,7 +235,6 @@ gprbuild -P powerjoular.gpr -aP../joularcore -aP../cpuload -XPOWERJOULAR_LINKING
 On Linux, a fully static binary cannot load a library while it runs, so the Nvidia and AMD graphic card readings, which do exactly that, are lost with this option. The processor readings are not affected, and PowerJoular carries on without the GPU rather than failing.
 
 On macOS, Apple ships no static C library, so this option does nothing: the binary is built the same way it is by default, which already carries the Ada runtime and libgcc inside it.
-
 
 ## :hourglass: Systemd service (Linux only)
 

@@ -2,6 +2,9 @@
 pkgname=powerjoular
 pkgver=2.0.0
 pkgrel=1
+# The release tags of the two libraries, which have to satisfy the constraints of alire.toml
+_joularcore_tag=0.0.4
+_cpuload_tag=0.0.4
 pkgdesc="PowerJoular allows monitoring power consumption of multiple platforms and processes."
 arch=('x86_64' 'aarch64' 'armv7h')
 url="https://github.com/joular/powerjoular"
@@ -9,9 +12,9 @@ license=('GPL-3.0-only')
 depends=('glibc')
 makedepends=('gcc-ada' 'gprbuild' 'git')
 
-source=("$pkgname::git+$url.git#branch=main"
-        "joularcore::git+https://github.com/joular/joularcore.git#branch=main"
-        "cpuload::git+https://github.com/joular/cpuload.git#branch=main")
+source=("$pkgname::git+$url.git#tag=$pkgver"
+        "joularcore::git+https://github.com/joular/joularcore.git#tag=$_joularcore_tag"
+        "cpuload::git+https://github.com/joular/cpuload.git#tag=$_cpuload_tag")
 sha256sums=('SKIP'
             'SKIP'
             'SKIP')

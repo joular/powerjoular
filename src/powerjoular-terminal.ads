@@ -10,28 +10,20 @@
 --
 
 -- Print the power data on the terminal
--- Each measurement is written over the previous one, so the display stays on a single line
--- Without a terminal to write over, each measurement is printed on a line of its own instead
+-- On a terminal each measurement is written over the previous one, otherwise (file or pipe) each one gets its own line
 package PowerJoular.Terminal is
 
-    -- Enable escape sequences on old terminals (mainly in Windows), and work out whether they can be used at all
-    -- Called once before anything is printed
+    -- Check whether the standard output is a terminal that handles escape sequences, and enable them on Windows
+    -- Called once, before anything is printed
     procedure Enable_Escape_Sequences;
 
-    -- Whether the standard output is a terminal that acts on the escape sequences
-    -- Redirected to a file or through a pipe there is no terminal to act on them, and printing them would leave the sequences themselves in the output as text
     function Escapes_Enabled return Boolean;
 
-    -- Show one cycle
-    -- Monitoring a process or an application shows that process or application, otherwise the whole system is shown
-    -- A load or a power that could not be read, Unreadable in PowerJoular, is shown as "n/a"
-    procedure Show (Data : in Cycle;
-                    Target : in Target_Kind;
-                    Previous_Total_Power : in Long_Float;
-                    GPU_Available : in Boolean);
+    -- Show one cycle, of the monitored process or application if any, otherwise of the whole system
+    -- An unreadable value is shown as "n/a"
+    procedure Show (Data : in Cycle; Target : in Target_Kind; GPU_Available : in Boolean);
 
-    -- End the line the last measurement left open, so the shell prompt starts on a line of its own
-    -- Called when the program exits
+    -- End the line left open by the last measurement, before an error message or when stopping
     procedure Close_Line;
 
 end PowerJoular.Terminal;

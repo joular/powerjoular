@@ -9,33 +9,30 @@
 --  Author : Adel Noureddine
 --
 
--- Write every cycle measurement to a shared memory ring buffer, so another program on the same machine can read the power data with low latency
--- The ring buffer holds, in the byte order of the machine, a counter of 8 bytes followed by 5 entries of 48 bytes:
---     timestamp : 8 bytes, unsigned, Unix time in seconds
---     cpu power, gpu power, total power : 8 bytes each, IEEE doubles, in watts
---     cpu usage : 8 bytes, IEEE double, from 0.0 to 1.0
---     process or application power : 8 bytes, IEEE double, in watts, and -1 when the process or the application could not be read at all
--- A cycle is written in the entry the counter points at, and the counter is raised afterwards.
--- A reader follows the counter to know when a new cycle has landed, and the timestamps to know how old each entry is.
+-- Write each cycle to a shared memory ring buffer, so another program on the same machine can read it with low latency
+-- Layout, in the byte order of the machine: a counter of 8 bytes, then 5 entries of 48 bytes:
+--     timestamp : unsigned 64 bits, Unix time in seconds
+--     cpu power, gpu power, total power : IEEE doubles, in watts
+--     cpu usage : IEEE double, from 0.0 to 1.0
+--     process or application power : IEEE double, in watts, -1 when it could not be read
+-- A cycle is written in entry (counter mod 5), then the counter is incremented
 --
--- The area lives at /dev/shm/joularcorering on Linux, %PROGRAMDATA%\joularcorering on Windows
--- (C:\ProgramData\joularcorering unless the machine puts ProgramData elsewhere), and /tmp/joularcorering elsewhere
---
--- Only one PowerJoular should write to the ring buffer at a time. Two runs writing to it at once each keep a counter of their own, so a reader sees the entries of both interleaved and the counter moving backwards
+-- The file is /dev/shm/powerjoular on Linux, %PROGRAMDATA%\powerjoular on Windows and /tmp/powerjoular on macOS
+-- It is created on each start, so a reader has to open it again when PowerJoular restarts
+-- Only one PowerJoular should write to it at a time
 package PowerJoular.Ring_Buffer is
 
-    -- Create the shared memory ring, or use one if already there, and map it
-    -- Returns False when it can't be done
+    -- Create the ring buffer file and map it
+    -- Returns False if it can't be done
     function Open return Boolean;
 
-    -- Write one cycle in the next entry, or nothing when the ring was never opened
+    -- Write one cycle in the next entry, or nothing if the ring buffer is not open
     procedure Write (Data : in Cycle);
 
-    -- Close and free the ring buffer
-    -- The ring buffer is a real file on every system, so it is left behind and a reader can still pick up the last entries written to it after PowerJoular has stopped
+    -- Unmap the ring buffer
+    -- The file is left behind, so a reader can still get the last entries after PowerJoular stops
     procedure Close;
 
-    -- The path of the ring buffer
     function Path return String;
 
 end PowerJoular.Ring_Buffer;

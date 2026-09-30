@@ -9,9 +9,13 @@
 --  Author : Adel Noureddine
 --
 
-package PowerJoular.Formatting is
+-- Ctrl+C handling: the handler only sets a flag, which the main loop checks
+package PowerJoular.Stop is
 
-    -- Value in plain digits, with Decimals digits after the dot, instead of the exponent notation Ada uses by default
-    function Image (Value : in Long_Float; Decimals : in Natural) return String;
+    -- Replace the default Ctrl+C behaviour, so the program can close its files before exiting
+    procedure Install;
 
-end PowerJoular.Formatting;
+    -- Whether Ctrl+C was pressed
+    function Asked return Boolean;
+
+end PowerJoular.Stop;

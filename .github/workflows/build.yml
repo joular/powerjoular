@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [ "main", "develop", "v2" ]
+    branches: [ "main", "develop" ]
     tags: [ "*" ]
   pull_request:
     branches: [ "main", "develop" ]
@@ -12,7 +12,8 @@ jobs:
 
   # GNU/Linux and Raspberry Pi, each built on a runner of its own architecture, so nothing is cross compiled
   #
-  # The build happens inside an Ubuntu 22.04 container rather than on the runner itself, and only for the C library it brings: a binary asks for the glibc it was built against or a newer one, and 22.04 carries 2.35, which Raspberry Pi OS, Debian 12 and Ubuntu 22.04 onwards all have.
+  # Built in an Ubuntu 22.04 container rather than on the 24.04 runner, so the binary
+  # only needs glibc 2.35: Raspberry Pi OS, Debian 12, Ubuntu 22.04 and newer
   linux:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
@@ -39,7 +40,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v7
 
-    # setup-alire runs part of itself through `github.action_path`, and that path stays the runner's own (/home/runner/work/...) even for a job in a container, where the runner mounts the same directory at /__w. The action then points node at a file the container cannot see. The symlink makes that path resolve.
+    # setup-alire runs from the runner's own path (/home/runner/work), which the container mounts at /__w
     - name: Let the runner's action paths resolve inside the container
       run: |
         mkdir -p /home/runner
@@ -57,7 +58,7 @@ jobs:
         ./bin/powerjoular -v
         ./bin/powerjoular -h > /dev/null
 
-        # The version is written down in alire.toml and again in src/powerjoular.ads, which the plain gprbuild and AUR builds need, so nothing but this keeps the two from drifting apart
+        # alire.toml and src/powerjoular.ads both carry the version, so check they match
         MANIFEST=$(sed -n 's/^version *= *"\(.*\)"/\1/p' alire.toml | head -1)
         BINARY=$(./bin/powerjoular -v)
         if [ "$MANIFEST" != "$BINARY" ]; then
@@ -71,10 +72,7 @@ jobs:
           exit 1
         fi
 
-    # A binary runs against the C library it was built with or a newer one, and no older, so the
-    # version it needs is what says which machines it starts on. It goes in the name of the file and
-    # of everything made from it, and it is read back out of the binary rather than assumed, so the
-    # name stays right whatever this job is built on
+    # Read from the binary rather than assumed from the image, so the name stays right if the image changes
     - name: Name the binary after the C library it needs
       id: naming
       run: |
@@ -94,16 +92,10 @@ jobs:
         path: bin/powerjoular-glibc-${{ steps.naming.outputs.glibc }}
         if-no-files-found: error
 
-  # The same program built against the C library of Enterprise Linux 9, which is older than the one
-  # the Ubuntu build above carries. That build does not start on RHEL 9, AlmaLinux 9 or Rocky 9, whose
-  # glibc is 2.34, and this one does, as well as on everything newer.
+  # Built against the glibc 2.34 of Enterprise Linux 9, so it runs on RHEL, AlmaLinux and Rocky 9. x86_64 only
   #
-  # x86_64 only: the servers that run Enterprise Linux are, and the pieces below are published for it.
-  # An aarch64 machine takes the Ubuntu build, which covers Raspberry Pi OS and Debian from 12 onwards.
-  #
-  # The toolchain is pinned, and to the newest that actually runs here, which is older than the newest there is. Everything from GNAT 15 and GPRbuild 25 onwards is built on Ubuntu 22.04 and asks for glibc 2.35, so it does not start in this container. GNAT 14.2 is built on Ubuntu 20.04 and asks for 2.25, and GPRbuild 22 on Ubuntu 18.04.
-  #
-  # setup-alire is not used: it installs the newest toolchain before anything can pin it, so alr is fetched directly instead. alr itself asks only for glibc 2.34, so it runs here.
+  # GNAT 14.2 and GPRbuild 22 are the newest that run on glibc 2.34: newer ones are built on Ubuntu 22.04 and need 2.35
+  # setup-alire is skipped, as it installs the newest toolchain before it can be pinned, so alr is fetched directly
   linux-el9:
     name: AlmaLinux 9 amd64
     runs-on: ubuntu-24.04
@@ -115,9 +107,7 @@ jobs:
       GPRBUILD_VERSION: "22.0.1"
 
     steps:
-    # gcc brings the C library headers, the start up files and the linker that the Ada compiler links through
-    # The Ada compiler itself comes from Alire, and carries its own assembler and binutils
-    # curl replaces the curl-minimal the image ships, which is what --allowerasing is for
+    # gcc for the linker, start-up files and libc headers (GNAT comes from Alire); --allowerasing swaps curl-minimal for curl
     - name: Prepare the container
       run: |
         dnf install -y --allowerasing gcc git tar unzip findutils binutils ca-certificates curl
@@ -136,7 +126,6 @@ jobs:
     - name: Let git work on the checkout
       run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-    # Pinned rather than left to Alire, which would take the newest and land on one that cannot run here
     - name: Pin the toolchain to one this container can run
       run: |
         alr --non-interactive toolchain --select "gnat_native=${GNAT_VERSION}"
@@ -168,7 +157,7 @@ jobs:
 
         echo "needs glibc $GLIBC or newer"
 
-        # The whole point of this job: anything above 2.34 would not start on RHEL 9 and its rebuilds, so it is caught here rather than shipped as a package that cannot run
+        # Caught here rather than shipped as a package that cannot start on Enterprise Linux 9
         if [ "$GLIBC" != "static" ] \
            && [ "$(printf '%s\n' "$GLIBC" 2.34 | sort -V | tail -1)" != "2.34" ]; then
           echo "this build needs glibc $GLIBC, newer than the 2.34 of Enterprise Linux 9" >&2
@@ -186,9 +175,7 @@ jobs:
         if-no-files-found: error
 
   # The GNU/Linux packages, built from every binary the Linux jobs produced
-  #
-  # They are packaged on a plain Ubuntu runner rather than inside the containers the binaries were built in: dpkg-deb and rpmbuild only wrap files that are already compiled, so the C library of the machine doing the wrapping never reaches the package
-  # Every architecture and every C library version is packaged here, on one x86_64 runner: each binary goes in untouched, and release-version.sh reads what it is out of the binary itself
+  # Packaging only wraps prebuilt files, so this runner's glibc and architecture don't matter
   packages:
     name: Linux packages (deb and rpm)
     needs: [linux, linux-el9]
@@ -203,8 +190,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends dpkg-dev rpm binutils
 
-    # Each artifact lands in a folder named after it, and release-version.sh only looks at the
-    # binaries inside, so it picks up every architecture and C library version on its own
     - name: Download the Linux binaries
       uses: actions/download-artifact@v7
       with:
@@ -214,7 +199,6 @@ jobs:
     - name: Build the deb and rpm packages
       run: ./release-version.sh artifacts
 
-    # Printed so the log says outright what went into each package
     - name: Show what the packages hold
       run: |
         for DEB in packages/*.deb; do
@@ -236,31 +220,41 @@ jobs:
         path: packages/*
         if-no-files-found: error
 
-  # macOS on Apple Silicon, the only Macs supported
-  #
-  # The macos-14 runners and newer are arm64, so nothing is cross compiled
+  # macOS, built on a runner of each chip
+  # macos-15-intel gives the lowest minimum macOS GitHub still offers for Intel; macos-26-intel is the last Intel image, as macOS 26 is the last macOS for Intel Macs
   macos:
-    name: macOS arm64
-    runs-on: macos-15
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS arm64
+            runner: macos-15
+            artifact: powerjoular-macos-arm64
+
+          - name: macOS x86_64
+            runner: macos-15-intel
+            artifact: powerjoular-macos-x86_64
 
     steps:
     - name: Checkout
       uses: actions/checkout@v7
 
-    # Alire brings the GNAT toolchain, fetches the Joular Core and CPU Load libraries, and picks PJ_OS=macos on its own
+    # Alire picks PJ_OS=macos on its own
     - name: Set up Alire
       uses: alire-project/setup-alire@v6
 
     - name: Build
       run: alr --non-interactive build
 
-    # Only the version and the help are checked: the runners are virtual machines, where powermetrics reports nothing even as root
+    # powermetrics reports nothing on VM runners, even as root, so only the version and the help are checked
     - name: Check the binary runs
       run: |
         ./bin/powerjoular -v
         ./bin/powerjoular -h > /dev/null
 
-        # The version is written down in alire.toml and again in src/powerjoular.ads, which the plain gprbuild and AUR builds need, so nothing but this keeps the two from drifting apart
         MANIFEST=$(sed -n 's/^version *= *"\(.*\)"/\1/p' alire.toml | head -1)
         BINARY=$(./bin/powerjoular -v)
         if [ "$MANIFEST" != "$BINARY" ]; then
@@ -268,19 +262,21 @@ jobs:
           exit 1
         fi
 
-        # Redirected to a file, the help text must carry no escape sequences
         if ./bin/powerjoular -h | grep -q "$(printf '\033')"; then
           echo "the help text carries escape sequences when redirected" >&2
           exit 1
         fi
 
     - name: Show what the binary asks of the system
-      run: file bin/powerjoular
+      run: |
+        file bin/powerjoular
+        otool -L bin/powerjoular
+        vtool -show-build bin/powerjoular
 
     - name: Upload the binary
       uses: actions/upload-artifact@v7
       with:
-        name: powerjoular-macos-arm64
+        name: ${{ matrix.artifact }}
         path: bin/powerjoular
         if-no-files-found: error
 
@@ -293,7 +289,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v7
 
-    # Alire brings the GNAT toolchain, and fetches the Joular Core and CPU Load libraries
     - name: Set up Alire
       uses: alire-project/setup-alire@v6
 
