@@ -27,10 +27,6 @@ package body PowerJoular.Terminal is
     -- True once a measurement was printed without an end of line
     Line_Left_Open : Boolean := False;
 
-    -- Total power of the previous cycle, to show the change
-    Previous_Total_Power : Long_Float := 0.0;
-    Has_Previous : Boolean := False;
-
     --------------------------------------------------
 
     -- Value followed by its unit, or "n/a" if unreadable
@@ -50,11 +46,7 @@ package body PowerJoular.Terminal is
     --------------------------------------------------
 
     procedure Show (Data : in Cycle; Target : in Target_Kind; GPU_Available : in Boolean) is
-        Difference : constant Long_Float := Data.Total_Power - Previous_Total_Power;
-        Arrow : constant String := (if Difference >= 0.0 then "/\ " else "\/ ");
     begin
-        Previous_Total_Power := Data.Total_Power;
-
         if Escapes then
             Put (Clear_Line);
         end if;
@@ -69,12 +61,6 @@ package body PowerJoular.Terminal is
                 end if;
 
                 Put (")");
-
-                if Has_Previous then
-                    Put (HT & Arrow & Image (Difference, Decimals) & " Watts");
-                end if;
-
-                Has_Previous := True;
 
             when One_Process | One_Application =>
                 Put ((if Target = One_Process then "PID monitoring:" else "Application monitoring:") & HT);
