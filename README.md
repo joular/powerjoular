@@ -36,7 +36,7 @@ PowerJoular runs on **Linux, macOS and Windows**, on PCs, servers, Macs, and sin
 | GPU | Apple Silicon (M series) | macOS | powermetrics, installed with macOS |
 | Whole machine | Any of the above, from inside a virtual machine | Linux, macOS, Windows | A file the host writes the power to |
 
-On macOS, both chips are read from powermetrics, which reports the power drawn over its last sample. Apple Silicon Macs give their CPU and the GPU built into the same chip. Intel Macs give the CPU only.
+On macOS, both chips are read from powermetrics, which reports the power drawn over each cycle. Apple Silicon Macs give their CPU and the GPU built into the same chip. Intel Macs give the CPU only.
 
 The supported single-board computers are the Raspberry Pi models 5B, 400, 4B, 3B+, 3B, 2B, 1B+, 1B and Zero W, and the Asus Tinker Board (S). Every revision of each model is supported, though the power model was trained on one particular revision, on which the accuracy is at its best.
 
