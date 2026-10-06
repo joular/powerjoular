@@ -12,7 +12,7 @@
 with System;
 
 -- Everything that differs between operating systems
--- One body in src/posix (Linux and macOS) and one in src/windows, powerjoular.gpr picks the folder from PJ_OS
+-- One body in src/posix (Linux, macOS and FreeBSD) and one in src/windows, powerjoular.gpr picks the folder from PJ_OS
 package PowerJoular.Platform is
 
     -- Path of the shared memory ring buffer

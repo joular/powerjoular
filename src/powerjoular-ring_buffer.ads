@@ -17,7 +17,7 @@
 --     process or application power : IEEE double, in watts, -1 when it could not be read
 -- A cycle is written in entry (counter mod 5), then the counter is incremented
 --
--- The file is /dev/shm/powerjoular on Linux, %PROGRAMDATA%\powerjoular on Windows and /tmp/powerjoular on macOS
+-- The file is /dev/shm/powerjoular on Linux, %PROGRAMDATA%\powerjoular on Windows and /tmp/powerjoular on macOS and FreeBSD
 -- It is created on each start, so a reader has to open it again when PowerJoular restarts
 -- Only one PowerJoular should write to it at a time
 package PowerJoular.Ring_Buffer is

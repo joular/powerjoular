@@ -314,3 +314,71 @@ jobs:
         name: powerjoular-windows-amd64
         path: bin/powerjoular.exe
         if-no-files-found: error
+
+  # FreeBSD, built inside a virtual machine as GitHub has no FreeBSD runners. amd64 only, as RAPL is x86 only
+  #
+  # Alire's index has no CPU Load and Joular Core with FreeBSD support yet, so their develop branches are checked out and built with GPRBuild
+  # PJ_OS and PJ_X86 are given, so a target GPRBuild does not recognise cannot turn this into a Linux or a non-x86 build
+  # The virtual machine has no RAPL, so only the version and the help are checked
+  freebsd:
+    name: FreeBSD amd64
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+
+    - name: Checkout CPU Load
+      uses: actions/checkout@v7
+      with:
+        repository: joular/cpuload
+        ref: develop
+        path: deps/cpuload
+
+    - name: Checkout Joular Core
+      uses: actions/checkout@v7
+      with:
+        repository: joular/joularcore
+        ref: develop
+        path: deps/joularcore
+
+    # The newest FreeBSD 14, so the binary also runs on FreeBSD 15
+    # gprbuild brings GNAT 12, the default Ada compiler of FreeBSD
+    - name: Build and check in FreeBSD
+      uses: vmactions/freebsd-vm@v1
+      with:
+        release: "14"
+        prepare: pkg install -y gprbuild
+        run: |
+          export PATH=/usr/local/gnat12/bin:$PATH
+          gprbuild -P powerjoular.gpr -aPdeps/joularcore -aPdeps/cpuload -XPJ_OS=freebsd -XPJ_X86=True -p
+
+          ./bin/powerjoular -v
+          ./bin/powerjoular -h > /dev/null
+
+          MANIFEST=$(sed -n 's/^version *= *"\(.*\)"/\1/p' alire.toml | head -1)
+          BINARY=$(./bin/powerjoular -v)
+          if [ "$MANIFEST" != "$BINARY" ]; then
+            echo "alire.toml says $MANIFEST but the binary says $BINARY" >&2
+            exit 1
+          fi
+
+          if ./bin/powerjoular -h | grep -q "$(printf '\033')"; then
+            echo "the help text carries escape sequences when redirected" >&2
+            exit 1
+          fi
+
+          # Only libraries of the base system, so it runs where GNAT is not installed
+          file bin/powerjoular
+          ldd bin/powerjoular
+          if ldd bin/powerjoular | grep -q /usr/local/; then
+            echo "the binary needs a library installed with GNAT" >&2
+            exit 1
+          fi
+
+    - name: Upload the binary
+      uses: actions/upload-artifact@v7
+      with:
+        name: powerjoular-freebsd-amd64
+        path: bin/powerjoular
+        if-no-files-found: error

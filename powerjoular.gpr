@@ -5,22 +5,19 @@ project Powerjoular is
 
     -- Built for the same OS as CPU Load, so the program and its libraries always agree
     -- Override with: gprbuild -XPJ_OS=windows
-    type OS_Platform is ("linux", "windows", "macos");
+    type OS_Platform is ("linux", "windows", "macos", "freebsd");
     PJ_OS : OS_Platform := CpuLoad.PJ_OS;
 
-    -- Portable code is in src, the body of PowerJoular.Platform for one OS in its own folder
-    -- src/posix holds what Linux and macOS share
+    -- Portable code is in src, the body of PowerJoular.Platform in src/windows or in src/posix (Linux, macOS and FreeBSD)
     case PJ_OS is
-        when "linux" =>
-            for Source_Dirs use ("src", "src/posix", "src/linux");
         when "windows" =>
             for Source_Dirs use ("src", "src/windows");
-        when "macos" =>
-            for Source_Dirs use ("src", "src/posix", "src/macos");
+        when others =>
+            for Source_Dirs use ("src", "src/posix");
     end case;
 
     -- default: Ada runtime and libgcc static, libc shared (what the released packages use)
-    -- full: fully static; on Linux the GPU readings are lost (no dlopen)
+    -- full: fully static; on Linux and FreeBSD the Nvidia readings are lost (no dlopen)
     -- macOS has no static libc, so full does nothing there
     type Linking_Kind is ("default", "full");
     Linking : Linking_Kind := external ("POWERJOULAR_LINKING", "default");
@@ -50,7 +47,8 @@ project Powerjoular is
     end Builder;
 
     package Compiler is
-        for Switches ("Ada") use ("-O2", "-gnat2012", "-gnatwa");
+        -- CPU Load's symbols tell the OS apart in src/posix
+        for Switches ("Ada") use ("-O2", "-gnat2012", "-gnatwa") & CpuLoad.Defines;
     end Compiler;
 
     package Binder is

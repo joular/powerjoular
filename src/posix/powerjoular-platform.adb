@@ -13,14 +13,20 @@ with GNAT.OS_Lib;
 with Interfaces.C; use Interfaces.C;
 with System.Storage_Elements; use System.Storage_Elements;
 
-with PowerJoular.Platform.Constants;
-
--- Linux and macOS
+-- Linux, macOS and FreeBSD, told apart by the symbols of CPU Load (see powerjoular.gpr)
 package body PowerJoular.Platform is
 
     use type System.Address;
 
+    -- Flags of open, from fcntl.h
     O_RDWR : constant := 2;
+#if PJ_LINUX then
+    O_CREAT : constant := 8#100#;   -- The same on x86 and ARM
+    O_EXCL : constant := 8#200#;
+#else
+    O_CREAT : constant := 16#0200#;
+    O_EXCL : constant := 16#0800#;
+#end if;
 
     PROT_READ : constant := 1;
     PROT_WRITE : constant := 2;
@@ -62,9 +68,24 @@ package body PowerJoular.Platform is
 
     --------------------------------------------------
 
-    function Ring_Buffer_Path return String is (Constants.Ring_Buffer_Path);
+#if PJ_LINUX then
+    -- /dev/shm is kept in memory and never written to a disk
+    function Ring_Buffer_Path return String is ("/dev/shm/powerjoular");
 
-    function No_Power_Source_Hint return String is (Constants.No_Power_Source_Hint);
+    function No_Power_Source_Hint return String is
+        ("On a PC or a server, reading RAPL needs root: try 'sudo powerjoular'.");
+#elsif PJ_MACOS then
+    function Ring_Buffer_Path return String is ("/tmp/powerjoular");
+
+    function No_Power_Source_Hint return String is
+        ("On a Mac, reading powermetrics needs root: try 'sudo powerjoular'.");
+#else
+    -- FreeBSD has no /dev/shm
+    function Ring_Buffer_Path return String is ("/tmp/powerjoular");
+
+    function No_Power_Source_Hint return String is
+        ("On FreeBSD, reading RAPL needs the cpuctl module and root: try 'sudo kldload cpuctl' and 'sudo powerjoular'.");
+#end if;
 
     --------------------------------------------------
 
@@ -93,7 +114,7 @@ package body PowerJoular.Platform is
         -- O_EXCL makes sure the file is a new one and ours, and refuses to follow a symbolic link
         Ignored := unlink (Name);
 
-        Descriptor := open (Name, O_RDWR + Constants.O_CREAT + Constants.O_EXCL, Shared_File_Mode);
+        Descriptor := open (Name, O_RDWR + O_CREAT + O_EXCL, Shared_File_Mode);
 
         if Descriptor < 0 then
             return System.Null_Address;

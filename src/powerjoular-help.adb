@@ -47,6 +47,7 @@ package body PowerJoular.Help is
         Put_Line (HT & "powerjoular (on Raspberry Pi)");
         Put_Line (HT & "sudo powerjoular (on macOS, as powermetrics needs elevated access)");
         Put_Line (HT & "sudo powerjoular (on Linux, as RAPL needs elevated access. Otherwise give read rights to RAPL energy files)");
+        Put_Line (HT & "sudo powerjoular (on FreeBSD, as RAPL needs elevated access and the cpuctl module: kldload cpuctl)");
         Put_Line (Rule);
         Put_Line (Title ("Options:"));
         Put_Line (HT & "-h: show this help message");
