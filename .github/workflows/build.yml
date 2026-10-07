@@ -343,14 +343,14 @@ jobs:
         path: deps/joularcore
 
     # The newest FreeBSD 14, so the binary also runs on FreeBSD 15
-    # gprbuild brings GNAT 12, the default Ada compiler of FreeBSD
+    # GNAT 15 at least: GNAT 12, which gprbuild brings along, crashes on the cpuctl code of Joular Core
     - name: Build and check in FreeBSD
       uses: vmactions/freebsd-vm@v1
       with:
         release: "14"
-        prepare: pkg install -y gprbuild
+        prepare: pkg install -y gprbuild gnat15
         run: |
-          export PATH=/usr/local/gnat12/bin:$PATH
+          export PATH=/usr/local/gnat15/bin:$PATH
           gprbuild -P powerjoular.gpr -aPdeps/joularcore -aPdeps/cpuload -XPJ_OS=freebsd -XPJ_X86=True -p
 
           ./bin/powerjoular -v

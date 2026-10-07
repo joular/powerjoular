@@ -9,13 +9,13 @@
 --  Author : Adel Noureddine
 --
 
--- Ctrl+C handling: the handler only sets a flag, which the main loop checks
+-- Stop requests: Ctrl+C, and SIGTERM and SIGHUP outside Windows. The handler only sets a flag, which the main loop checks
 package PowerJoular.Stop is
 
-    -- Replace the default Ctrl+C behaviour, so the program can close its files before exiting
+    -- Replace the default behaviour of these signals, so the program can close its files and sources before exiting
     procedure Install;
 
-    -- Whether Ctrl+C was pressed
+    -- Whether a stop was asked
     function Asked return Boolean;
 
 end PowerJoular.Stop;

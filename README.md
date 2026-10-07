@@ -228,7 +228,7 @@ gprbuild -P powerjoular.gpr -aP../joularcore -aP../cpuload -XPJ_OS=windows -p
 
 Linux, macOS, Windows and FreeBSD are each detected on their own, from the target GPRBuild identifies.
 
-On FreeBSD, `pkg install gprbuild` brings GPRBuild and GNAT, whose folder `/usr/local/gnat12/bin` has to be added to `PATH`.
+On FreeBSD, use GNAT 15 or newer, which Alire also takes from `PATH`: `pkg install gprbuild gnat15` brings GPRBuild and GNAT 15, whose folder `/usr/local/gnat15/bin` has to be added to `PATH`. GNAT 12, which `pkg install gprbuild` uses, crashes while compiling Joular Core.
 
 ### A binary with no dependencies at all
 

@@ -42,19 +42,15 @@ procedure PowerJoular_Main is
 
     --------------------------------------------------
 
-    -- Wait until Ending, waking up regularly to notice a Ctrl+C quickly
+    -- Wait until Ending, waking up regularly to notice a stop quickly
+    -- Ending more than a cycle away means the clock was set back (on macOS it follows the wall clock), so stop waiting
     procedure Wait_Until (Ending : in Time) is
-        Step : constant Time_Span := Milliseconds (100);
-        Next : Time := Clock + Step;
+        Step : constant Duration := 0.1;
     begin
-        while not Stop.Asked and then Next < Ending loop
-            delay until Next;
-            Next := Next + Step;
+        while not Stop.Asked loop
+            exit when Clock >= Ending or else Ending - Clock > Interval;
+            delay Duration'Min (Step, To_Duration (Ending - Clock));
         end loop;
-
-        if not Stop.Asked then
-            delay until Ending;
-        end if;
     end Wait_Until;
 
     --------------------------------------------------
@@ -149,9 +145,10 @@ begin
         end;
 
         -- After a sleep, or when far behind, start again from now instead of catching up
+        -- Far ahead: the clock was set back
         Deadline := Deadline + Interval;
 
-        if Deadline < Clock then
+        if Deadline < Clock or else Deadline > Clock + Interval then
             Deadline := Clock + Interval;
         end if;
     end loop;
