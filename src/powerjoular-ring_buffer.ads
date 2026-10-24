@@ -10,11 +10,12 @@
 --
 
 -- Write each cycle to a shared memory ring buffer, so another program on the same machine can read it with low latency
--- Layout, in the byte order of the machine: a counter of 8 bytes, then 5 entries of 48 bytes:
+-- Layout, in the byte order of the machine: a counter of 8 bytes, then 5 entries of 56 bytes:
 --     timestamp : unsigned 64 bits, Unix time in seconds
 --     cpu power, gpu power, total power : IEEE doubles, in watts
 --     cpu usage : IEEE double, from 0.0 to 1.0
 --     process or application power : IEEE double, in watts, -1 when it could not be read
+--     process or application cpu usage : IEEE double, from 0.0 to 1.0, -1 when it could not be read
 -- A cycle is written in entry (counter mod 5), then the counter is incremented
 --
 -- The file is /dev/shm/powerjoular on Linux, %PROGRAMDATA%\powerjoular on Windows and /tmp/powerjoular on macOS and FreeBSD

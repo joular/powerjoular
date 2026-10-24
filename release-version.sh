@@ -65,6 +65,17 @@ if [[ "$PKGBUILD_VERSION" != "$VERSION" ]]; then
     exit 1
 fi
 
+# The library tags of the PKGBUILD have to satisfy alire.toml, which pins one minor version (~x.y.z: same x.y, z or newer)
+for LIB in joularcore cpuload; do
+    WANTED=$(sed -n "s/^$LIB *= *\"~\(.*\)\"/\1/p" alire.toml | head -1)
+    TAG=$(sed -n "s/^_${LIB}_tag=//p" installer/aur/PKGBUILD | head -1)
+
+    if [[ -z "$WANTED" || -z "$TAG" || "${TAG%.*}" != "${WANTED%.*}" || "${TAG##*.}" -lt "${WANTED##*.}" ]]; then
+        echo "ERROR: alire.toml wants $LIB ~$WANTED but installer/aur/PKGBUILD checks out tag $TAG" >&2
+        exit 1
+    fi
+done
+
 
 # What each binary is
 
@@ -169,11 +180,27 @@ while read -r GLIBC ARCH; do
     install -m 755 "$BIN" "$STAGE/powerjoular/usr/bin/powerjoular"
     install -m 644 systemd/powerjoular.service "$STAGE/powerjoular/usr/lib/systemd/system/"
 
+    # A static binary depends on nothing, and dpkg refuses an empty Depends line
     if [[ "$GLIBC" == "static" ]]; then
-        LIBC_DEPENDS="Depends: "
+        LIBC_DEPENDS=""
     else
-        LIBC_DEPENDS="Depends: libc6 (>= $GLIBC)"
+        LIBC_DEPENDS="Depends: libc6 (>= $GLIBC)"$'\n'
     fi
+
+    # systemd learns about the unit on install and forgets it on removal
+    cat << 'EOL' > "$STAGE/powerjoular/DEBIAN/postinst"
+#!/bin/sh
+set -e
+if [ -d /run/systemd/system ]; then systemctl daemon-reload || true; fi
+EOL
+
+    cat << 'EOL' > "$STAGE/powerjoular/DEBIAN/postrm"
+#!/bin/sh
+set -e
+if [ "$1" = remove ] && [ -d /run/systemd/system ]; then systemctl daemon-reload || true; fi
+EOL
+
+    chmod 755 "$STAGE/powerjoular/DEBIAN/postinst" "$STAGE/powerjoular/DEBIAN/postrm"
 
     # Same package name for every build, so they replace each other on upgrade
     cat << EOL > "$STAGE/powerjoular/DEBIAN/control"
@@ -183,8 +210,7 @@ Maintainer: Adel Noureddine <adel.noureddine@outlook.com>
 Architecture: $DEB_ARCH
 Section: utils
 Priority: optional
-$LIBC_DEPENDS
-Homepage: https://github.com/joular/powerjoular
+${LIBC_DEPENDS}Homepage: https://github.com/joular/powerjoular
 Description: Monitor the power consumption of hardware components, processes and software.
  PowerJoular monitors, in real time, the power consumption of the CPU and the
  GPU of the machine, and of one process or one application running on it.

@@ -3,9 +3,9 @@ pkgname=powerjoular
 pkgver=2.0.0
 pkgrel=1
 # The release tags of the two libraries, which have to satisfy the constraints of alire.toml
-_joularcore_tag=0.0.4
-_cpuload_tag=0.0.4
-pkgdesc="PowerJoular allows monitoring power consumption of multiple platforms and processes."
+_joularcore_tag=0.0.5
+_cpuload_tag=0.0.5
+pkgdesc="Monitor the power consumption of platforms, processes and applications"
 arch=('x86_64' 'aarch64' 'armv7h')
 url="https://github.com/joular/powerjoular"
 license=('GPL-3.0-only')

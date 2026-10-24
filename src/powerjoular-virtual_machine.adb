@@ -96,8 +96,8 @@ package body PowerJoular.Virtual_Machine is
             Power := Long_Float'Value (Trim (Text, Blanks, Blanks));
         end;
 
-        -- PowerJoular writes -1 for a process it could not read
-        return Power >= 0.0;
+        -- A number was read. PowerJoular writes -1 for a process it could not read, which Power keeps out
+        return True;
     exception
         when others =>
             if Is_Open (Input) then
@@ -112,7 +112,7 @@ package body PowerJoular.Virtual_Machine is
     function Power (File_Name : in String; Format : in File_Format) return Long_Float is
         Value : Long_Float;
     begin
-        if Read (File_Name, Format, Value) then
+        if Read (File_Name, Format, Value) and then Value >= 0.0 then
             Last_Power := Value;
             Ever_Read := True;
             Failed_Last := False;

@@ -200,4 +200,13 @@ package body PowerJoular.Platform is
         Close_Handles;
     end Unmap_Shared_File;
 
+    --------------------------------------------------
+
+    -- Windows ends a program through the console events GNAT.Ctrl_C already covers
+    procedure Install_Stop_Handler (Handler : in Signal_Handler) is
+        pragma Unreferenced (Handler);
+    begin
+        null;
+    end Install_Stop_Handler;
+
 end PowerJoular.Platform;

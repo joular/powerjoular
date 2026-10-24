@@ -14,6 +14,7 @@ with Ada.Strings; use Ada.Strings;
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Text_IO; use Ada.Text_IO;
+with GNAT.OS_Lib;
 
 with CPU_Load;
 
@@ -45,12 +46,13 @@ package body PowerJoular.CSV is
 
     --------------------------------------------------
 
-    -- Folder separators and ':' (NTFS streams) are replaced, so the file lands in the folder given
+    -- Folder separators, the other characters that Windows refuses in a name and control characters are replaced
+    -- So the file lands in the folder given, with the same name on every OS
     function File_Name_Part (Name : in String) return String is
         Result : String := Name;
     begin
         for C of Result loop
-            if C = '/' or else C = '\' or else C = ':' then
+            if C in '/' | '\' | ':' | '*' | '?' | '"' | '<' | '>' | '|' or else C < ' ' then
                 C := '_';
             end if;
         end loop;
@@ -95,19 +97,30 @@ package body PowerJoular.CSV is
     --------------------------------------------------
 
     -- Add Row to the file, and start a new or empty file with Header
-    -- In overwrite mode, the file is rewritten with Row only
+    -- In overwrite mode, the file is replaced by Row only, written whole beside it first so a reader never finds it empty
     procedure Write_Row (File : in out Output_File; Header : in String; Row : in String) is
         Name : constant String := To_String (File.Name);
+        Temporary : constant String := Name & ".tmp";
         Output : File_Type;
+        Moved : Boolean;
     begin
         -- PowerJoular often runs as root, so refuse a link that may point at a system file (not race free, see the README)
-        if Platform.Is_Symbolic_Link (Name) then
+        if Platform.Is_Symbolic_Link (Name) or else Platform.Is_Symbolic_Link (Temporary) then
             Report (File, Name & " is a symbolic link and is not written to");
             return;
         end if;
 
         if Overwrite then
-            Create (Output, Out_File, Name);
+            Create (Output, Out_File, Temporary);
+            Put_Line (Output, Row);
+            Close (Output);
+            GNAT.OS_Lib.Rename_File (Temporary, Name, Moved);
+
+            if not Moved then
+                Report (File, "cannot write to " & Name);
+            end if;
+
+            return;
         elsif Ada.Directories.Exists (Name) and then Ada.Directories.Size (Name) > 0 then
             Open (Output, Append_File, Name);
         else

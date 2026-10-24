@@ -30,8 +30,9 @@ package body PowerJoular.Ring_Buffer is
             Total_Power : IEEE_Float_64 := 0.0;
             CPU_Usage : IEEE_Float_64 := 0.0;
             Target_Power : IEEE_Float_64 := 0.0;
+            Target_Usage : IEEE_Float_64 := 0.0;
         end record
-        with Convention => C, Size => 48 * 8;
+        with Convention => C, Size => 56 * 8;
 
     type Entry_Array is array (0 .. Entry_Count - 1) of Ring_Entry
         with Convention => C;
@@ -42,7 +43,7 @@ package body PowerJoular.Ring_Buffer is
             Head : Unsigned_64 := 0;
             Entries : Entry_Array;
         end record
-        with Convention => C, Volatile, Size => (8 + Entry_Count * 48) * 8;
+        with Convention => C, Volatile, Size => (8 + Entry_Count * 56) * 8;
 
     Area_Size : constant Positive := Shared_Area'Size / System.Storage_Unit;
 
@@ -95,7 +96,8 @@ package body PowerJoular.Ring_Buffer is
              GPU_Power => IEEE_Float_64 (Data.GPU_Power),
              Total_Power => IEEE_Float_64 (Data.Total_Power),
              CPU_Usage => IEEE_Float_64 (Data.CPU_Usage),
-             Target_Power => IEEE_Float_64 (Data.Target_Power));
+             Target_Power => IEEE_Float_64 (Data.Target_Power),
+             Target_Usage => IEEE_Float_64 (Data.Target_Usage));
 
         Memory_Barrier;
 

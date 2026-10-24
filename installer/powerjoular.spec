@@ -1,7 +1,7 @@
 Name:           powerjoular
 Version:        2.0.0
 Release:        1%{?dist}
-Summary:        PowerJoular allows monitoring power consumption of multiple platforms and processes.
+Summary:        Monitor the power consumption of platforms, processes and applications
 
 License:        GPL-3.0-only
 URL:            https://github.com/joular/powerjoular
@@ -11,7 +11,8 @@ Source1:        %{_sourcedir}/powerjoular.service
 %{!?_unitdir: %global _unitdir %{_prefix}/lib/systemd/system}
 
 %description
-PowerJoular allows monitoring power consumption of multiple platforms and processes.
+PowerJoular monitors, in real time, the power consumption of hardware components (CPU, GPU), processes and applications, on Linux, macOS, Windows and FreeBSD.
+It follows one process or one whole application, and exports power values to the terminal, to CSV files, and to a shared memory ring buffer.
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -20,6 +21,13 @@ mkdir -p $RPM_BUILD_ROOT/%{_unitdir}
 install -m 755 %{SOURCE0} $RPM_BUILD_ROOT/%{_bindir}/%{name}
 install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/%{_unitdir}/%{name}.service
 
+# systemd learns about the unit on install and forgets it on removal
+%post
+if [ -d /run/systemd/system ]; then systemctl daemon-reload > /dev/null 2>&1 || :; fi
+
+%postun
+if [ -d /run/systemd/system ]; then systemctl daemon-reload > /dev/null 2>&1 || :; fi
+
 %files
 %{_bindir}/%{name}
 %{_unitdir}/%{name}.service
@@ -27,7 +35,7 @@ install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/%{_unitdir}/%{name}.service
 %changelog
 * Wed Sep 30 2026 Adel Noureddine <adel.noureddine@outlook.com> - 2.0.0-1
 - Measure through the Joular Core and CPU Load libraries
-- Add Windows and macOS support
+- Add Windows, macOS and FreeBSD support
 - Add the shared memory ring buffer export (-r)
 - Remove the experimental -k option
 - Remove the -l option: the polynomial power models are now the only ones used

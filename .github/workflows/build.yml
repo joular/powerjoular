@@ -2,10 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [ "main", "develop" ]
-    tags: [ "*" ]
   pull_request:
-    branches: [ "main", "develop" ]
   workflow_dispatch:
 
 jobs:
@@ -308,6 +305,11 @@ jobs:
           exit 1
         fi
 
+        if ./bin/powerjoular.exe -h | grep -q "$(printf '\033')"; then
+          echo "the help text carries escape sequences when redirected" >&2
+          exit 1
+        fi
+
     - name: Upload the binary
       uses: actions/upload-artifact@v7
       with:
@@ -317,7 +319,7 @@ jobs:
 
   # FreeBSD, built inside a virtual machine as GitHub has no FreeBSD runners. amd64 only, as RAPL is x86 only
   #
-  # Alire's index has no CPU Load and Joular Core with FreeBSD support yet, so their develop branches are checked out and built with GPRBuild
+  # The two libraries are checked out at the releases alire.toml pins and built with GPRBuild, as the virtual machine has no Alire
   # PJ_OS and PJ_X86 are given, so a target GPRBuild does not recognise cannot turn this into a Linux or a non-x86 build
   # The virtual machine has no RAPL, so only the version and the help are checked
   freebsd:
@@ -332,14 +334,14 @@ jobs:
       uses: actions/checkout@v7
       with:
         repository: joular/cpuload
-        ref: develop
+        ref: "0.0.5"
         path: deps/cpuload
 
     - name: Checkout Joular Core
       uses: actions/checkout@v7
       with:
         repository: joular/joularcore
-        ref: develop
+        ref: "0.0.5"
         path: deps/joularcore
 
     # The newest FreeBSD 14, so the binary also runs on FreeBSD 15

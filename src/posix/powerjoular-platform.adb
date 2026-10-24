@@ -149,4 +149,33 @@ package body PowerJoular.Platform is
         Ignored := munmap (Address, size_t (Size));
     end Unmap_Shared_File;
 
+    --------------------------------------------------
+
+    -- The same numbers on Linux, macOS and FreeBSD
+    SIGHUP : constant := 1;
+    SIGTERM : constant := 15;
+
+    Stop_Signals : constant array (1 .. 2) of int := (SIGHUP, SIGTERM);
+
+    SIG_IGN : constant System.Address := To_Address (1);
+
+    -- Both return the previous handler
+    function signal (signum : int; handler : Signal_Handler) return System.Address
+        with Import, Convention => C, External_Name => "signal";
+
+    function signal (signum : int; handler : System.Address) return System.Address
+        with Import, Convention => C, External_Name => "signal";
+
+    procedure Install_Stop_Handler (Handler : in Signal_Handler) is
+        Previous : System.Address;
+    begin
+        for Number of Stop_Signals loop
+            Previous := signal (Number, Handler);
+
+            if Previous = SIG_IGN then
+                Previous := signal (Number, SIG_IGN);
+            end if;
+        end loop;
+    end Install_Stop_Handler;
+
 end PowerJoular.Platform;

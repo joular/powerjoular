@@ -5,7 +5,7 @@
 
 ![PowerJoular Logo](powerjoular.png)
 
-PowerJoular is a command line tool that monitors, in real time, the power consumption of  hardware components, processes and software, on Windows, Linux, macOS and FreeBSD.
+PowerJoular is a command line tool that monitors, in real time, the power consumption of hardware components, processes and software, on Windows, Linux, macOS and FreeBSD.
 
 Detailed documentation (including user and reference guides) is available at: [https://joular.github.io/powerjoular/](https://joular.github.io/powerjoular/).
 
@@ -39,7 +39,7 @@ PowerJoular runs on **Linux, macOS, Windows and FreeBSD**, on PCs, servers, Macs
 
 On macOS, both chips are read from powermetrics, which reports the power drawn over each cycle. Apple Silicon Macs give their CPU and the GPU built into the same chip. Intel Macs give the CPU only.
 
-The supported single-board computers are the Raspberry Pi models 5B, 400, 4B, 3B+, 3B, 2B, 1B+, 1B and Zero W, and the Asus Tinker Board (S). Every revision of each model is supported, though the power model was trained on one particular revision, on which the accuracy is at its best.
+The supported single-board computers are the Raspberry Pi models 5B, 400, 4B, 3B+, 3B, 2B, 1B+, 1B and Zero W, and the Asus Tinker Board. Every revision of each model is supported, though the power model was trained on one particular revision, on which the accuracy is at its best.
 
 PowerJoular does the energy and CPU usage measuring through two Ada libraries we developed:
 
@@ -94,7 +94,7 @@ Timestamp,CPU Usage,Total Power,CPU Power,GPU Power
 1756681930,0.2460,18.4500,15.2000,3.2500
 ```
 
-The file of a monitored process or application have the CPU usage and the power of that process or application:
+The file of a monitored process or application has the CPU usage and the power of that process or application:
 
 ```
 Timestamp,CPU Usage,CPU Power
@@ -104,6 +104,11 @@ Timestamp,CPU Usage,CPU Power
 `-o` writes the latest measurement only: the file is rewritten every second and carries no header, which is a good option for another program polling it for the current value.
 
 The time of the measurement is a Unix timestamp, the same one written to the ring buffer.
+
+The power of a process or an application is its share of the CPU power, taken from its share of the CPU load.
+On an AMD APU, the GPU reading already holds part of the power of the CPU cores, so the total power counts that part twice.
+
+The Joular tools write their CSV files the same way: a `Timestamp` column in Unix seconds, columns separated by commas, four decimals, and the file of an application named after it, with the characters a file name cannot hold replaced by `_`.
 
 PowerJoular refuses to write a CSV file if a symbolic link is already at its path. This is a basic check, not a guarantee, as the link can still be swapped in after the check. When running PowerJoular as root, write the CSV files to a folder only root can write to (such as `/run/powerjoular` for the service), not to a shared folder such as `/tmp`.
 
@@ -123,7 +128,7 @@ That is not the same as `0.0000`, which means a process that was read and used n
 | macOS | `/tmp/powerjoular` |
 | FreeBSD | `/tmp/powerjoular` |
 
-The area is 248 bytes, in the byte order of the machine: a counter of 8 bytes, then 5 entries of 48 bytes each.
+The area is 288 bytes, in the byte order of the machine: a counter of 8 bytes, then 5 entries of 56 bytes each.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -132,7 +137,8 @@ The area is 248 bytes, in the byte order of the machine: a counter of 8 bytes, t
 | `gpu_power` | IEEE double | GPU power in watts |
 | `total_power` | IEEE double | CPU plus GPU power in watts |
 | `cpu_usage` | IEEE double | Load of the machine, from 0.0 to 1.0 |
-| `pid_app_power` | IEEE double | Power of the monitored process or application in watts, zero when none is monitored, and `-1` when the one monitored could not be read |
+| `pid_app_power` | IEEE double | CPU power of the monitored process or application in watts, zero when none is monitored, and `-1` when the one monitored could not be read |
+| `pid_app_usage` | IEEE double | Load of the monitored process or application, from 0.0 to 1.0, zero when none is monitored, and `-1` when the one monitored could not be read |
 
 A measurement goes in the entry the counter points at (`counter mod 5`), and the counter is raised afterwards. A reader follows the counter to know when a new measurement has landed, and the timestamps to know how old each entry is.
 
@@ -189,14 +195,14 @@ On FreeBSD, it publishes `powerjoular-freebsd-amd64`, built on FreeBSD 14 so it 
 
 ### Which Linux build to use
 
-PowerJoular binary runs on the glibc version it was build on or a new one (but not and older one), so more than one build is published and every file says which glibc version was used:
+PowerJoular binary runs on the glibc version it was built on or a newer one (but not an older one), so more than one build is published and every file says which glibc version was used:
 
 | File | Architectures | Runs on |
 |---|---|---|
 | `powerjoular-glibc-2.35`, `powerjoular-glibc-2.35_*.deb`, `powerjoular-glibc-2.35-*.rpm` | x86_64 and aarch64 | Ubuntu 22.04 and newer, Debian 12 and newer, Raspberry Pi OS bookworm and newer, Fedora 36 and newer |
 | `powerjoular-glibc-2.34`, `powerjoular-glibc-2.34_*.deb`, `powerjoular-glibc-2.34-*.rpm` | x86_64 only | The same, and also RHEL 9, AlmaLinux 9, Rocky 9 and CentOS Stream 9 |
 
-Take the `2.34` build if you are unsure, or if the other version gives you an `version 'GLIBC_2.35' not found`. Both are the exact same program with the only difference being the C library (glibc) they were linked against.
+Take the `2.34` build if you are unsure, or if the other version gives you a `version 'GLIBC_2.35' not found`. Both are the exact same program with the only difference being the C library (glibc) they were linked against.
 
 ## :floppy_disk: Compilation
 
@@ -258,6 +264,7 @@ Version 2 does the measuring using the [Joular Core](https://github.com/joular/j
 - **New**: `-r` writes the power data to a shared memory ring buffer.
 - **Removed**: `-k`, which measured a process from its threads. It was experimental, and the process readings no longer need it.
 - **Removed**: `-l`, which picked the linear power models of the single-board computers, has been removed. The default and only models used now are the polynomial models, which are much more accurate and their overhead is minimal.
+- **Removed**: `-c`, which wrote the timestamps with milliseconds. Timestamps are whole seconds.
 
 Other main differences:
 

@@ -1,5 +1,5 @@
 name = "powerjoular"
-description = "Monitoring the power consumption of multiple platforms and processes"
+description = "Monitor the power consumption of platforms, processes and applications"
 version = "2.0.0"
 
 long-description = """
@@ -23,17 +23,7 @@ joularcore = "~0.0.5"
 cpuload = "~0.0.5"
 
 [gpr-externals]
-PJ_OS = ["linux", "windows", "macos", "freebsd"]
 POWERJOULAR_LINKING = ["default", "full"]
-
-[gpr-set-externals."case(os)".linux]
-PJ_OS = "linux"
-[gpr-set-externals."case(os)".windows]
-PJ_OS = "windows"
-[gpr-set-externals."case(os)".macos]
-PJ_OS = "macos"
-[gpr-set-externals."case(os)".freebsd]
-PJ_OS = "freebsd"
 
 [available.'case(os)']
 linux = true
