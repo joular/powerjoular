@@ -9,6 +9,7 @@
 --  Author : Adel Noureddine
 --
 
+with GNAT.OS_Lib;
 with Interfaces.C;
 with System;
 
@@ -26,8 +27,13 @@ package PowerJoular.Platform is
     -- Returns True if the standard output is a terminal that handles them, False for a file or a pipe
     function Enable_Terminal_Escapes return Boolean;
 
-    -- Whether Path is a symbolic link (or any reparse point on Windows)
-    function Is_Symbolic_Link (Path : in String) return Boolean;
+    -- Open Path to write to, never through a symbolic link, as PowerJoular often runs as root
+    -- Append opens a file that exists, at its end; otherwise anything at Path is deleted and a new file created
+    -- Returns GNAT.OS_Lib.Invalid_FD on failure
+    function Open_Output (Path : in String; Append : in Boolean) return GNAT.OS_Lib.File_Descriptor;
+
+    -- Rename From to To, replacing To if it exists (GNAT's Rename_File fails then on Windows)
+    function Replace_File (From : in String; To : in String) return Boolean;
 
     -- Create a new file of Size bytes at Path, readable by everyone, and map it in shared memory
     -- Anything already at Path is deleted first, so we never write into a file someone else prepared

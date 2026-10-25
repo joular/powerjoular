@@ -52,6 +52,11 @@ package body PowerJoular.Platform is
     function DeleteFileA (lpFileName : char_array) return int;
     pragma Import (Stdcall, DeleteFileA, "DeleteFileA");
 
+    MOVEFILE_REPLACE_EXISTING : constant unsigned := 1;
+
+    function MoveFileExA (lpExistingFileName : char_array; lpNewFileName : char_array; dwFlags : unsigned) return int;
+    pragma Import (Stdcall, MoveFileExA, "MoveFileExA");
+
     function CreateFileA
        (lpFileName : char_array;
         dwDesiredAccess : unsigned;
@@ -124,6 +129,32 @@ package body PowerJoular.Platform is
         return Attributes /= INVALID_FILE_ATTRIBUTES
                and then (Attributes and FILE_ATTRIBUTE_REPARSE_POINT) /= 0;
     end Is_Symbolic_Link;
+
+    --------------------------------------------------
+
+    -- Making a symbolic link takes administrator rights or developer mode on Windows, so it is only checked for before opening
+    function Open_Output (Path : in String; Append : in Boolean) return GNAT.OS_Lib.File_Descriptor is
+        Ignored : Boolean;
+    begin
+        if Is_Symbolic_Link (Path) then
+            return GNAT.OS_Lib.Invalid_FD;
+        end if;
+
+        if Append then
+            return GNAT.OS_Lib.Open_Append (Path, GNAT.OS_Lib.Text);
+        end if;
+
+        GNAT.OS_Lib.Delete_File (Path, Ignored);
+
+        return GNAT.OS_Lib.Create_New_File (Path, GNAT.OS_Lib.Text);
+    end Open_Output;
+
+    --------------------------------------------------
+
+    function Replace_File (From : in String; To : in String) return Boolean is
+    begin
+        return MoveFileExA (To_C (From), To_C (To), MOVEFILE_REPLACE_EXISTING) /= 0;
+    end Replace_File;
 
     --------------------------------------------------
 

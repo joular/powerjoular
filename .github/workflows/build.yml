@@ -5,6 +5,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
 
   # GNU/Linux and Raspberry Pi, each built on a runner of its own architecture, so nothing is cross compiled

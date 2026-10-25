@@ -25,6 +25,7 @@ with PowerJoular.Terminal;
 package body PowerJoular.CSV is
 
     use type Ada.Directories.File_Size;
+    use type GNAT.OS_Lib.File_Descriptor;
 
     Decimals : constant := 4;
 
@@ -96,52 +97,48 @@ package body PowerJoular.CSV is
 
     --------------------------------------------------
 
+    -- Write Line and a line end, True if all of it was written
+    function Write_Line (Output : in GNAT.OS_Lib.File_Descriptor; Line : in String) return Boolean is
+        Text : constant String := Line & ASCII.LF;
+    begin
+        return GNAT.OS_Lib.Write (Output, Text'Address, Text'Length) = Text'Length;
+    end Write_Line;
+
+    --------------------------------------------------
+
     -- Add Row to the file, and start a new or empty file with Header
     -- In overwrite mode, the file is replaced by Row only, written whole beside it first so a reader never finds it empty
     procedure Write_Row (File : in out Output_File; Header : in String; Row : in String) is
         Name : constant String := To_String (File.Name);
         Temporary : constant String := Name & ".tmp";
-        Output : File_Type;
-        Moved : Boolean;
+        Appending : Boolean := False;
+        Output : GNAT.OS_Lib.File_Descriptor;
+        Written : Boolean := False;
     begin
-        -- PowerJoular often runs as root, so refuse a link that may point at a system file (not race free, see the README)
-        if Platform.Is_Symbolic_Link (Name) or else Platform.Is_Symbolic_Link (Temporary) then
-            Report (File, Name & " is a symbolic link and is not written to");
-            return;
-        end if;
-
+        -- PowerJoular often runs as root, so the file is never opened through a symbolic link (see Platform.Open_Output)
         if Overwrite then
-            Create (Output, Out_File, Temporary);
-            Put_Line (Output, Row);
-            Close (Output);
-            GNAT.OS_Lib.Rename_File (Temporary, Name, Moved);
-
-            if not Moved then
-                Report (File, "cannot write to " & Name);
-            end if;
-
-            return;
-        elsif Ada.Directories.Exists (Name) and then Ada.Directories.Size (Name) > 0 then
-            Open (Output, Append_File, Name);
+            Output := Platform.Open_Output (Temporary, Append => False);
         else
-            Create (Output, Out_File, Name);
-            Put_Line (Output, Header);
+            Appending := Ada.Directories.Exists (Name) and then Ada.Directories.Size (Name) > 0;
+            Output := Platform.Open_Output (Name, Append => Appending);
         end if;
 
-        Put_Line (Output, Row);
-        Close (Output);
+        if Output /= GNAT.OS_Lib.Invalid_FD then
+            Written := (Overwrite or else Appending or else Write_Line (Output, Header)) and then Write_Line (Output, Row);
+            GNAT.OS_Lib.Close (Output);
+        end if;
+
+        -- The rename replaces whatever is at Name, a link included, without writing through it
+        if Written and then Overwrite then
+            Written := Platform.Replace_File (Temporary, Name);
+        end if;
+
+        if not Written then
+            Report (File, "cannot write to " & Name);
+        end if;
     exception
         when others =>
             Report (File, "cannot write to " & Name);
-
-            if Is_Open (Output) then
-                begin
-                    Close (Output);
-                exception
-                    when others =>
-                        null;
-                end;
-            end if;
     end Write_Row;
 
     --------------------------------------------------

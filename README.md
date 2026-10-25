@@ -110,7 +110,7 @@ On an AMD APU, the GPU reading already holds part of the power of the CPU cores,
 
 The Joular tools write their CSV files the same way: a `Timestamp` column in Unix seconds, columns separated by commas, four decimals, and the file of an application named after it, with the characters a file name cannot hold replaced by `_`.
 
-PowerJoular refuses to write a CSV file if a symbolic link is already at its path. This is a basic check, not a guarantee, as the link can still be swapped in after the check. When running PowerJoular as root, write the CSV files to a folder only root can write to (such as `/run/powerjoular` for the service), not to a shared folder such as `/tmp`.
+PowerJoular never writes a CSV file through a symbolic link: `-o` writes a new file each time and renames it over the previous one, and `-f` starts a new file or appends to one that is not a link. A hard link is still followed when `-f` appends: Linux refuses to make one to another user's file, but macOS and FreeBSD don't. So when running PowerJoular as root, write the CSV files to a folder only root can write to (such as `/run/powerjoular` for the service), not to a shared folder such as `/tmp`.
 
 Both value columns hold `-1.0000` for a second where the monitored process could not be read at all: it has stopped, it was never running, or the system does not let us get the information needed.
 That is not the same as `0.0000`, which means a process that was read and used no CPU time.

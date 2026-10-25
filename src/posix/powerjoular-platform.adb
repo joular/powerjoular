@@ -9,7 +9,6 @@
 --  Author : Adel Noureddine
 --
 
-with GNAT.OS_Lib;
 with Interfaces.C; use Interfaces.C;
 with System.Storage_Elements; use System.Storage_Elements;
 
@@ -19,13 +18,24 @@ package body PowerJoular.Platform is
     use type System.Address;
 
     -- Flags of open, from fcntl.h
+    O_WRONLY : constant := 1;
     O_RDWR : constant := 2;
 #if PJ_LINUX then
     O_CREAT : constant := 8#100#;   -- The same on x86 and ARM
     O_EXCL : constant := 8#200#;
+    O_APPEND : constant := 8#2000#;
+    O_NONBLOCK : constant := 8#4000#;
+#if PJ_ARM then
+    O_NOFOLLOW : constant := 8#100000#;
+#else
+    O_NOFOLLOW : constant := 8#400000#;
+#end if;
 #else
     O_CREAT : constant := 16#0200#;
     O_EXCL : constant := 16#0800#;
+    O_APPEND : constant := 16#0008#;
+    O_NONBLOCK : constant := 16#0004#;
+    O_NOFOLLOW : constant := 16#0100#;
 #end if;
 
     PROT_READ : constant := 1;
@@ -97,10 +107,30 @@ package body PowerJoular.Platform is
 
     --------------------------------------------------
 
-    function Is_Symbolic_Link (Path : in String) return Boolean is
+    function Open_Output (Path : in String; Append : in Boolean) return GNAT.OS_Lib.File_Descriptor is
+        Name : constant char_array := To_C (Path);
+        Ignored : int;
     begin
-        return GNAT.OS_Lib.Is_Symbolic_Link (Path);
-    end Is_Symbolic_Link;
+        -- O_NOFOLLOW refuses a symbolic link, O_NONBLOCK a FIFO no one reads, which would block the program
+        -- A hard link is still followed: Linux refuses to make one to another user's file, macOS and FreeBSD don't (see the README)
+        if Append then
+            return GNAT.OS_Lib.File_Descriptor (open (Name, O_WRONLY + O_APPEND + O_NOFOLLOW + O_NONBLOCK, 0));
+        end if;
+
+        -- As in Create_Shared_File, O_EXCL makes sure the file is a new one and ours
+        Ignored := unlink (Name);
+
+        return GNAT.OS_Lib.File_Descriptor (open (Name, O_WRONLY + O_CREAT + O_EXCL, Shared_File_Mode));
+    end Open_Output;
+
+    --------------------------------------------------
+
+    function Replace_File (From : in String; To : in String) return Boolean is
+        Moved : Boolean;
+    begin
+        GNAT.OS_Lib.Rename_File (From, To, Moved);
+        return Moved;
+    end Replace_File;
 
     --------------------------------------------------
 

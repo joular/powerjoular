@@ -36,6 +36,14 @@ project Powerjoular is
             end case;
     end case;
 
+    -- Linux numbers some flags of open differently on ARM (O_NOFOLLOW, see src/posix)
+    Arm := "False";
+    Host_Target := project'Target;
+    case Host_Target is
+        when "aarch64-linux" | "arm-linux" | "armhf-linux" => Arm := "True";
+        when others => null;
+    end case;
+
     for Languages use ("Ada");
     for Object_Dir use "obj";
     for Exec_Dir use "bin";
@@ -48,7 +56,7 @@ project Powerjoular is
 
     package Compiler is
         -- CPU Load's symbols tell the OS apart in src/posix
-        for Switches ("Ada") use ("-O2", "-gnat2012", "-gnatwa") & CpuLoad.Defines;
+        for Switches ("Ada") use ("-O2", "-gnat2012", "-gnatwa") & CpuLoad.Defines & ("-gnateDPJ_ARM=" & Arm);
     end Compiler;
 
     package Binder is
