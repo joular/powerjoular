@@ -9,6 +9,7 @@
 --  Author : Adel Noureddine
 --
 
+with Ada.Command_Line;
 with Ada.Directories;
 with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.Command_Line; use GNAT.Command_Line;
@@ -71,6 +72,14 @@ package body PowerJoular.Options is
     begin
         Config := (others => <>);
         Result := Rejected;
+
+        -- Getopt reads past the end of a lone "-", so it never gets to see one
+        for I in 1 .. Ada.Command_Line.Argument_Count loop
+            if Ada.Command_Line.Argument (I) = "-" then
+                Refuse ("unknown option: -");
+                return;
+            end if;
+        end loop;
 
         loop
             case Getopt (Switches) is
