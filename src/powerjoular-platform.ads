@@ -27,6 +27,13 @@ package PowerJoular.Platform is
     -- Returns True if the standard output is a terminal that handles them, False for a file or a pipe
     function Enable_Terminal_Escapes return Boolean;
 
+    -- Whether the terminal shows UTF-8, for the blocks of the meters: a UTF-8 locale on POSIX,
+    -- Windows Terminal on Windows, whose console is switched to UTF-8 then (the older console gets ASCII)
+    function Enable_Unicode_Output return Boolean;
+
+    -- Give the console back the code page Enable_Unicode_Output changed (Windows), on stop
+    procedure Restore_Terminal;
+
     -- Open Path to write to, never through a symbolic link, as PowerJoular often runs as root
     -- Append opens a file that exists, at its end; otherwise anything at Path is deleted and a new file created
     -- Returns GNAT.OS_Lib.Invalid_FD on failure

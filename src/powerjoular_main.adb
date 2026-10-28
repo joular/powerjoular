@@ -76,7 +76,7 @@ procedure PowerJoular_Main is
     begin
         Ring_Buffer.Close;
         Monitor.Stop;
-        Terminal.Close_Line;
+        Terminal.Stop;
     end Shut_Down;
 
     --------------------------------------------------
@@ -99,6 +99,9 @@ begin
     end case;
 
     Stop.Install;
+
+    -- Before starting the sources, which can take a second (powermetrics)
+    Terminal.Start (Config);
 
     Monitor.Start (Config);
     Deadline := Clock + Interval;

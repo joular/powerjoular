@@ -46,6 +46,17 @@ package body PowerJoular.Platform is
     function SetConsoleMode (hConsoleHandle : HANDLE; dwMode : unsigned) return int;
     pragma Import (Stdcall, SetConsoleMode, "SetConsoleMode");
 
+    CP_UTF8 : constant unsigned := 65001;
+
+    function GetConsoleOutputCP return unsigned;
+    pragma Import (Stdcall, GetConsoleOutputCP, "GetConsoleOutputCP");
+
+    function SetConsoleOutputCP (wCodePageID : unsigned) return int;
+    pragma Import (Stdcall, SetConsoleOutputCP, "SetConsoleOutputCP");
+
+    -- Code page of the console before the switch to UTF-8, 0 if not switched
+    Previous_Code_Page : unsigned := 0;
+
     function GetFileAttributesA (lpFileName : char_array) return unsigned;
     pragma Import (Stdcall, GetFileAttributesA, "GetFileAttributesA");
 
@@ -119,6 +130,26 @@ package body PowerJoular.Platform is
         -- Older consoles refuse, and would print the escape sequences as text
         return SetConsoleMode (Output, Mode or ENABLE_VIRTUAL_TERMINAL_PROCESSING) /= 0;
     end Enable_Terminal_Escapes;
+
+    -- Windows Terminal sets WT_SESSION. The older console may have no blocks in its font
+    function Enable_Unicode_Output return Boolean is
+    begin
+        if not Ada.Environment_Variables.Exists ("WT_SESSION") then
+            return False;
+        end if;
+
+        Previous_Code_Page := GetConsoleOutputCP;
+        return SetConsoleOutputCP (CP_UTF8) /= 0;
+    end Enable_Unicode_Output;
+
+    -- The code page belongs to the console, which the shell keeps using once PowerJoular ends
+    procedure Restore_Terminal is
+        Ignored : int;
+    begin
+        if Previous_Code_Page /= 0 then
+            Ignored := SetConsoleOutputCP (Previous_Code_Page);
+        end if;
+    end Restore_Terminal;
 
     --------------------------------------------------
 

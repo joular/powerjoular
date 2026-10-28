@@ -9,6 +9,9 @@
 --  Author : Adel Noureddine
 --
 
+with Ada.Characters.Handling;
+with Ada.Environment_Variables;
+with Ada.Strings.Fixed;
 with Interfaces.C; use Interfaces.C;
 with System.Storage_Elements; use System.Storage_Elements;
 
@@ -104,6 +107,21 @@ package body PowerJoular.Platform is
     begin
         return isatty (Standard_Output) /= 0;
     end Enable_Terminal_Escapes;
+
+    -- The first of these that is set gives the character set, as for setlocale
+    function Enable_Unicode_Output return Boolean is
+        use Ada.Environment_Variables;
+
+        Locale : constant String :=
+            Ada.Characters.Handling.To_Upper
+                (if Value ("LC_ALL", "") /= "" then Value ("LC_ALL")
+                 elsif Value ("LC_CTYPE", "") /= "" then Value ("LC_CTYPE")
+                 else Value ("LANG", ""));
+    begin
+        return Ada.Strings.Fixed.Index (Locale, "UTF-8") > 0 or else Ada.Strings.Fixed.Index (Locale, "UTF8") > 0;
+    end Enable_Unicode_Output;
+
+    procedure Restore_Terminal is null;
 
     --------------------------------------------------
 

@@ -22,8 +22,7 @@ with PowerJoular.Terminal;
 package body PowerJoular.Help is
 
     -- Section title in yellow, or plain when the output is not a terminal
-    function Title (Text : in String) return String is
-        (if Terminal.Escapes_Enabled then ESC & "[93m" & Text & ESC & "[0m" else Text);
+    function Title (Text : in String) return String is (Terminal.Colour (Text, "93"));
 
     Rule : constant String := "--------------------------";
 
@@ -31,8 +30,7 @@ package body PowerJoular.Help is
 
     procedure Show_Help is
     begin
-        Put_Line (Title ("~~ PowerJoular ~~"));
-        Put_Line ("Version " & Version);
+        Put_Line (Terminal.Banner);
         Put_Line (Rule);
         Put_Line ("PowerJoular is a multi-platform power monitoring tool.");
         Put_Line ("It estimates the power consumption every second of:");
@@ -97,7 +95,11 @@ package body PowerJoular.Help is
         function Availability (Available : in Boolean) return String is
             (if Available then "available" else "not available");
     begin
-        Put_Line ("PowerJoular " & Version);
+        -- On a terminal the banner already gave it
+        if not Terminal.Escapes_Enabled then
+            Put_Line ("PowerJoular " & Version);
+        end if;
+
         Put_Line (HT & "Joular Core library: " & Joular_Core.Version);
         Put_Line (HT & "CPU Load library: " & CPU_Load.Version);
 

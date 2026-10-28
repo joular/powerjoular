@@ -65,6 +65,8 @@ Run `powerjoular`. With no option, it prints the power of the machine on the ter
 sudo powerjoular
 ```
 
+On a terminal, PowerJoular shows its name and version when it starts. Set `NO_COLOR` to turn the colours off.
+
 The following options are available:
 
 | Option | What it does |
