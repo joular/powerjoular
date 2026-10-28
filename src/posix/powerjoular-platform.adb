@@ -183,9 +183,10 @@ package body PowerJoular.Platform is
 
     -- The same numbers on Linux, macOS and FreeBSD
     SIGHUP : constant := 1;
+    SIGPIPE : constant := 13;
     SIGTERM : constant := 15;
 
-    Stop_Signals : constant array (1 .. 2) of int := (SIGHUP, SIGTERM);
+    Stop_Signals : constant array (1 .. 3) of int := (SIGHUP, SIGPIPE, SIGTERM);
 
     SIG_IGN : constant System.Address := To_Address (1);
 

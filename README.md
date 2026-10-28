@@ -81,9 +81,11 @@ The following options are available:
 | `-m filename` | Read the power of this machine from the file the host writes, when running inside a virtual machine |
 | `-s format` | Format of that file, either `powerjoular` or `watts` |
 
-Options can be mixed, i.e., `powerjoular -tp 144` monitors the process 144 and prints it on the terminal.
+Options can be mixed, except `-f` with `-o` and `-p` with `-a`, i.e., `powerjoular -tp 144` monitors the process 144 and prints it on the terminal.
 
-Monitoring a process or an application writes **two** CSV files: the given filename for the whole system, and the same name with the process number or the application name added to it for the process or the application.
+Monitoring a process or an application writes **two** CSV files: the given filename for the entire system, and a second one for the monitored process or application, i.e., `-p 144 -f power.csv` writes `power.csv` and `power-144.csv`.
+
+`-p` checks that the process can be read when PowerJoular starts, and refuses to start otherwise.
 
 ### Exporting to CSV
 
@@ -112,7 +114,7 @@ The Joular tools write their CSV files the same way: a `Timestamp` column in Uni
 
 PowerJoular never writes a CSV file through a symbolic link: `-o` writes a new file each time and renames it over the previous one, and `-f` starts a new file or appends to one that is not a link. A hard link is still followed when `-f` appends: Linux refuses to make one to another user's file, but macOS and FreeBSD don't. So when running PowerJoular as root, write the CSV files to a folder only root can write to (such as `/run/powerjoular` for the service), not to a shared folder such as `/tmp`.
 
-Both value columns hold `-1.0000` for a second where the monitored process could not be read at all: it has stopped, it was never running, or the system does not let us get the information needed.
+Both value columns hold `-1.0000` for a second where the monitored process could not be read at all: it has stopped, or the system does not let us get the information needed.
 That is not the same as `0.0000`, which means a process that was read and used no CPU time.
 
 `-a` is the exception: an application with no running process at all is reported as `0.0000` and not as `-1.0000`, because we can't tell apart a name that matches nothing from a name whose processes did not use any CPU time. `-1.0000` still appears for `-a` when a process is found but the system does not let us read it.
@@ -142,7 +144,7 @@ The area is 288 bytes, in the byte order of the machine: a counter of 8 bytes, t
 
 A measurement goes in the entry the counter points at (`counter mod 5`), and the counter is raised afterwards. A reader follows the counter to know when a new measurement has landed, and the timestamps to know how old each entry is.
 
-Only one PowerJoular should write to the ring buffer at the same time. Two runs using `-r` at once each keep a counter of their own, so a reader sees the entries of both interleaved and the counter moving backwards.
+Only one PowerJoular should write to the ring buffer at the same time. A second run using `-r` replaces the file, so readers that open it after that, only see that run, while the first one goes on writing to a file no one can open any more. On Windows, the second run cannot replace the file while the first one has it open, and continues without the ring buffer.
 The ring buffer is created every time PowerJoular starts: a file left at that path, by an earlier run or by anyone else, is deleted first, so PowerJoular never writes into a file it did not create. It is readable by everyone and writable only by the user running PowerJoular. A reader that mapped the file has to map it again when PowerJoular restarts. When the file cannot be created, PowerJoular carries on without the ring buffer.
 
 ### Monitoring inside a virtual machine
@@ -170,7 +172,7 @@ powerjoular -p 1234 -o /shared/vm-power.csv
 This writes two files, and the one to share is the one with the process number: it alone holds the power of the virtual machine, while the other one holds the power of the whole host.
 
 ```bash
-powerjoular -m /shared/vm-power.csv-1234.csv -s powerjoular -t
+powerjoular -m /shared/vm-power-1234.csv -s powerjoular -t
 ```
 
 **With another program on the host.** Have it write the power in watts and nothing else, then read that file with the `watts` format:
@@ -232,7 +234,7 @@ To build for another OS than the one you are on, set `PJ_OS` to `linux`, `macos`
 gprbuild -P powerjoular.gpr -aP../joularcore -aP../cpuload -XPJ_OS=windows -p
 ```
 
-Linux, macOS, Windows and FreeBSD are each detected on their own, from the target GPRBuild identifies.
+Linux, macOS, Windows and FreeBSD are each detected on their own, from the target GPRBuild identifies. A target name it does not know stops the build: set `PJ_OS` then.
 
 On FreeBSD, use GNAT 15 or newer, which Alire also takes from `PATH`: `pkg install gprbuild gnat15` brings GPRBuild and GNAT 15, whose folder `/usr/local/gnat15/bin` has to be added to `PATH`. GNAT 12, which `pkg install gprbuild` uses, crashes while compiling Joular Core.
 
@@ -269,6 +271,7 @@ Version 2 does the measuring using the [Joular Core](https://github.com/joular/j
 Other main differences:
 
 - The CSV files hold four digits after the dot instead of the fourteen. The columns and the header have been renamed, with Timestamp and CPU Usage.
+- The CSV file of a monitored process or application is named `power-144.csv` for `power.csv`, instead of `power.csv-144.csv`.
 - The energy a RAPL processor reports is divided by how long the cycle actually took, rather than assumed to be exactly one second. On a machine running late, the watts reported are now the watts drawn.
 - A file that cannot be written to, a power source that stops answering, or a ring buffer that cannot be opened is reported once and the monitoring continues.
 

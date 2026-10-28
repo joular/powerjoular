@@ -136,7 +136,8 @@ begin
             Publish (Data);
         exception
             when E : others =>
-                if not Reported_Failure then
+                -- Writing to a closed pipe fails once the stop is asked: that is no failure to report
+                if not Reported_Failure and then not Stop.Asked then
                     Reported_Failure := True;
                     Terminal.Close_Line;
                     Put_Line (Standard_Error, "powerjoular: a cycle failed, the monitoring goes on.");

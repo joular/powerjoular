@@ -37,10 +37,11 @@ project Powerjoular is
     end case;
 
     -- Linux numbers some flags of open differently on ARM (O_NOFOLLOW, see src/posix)
+    -- The last name is Arch Linux ARM's (armv7h), which gprconfig leaves as it is
     Arm := "False";
     Host_Target := project'Target;
     case Host_Target is
-        when "aarch64-linux" | "arm-linux" | "armhf-linux" => Arm := "True";
+        when "aarch64-linux" | "arm-linux" | "armhf-linux" | "armv7l-unknown-linux-gnueabihf" => Arm := "True";
         when others => null;
     end case;
 

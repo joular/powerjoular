@@ -9,6 +9,7 @@
 --  Author : Adel Noureddine
 --
 
+with Ada.Characters.Handling; use Ada.Characters.Handling;
 with Ada.Directories;
 with Ada.Strings; use Ada.Strings;
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
@@ -47,6 +48,18 @@ package body PowerJoular.CSV is
 
     --------------------------------------------------
 
+    -- power.csv gives power-144.csv for the process 144, power-firefox.csv for Firefox
+    function Target_File_Name (Base : in String; Target : in String) return String is
+        Stem : constant String :=
+            (if Base'Length > 4 and then To_Lower (Base (Base'Last - 3 .. Base'Last)) = ".csv"
+             then Base (Base'First .. Base'Last - 4)
+             else Base);
+    begin
+        return Stem & "-" & Target & ".csv";
+    end Target_File_Name;
+
+    --------------------------------------------------
+
     -- Folder separators, the other characters that Windows refuses in a name and control characters are replaced
     -- So the file lands in the folder given, with the same name on every OS
     function File_Name_Part (Name : in String) return String is
@@ -76,11 +89,11 @@ package body PowerJoular.CSV is
 
             when One_Process =>
                 Target_File.Name :=
-                    To_Unbounded_String (Base & "-" & Trim (CPU_Load.Process_ID'Image (Config.PID), Left) & ".csv");
+                    To_Unbounded_String (Target_File_Name (Base, Trim (CPU_Load.Process_ID'Image (Config.PID), Left)));
 
             when One_Application =>
                 Target_File.Name :=
-                    To_Unbounded_String (Base & "-" & File_Name_Part (To_String (Config.App)) & ".csv");
+                    To_Unbounded_String (Target_File_Name (Base, File_Name_Part (To_String (Config.App))));
         end case;
     end Start;
 

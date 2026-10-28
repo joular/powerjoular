@@ -9,7 +9,7 @@
 --  Author : Adel Noureddine
 --
 
--- Stop requests: Ctrl+C, and SIGTERM and SIGHUP outside Windows. The handler only sets a flag, which the main loop checks
+-- Stop requests: Ctrl+C, and SIGTERM, SIGHUP and SIGPIPE outside Windows. The handler only sets a flag, which the main loop checks
 package PowerJoular.Stop is
 
     -- Replace the default behaviour of these signals, so the program can close its files and sources before exiting

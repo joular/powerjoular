@@ -46,7 +46,7 @@ package PowerJoular.Platform is
     -- A handler for the kill signals the OS sends to end a program, as C expects it
     type Signal_Handler is access procedure (Number : in Interfaces.C.int) with Convention => C;
 
-    -- Call Handler when the OS asks the program to end other than with Ctrl+C: SIGTERM and SIGHUP on POSIX, nothing on Windows
+    -- Call Handler when the OS asks the program to end other than with Ctrl+C: SIGTERM, SIGHUP and SIGPIPE on POSIX, nothing on Windows
     -- A signal nohup or the shell set to be ignored stays ignored, so a run in the background outlives its terminal
     procedure Install_Stop_Handler (Handler : in Signal_Handler);
 

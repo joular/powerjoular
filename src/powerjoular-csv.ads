@@ -12,7 +12,7 @@
 with PowerJoular.Options;
 
 -- Write the power data to CSV files
--- Monitoring a process or an application writes a second file: the CSV file name followed by the PID or the application name
+-- Monitoring a process or an application writes a second file, named after the PID or the application: power.csv gives power-144.csv
 package PowerJoular.CSV is
 
     -- Set the files to write to, from the command line

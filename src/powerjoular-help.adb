@@ -62,7 +62,7 @@ package body PowerJoular.Help is
         Put_Line (HT & "-m filename: read the power of this machine from the file the host writes, when running inside a virtual machine");
         Put_Line (HT & "-s format: format of that VM file, either 'powerjoular' (the 3 column CSV that -o writes for a monitored process, the power being the third column) or 'watts' (one column with the power only)");
         Put_Line (HT & HT & "with 'powerjoular', point -m at the file of the process the virtual machine runs as on the host, the one carrying the process number, and not at the file of the whole host machine");
-        Put_Line ("You can mix the options, i.e., powerjoular -tp 144 monitors the process 144 and prints it on the terminal.");
+        Put_Line ("You can mix the options, except -f with -o and -p with -a, i.e., powerjoular -tp 144 monitors the process 144 and prints it on the terminal.");
         Put_Line (Rule);
         Put_Line (Title ("Ring buffer:"));
         Put_Line ("With -r, the power data of every second is written to a small shared memory area, which any program on the same machine can read with low latency.");

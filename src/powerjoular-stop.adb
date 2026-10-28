@@ -43,7 +43,8 @@ package body PowerJoular.Stop is
     begin
         GNAT.Ctrl_C.Install_Handler (On_Ctrl_C'Access);
 
-        -- kill and systemctl stop send SIGTERM, closing the terminal SIGHUP: stop cleanly then too (on macOS, powermetrics would outlive us)
+        -- kill and systemctl stop send SIGTERM, closing the terminal SIGHUP, a closed pipe (powerjoular | head) SIGPIPE
+        -- Stop cleanly then too (on macOS, powermetrics would outlive us)
         Platform.Install_Stop_Handler (On_Signal'Access);
     end Install;
 

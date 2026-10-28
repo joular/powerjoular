@@ -3,8 +3,8 @@ pkgname=powerjoular
 pkgver=2.0.0
 pkgrel=1
 # The release tags of the two libraries, which have to satisfy the constraints of alire.toml
-_joularcore_tag=0.0.5
-_cpuload_tag=0.0.5
+_joularcore_tag=0.0.6
+_cpuload_tag=0.0.6
 pkgdesc="Monitor the power consumption of platforms, processes and applications"
 arch=('x86_64' 'aarch64' 'armv7h')
 url="https://github.com/joular/powerjoular"
@@ -22,9 +22,11 @@ sha256sums=('SKIP'
 build() {
     cd "$srcdir/$pkgname"
     # Each library is checked out into a folder named after it, and is found through the project search path
+    # PJ_OS is given, as gprconfig doesn't know the target name of every Arch GCC (armv7h) and the libraries then stop
     gprbuild -P powerjoular.gpr -p \
         -aP"$srcdir/joularcore" \
-        -aP"$srcdir/cpuload"
+        -aP"$srcdir/cpuload" \
+        -XPJ_OS=linux
 }
 
 package() {
