@@ -11,8 +11,6 @@
 
 with Ada.Command_Line;
 with Ada.Directories;
-with Ada.Strings; use Ada.Strings;
-with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.Command_Line; use GNAT.Command_Line;
 with Interfaces;
@@ -39,7 +37,6 @@ package body PowerJoular.Options is
         Asked_For_Process : Boolean := False;
         Asked_For_Application : Boolean := False;
         Asked_For_Append : Boolean := False;
-        Asked_For_Overwrite : Boolean := False;
         Format_Name : Unbounded_String;
         Format_Known : Boolean := False;
 
@@ -57,11 +54,11 @@ package body PowerJoular.Options is
                 return "-p takes the number of a running process, and 0 is not one.";
             -- Checked once now, rather than printing n/a every second for a process that will never be read
             elsif Asked_For_Process and then CPU_Load.Take (Config.PID).Used < 0 then
-                return "cannot read the process " & Trim (CPU_Load.Process_ID'Image (Config.PID), Left)
+                return "cannot read the process" & CPU_Load.Process_ID'Image (Config.PID)
                        & ": it is not running, or this user is not allowed to read it.";
             elsif Asked_For_Application and then Config.App = Null_Unbounded_String then
                 return "-a needs the name of an application to monitor.";
-            elsif Asked_For_Append and then Asked_For_Overwrite then
+            elsif Asked_For_Append and then Config.Overwrite then
                 return "write either every measurement (-f) or the latest one (-o), not both.";
             elsif Config.Write_CSV and then Config.CSV_File = Null_Unbounded_String then
                 return "-f and -o need the path of a file to write to.";
@@ -118,14 +115,12 @@ package body PowerJoular.Options is
                 when 'f' =>
                     Config.Write_CSV := True;
                     Config.CSV_File := To_Unbounded_String (Parameter);
-                    Config.Overwrite := False;
                     Asked_For_Append := True;
 
                 when 'o' =>
                     Config.Write_CSV := True;
                     Config.CSV_File := To_Unbounded_String (Parameter);
                     Config.Overwrite := True;
-                    Asked_For_Overwrite := True;
 
                 when 'p' =>
                     begin

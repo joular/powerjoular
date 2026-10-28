@@ -137,7 +137,7 @@ package body PowerJoular.CSV is
         end if;
 
         if Output /= GNAT.OS_Lib.Invalid_FD then
-            Written := (Overwrite or else Appending or else Write_Line (Output, Header)) and then Write_Line (Output, Row);
+            Written := Write_Line (Output, (if Overwrite or else Appending then Row else Header & ASCII.LF & Row));
             GNAT.OS_Lib.Close (Output);
         end if;
 
