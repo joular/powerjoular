@@ -141,6 +141,41 @@ package body PowerJoular.Platform is
 
     --------------------------------------------------
 
+    -- struct winsize, the same on Linux, macOS and FreeBSD
+    type Window_Size is
+        record
+            Rows : unsigned_short := 0;
+            Columns : unsigned_short := 0;
+            Width_In_Pixels : unsigned_short := 0;
+            Height_In_Pixels : unsigned_short := 0;
+        end record
+        with Convention => C;
+
+#if PJ_LINUX then
+    TIOCGWINSZ : constant unsigned_long := 16#5413#;
+#else
+    TIOCGWINSZ : constant unsigned_long := 16#4008_7468#; -- _IOR ('t', 104, struct winsize)
+#end if;
+
+    -- The size is a variadic argument of ioctl, as the mode of open
+    function ioctl (fd : int; request : unsigned_long; size : access Window_Size) return int;
+    pragma Import (C_Variadic_2, ioctl, "ioctl");
+
+    procedure Terminal_Size (Columns, Rows : out Positive) is
+        Size : aliased Window_Size;
+    begin
+        Columns := 80;
+        Rows := 24;
+
+        -- A serial console may answer 0 by 0
+        if ioctl (Standard_Output, TIOCGWINSZ, Size'Access) = 0 and then Size.Columns > 0 and then Size.Rows > 0 then
+            Columns := Positive (Size.Columns);
+            Rows := Positive (Size.Rows);
+        end if;
+    end Terminal_Size;
+
+    --------------------------------------------------
+
     function Open_Output (Path : in String; Append : in Boolean) return GNAT.OS_Lib.File_Descriptor is
         Name : constant char_array := To_C (Path);
         Ignored : int;

@@ -34,6 +34,9 @@ package PowerJoular.Platform is
     -- Give the console back the code page Enable_Unicode_Output changed (Windows), on stop
     procedure Restore_Terminal;
 
+    -- Size of the terminal on the standard output, 80 by 24 if it can't be read
+    procedure Terminal_Size (Columns, Rows : out Positive);
+
     -- Open Path to write to, never through a symbolic link, as PowerJoular often runs as root
     -- Append opens a file that exists, at its end; otherwise anything at Path is deleted and a new file created
     -- Returns GNAT.OS_Lib.Invalid_FD on failure

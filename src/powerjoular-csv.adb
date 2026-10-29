@@ -14,7 +14,6 @@ with Ada.Directories;
 with Ada.Strings; use Ada.Strings;
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
-with Ada.Text_IO; use Ada.Text_IO;
 with GNAT.OS_Lib;
 
 with CPU_Load;
@@ -104,8 +103,7 @@ package body PowerJoular.CSV is
     begin
         if not File.Reported then
             File.Reported := True;
-            Terminal.Close_Line;
-            Put_Line (Standard_Error, "powerjoular: " & Message & ", the monitoring goes on without the file.");
+            Terminal.Report (Message & ", the monitoring goes on without the file.");
         end if;
     end Report;
 
@@ -186,5 +184,9 @@ package body PowerJoular.CSV is
                               & "," & Image (Data.Target_Power, Decimals));
         end if;
     end Write;
+
+    --------------------------------------------------
+
+    function Target_Name return String is (if Has_Target_File then To_String (Target_File.Name) else "");
 
 end PowerJoular.CSV;

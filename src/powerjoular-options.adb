@@ -21,7 +21,7 @@ package body PowerJoular.Options is
 
     use type Interfaces.Integer_64;
 
-    Switches : constant String := "h v t d f: o: p: a: m: s: r";
+    Switches : constant String := "h v t d i f: o: p: a: m: s: r";
 
     --------------------------------------------------
 
@@ -108,6 +108,11 @@ package body PowerJoular.Options is
 
                 when 'd' =>
                     Config.Show_Debug := True;
+
+                -- The terminal shows it either way, the whole terminal when there is one
+                when 'i' =>
+                    Config.Show_Screen := True;
+                    Config.Show_Terminal := True;
 
                 when 'r' =>
                     Config.Write_Ring_Buffer := True;

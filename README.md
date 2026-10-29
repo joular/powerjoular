@@ -74,6 +74,7 @@ The following options are available:
 | `-h` | Show the help message |
 | `-v` | Show the version number |
 | `-t` | Print the power data on the terminal |
+| `-i` | Show the visual TUI with power data on the whole terminal along with bars and a chart |
 | `-d` | Print what the machine offers on start up |
 | `-p pid` | Monitor the process with this number |
 | `-a appName` | Monitor this application, and every process of it |
@@ -88,6 +89,8 @@ Options can be mixed, except `-f` with `-o` and `-p` with `-a`, i.e., `powerjoul
 Monitoring a process or an application writes **two** CSV files: the given filename for the entire system, and a second one for the monitored process or application, i.e., `-p 144 -f power.csv` writes `power.csv` and `power-144.csv`.
 
 `-p` checks that the process can be read when PowerJoular starts, and refuses to start otherwise.
+
+`-i` shows the visual TUI: the power in large digits, a bar for the CPU and the GPU when there is a GPU (with `-p` or `-a`, the process's share of the CPU), a bar for the load, and a chart with one bar a second. A side panel lists what was found (CPU, GPU) and what is being written (`-f`, `-o`, `-r`). It works with every option, and stops with Ctrl+C. Messages that come while it is shown are printed when it closes. A window smaller than 50 by 16 gets the `-t` line instead, and a pipe or a file gets exactly what `-t` prints.
 
 ### Exporting to CSV
 
@@ -266,6 +269,7 @@ sudo systemctl enable powerjoular.service
 Version 2 does the measuring using the [Joular Core](https://github.com/joular/joularcore) and [CPU Load](https://github.com/joular/cpuload) libraries instead of its own code, which also include macOS, Windows and FreeBSD support.
 
 - **New**: `-r` writes the power data to a shared memory ring buffer.
+- **New**: `-i` shows the visual TUI with power data on the whole terminal along with bars and a chart.
 - **Removed**: `-k`, which measured a process from its threads. It was experimental, and the process readings no longer need it.
 - **Removed**: `-l`, which picked the linear power models of the single-board computers, has been removed. The default and only models used now are the polynomial models, which are much more accurate and their overhead is minimal.
 - **Removed**: `-c`, which wrote the timestamps with milliseconds. Timestamps are whole seconds.

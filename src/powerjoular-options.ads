@@ -30,6 +30,9 @@ package PowerJoular.Options is
             Show_Terminal : Boolean := False;
             Show_Debug : Boolean := False;
 
+            -- Show the visual TUI with power data on the whole terminal along with bars and a chart (-i)
+            Show_Screen : Boolean := False;
+
             -- Write the power data to a CSV file
             -- Overwrite keeps only the latest measurement in the file
             Write_CSV : Boolean := False;

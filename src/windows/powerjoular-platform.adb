@@ -164,6 +164,51 @@ package body PowerJoular.Platform is
 
     --------------------------------------------------
 
+    type COORD is
+        record
+            X, Y : short := 0;
+        end record
+        with Convention => C;
+
+    type SMALL_RECT is
+        record
+            Left, Top, Right, Bottom : short := 0;
+        end record
+        with Convention => C;
+
+    -- In this order, as in wincon.h
+    type CONSOLE_SCREEN_BUFFER_INFO is
+        record
+            dwSize : COORD;
+            dwCursorPosition : COORD;
+            wAttributes : unsigned_short := 0;
+            srWindow : SMALL_RECT;
+            dwMaximumWindowSize : COORD;
+        end record
+        with Convention => C;
+
+    function GetConsoleScreenBufferInfo
+       (hConsoleOutput : HANDLE; lpConsoleScreenBufferInfo : access CONSOLE_SCREEN_BUFFER_INFO) return int;
+    pragma Import (Stdcall, GetConsoleScreenBufferInfo, "GetConsoleScreenBufferInfo");
+
+    -- The visible window, not the buffer, which holds the scrollback too
+    procedure Terminal_Size (Columns, Rows : out Positive) is
+        Info : aliased CONSOLE_SCREEN_BUFFER_INFO;
+        Window : SMALL_RECT renames Info.srWindow;
+    begin
+        Columns := 80;
+        Rows := 24;
+
+        if GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), Info'Access) /= 0
+           and then Window.Right >= Window.Left and then Window.Bottom >= Window.Top
+        then
+            Columns := Integer (Window.Right) - Integer (Window.Left) + 1;
+            Rows := Integer (Window.Bottom) - Integer (Window.Top) + 1;
+        end if;
+    end Terminal_Size;
+
+    --------------------------------------------------
+
     -- Symbolic links and junctions are both reparse points
     function Is_Symbolic_Link (Path : in String) return Boolean is
         Attributes : constant unsigned := GetFileAttributesW (Wide (Path));

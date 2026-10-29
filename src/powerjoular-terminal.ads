@@ -13,6 +13,7 @@ with PowerJoular.Options;
 
 -- Print the power data on the terminal
 -- On a terminal each measurement is written over the previous one, with meters, otherwise (file or pipe) each one gets its own line of plain text
+-- With -i, a terminal shows it on its whole screen instead (powerjoular-terminal-screen.adb)
 package PowerJoular.Terminal is
 
     -- Check whether the standard output is a terminal that handles escape sequences, and enable them on Windows
@@ -32,12 +33,14 @@ package PowerJoular.Terminal is
 
     -- Show one cycle, of the monitored process or application if any, otherwise of the whole system
     -- An unreadable value is shown as "n/a"
-    procedure Show (Data : in Cycle; Target : in Target_Kind; GPU_Available : in Boolean);
+    -- Config is the one main ends up with: a ring buffer that failed to open is off in it
+    procedure Show (Data : in Cycle; Config : in Options.Settings; CPU_Available, GPU_Available : in Boolean);
 
-    -- End the line left open by the last measurement, before an error message
-    procedure Close_Line;
+    -- Print a message on the standard error after "powerjoular: ", then Detail on its own line if any
+    -- While the whole screen is shown, both are held and printed when it closes
+    procedure Report (Text : in String; Detail : in String := "");
 
-    -- End the line, and give the terminal back as Start found it
+    -- End the line or close the whole screen, and give the terminal back as Start found it
     procedure Stop;
 
 end PowerJoular.Terminal;

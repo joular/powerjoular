@@ -120,11 +120,9 @@ package body PowerJoular.Virtual_Machine is
             Failed_Last := True;
         elsif not Reported_Failure then
             Reported_Failure := True;
-            Terminal.Close_Line;
-            Put_Line (Standard_Error,
-                      "powerjoular: cannot read the power of this machine from " & File_Name
-                      & (if Ever_Read then ", keeping the last value read."
-                         else ", reporting no power until it can be read."));
+            Terminal.Report ("cannot read the power of this machine from " & File_Name
+                             & (if Ever_Read then ", keeping the last value read."
+                                else ", reporting no power until it can be read."));
         end if;
 
         return Last_Power;

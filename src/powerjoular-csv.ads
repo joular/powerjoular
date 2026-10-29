@@ -24,4 +24,7 @@ package PowerJoular.CSV is
     -- A file that can't be written to is skipped, and reported once
     procedure Write (Data : in Cycle);
 
+    -- Name of the file of the monitored process or application, set by Start; empty for the whole system
+    function Target_Name return String;
+
 end PowerJoular.CSV;

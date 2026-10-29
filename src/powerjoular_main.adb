@@ -55,18 +55,19 @@ procedure PowerJoular_Main is
 
     --------------------------------------------------
 
+    -- The files first, so a fault on the terminal never costs them a row
     procedure Publish (Data : in Cycle) is
     begin
-        if Config.Show_Terminal then
-            Terminal.Show (Data, Config.Target, Monitor.GPU_Available);
-        end if;
-
         if Config.Write_CSV then
             CSV.Write (Data);
         end if;
 
         if Config.Write_Ring_Buffer then
             Ring_Buffer.Write (Data);
+        end if;
+
+        if Config.Show_Terminal then
+            Terminal.Show (Data, Config, Monitor.CPU_Available, Monitor.GPU_Available);
         end if;
     end Publish;
 
@@ -157,9 +158,8 @@ begin
                 -- Writing to a closed pipe fails once the stop is asked: that is no failure to report
                 if not Reported_Failure and then not Stop.Asked then
                     Reported_Failure := True;
-                    Terminal.Close_Line;
-                    Put_Line (Standard_Error, "powerjoular: a cycle failed, the monitoring goes on.");
-                    Put_Line (Standard_Error, Ada.Exceptions.Exception_Information (E));
+                    Terminal.Report ("a cycle failed, the monitoring goes on.",
+                                     Ada.Exceptions.Exception_Information (E));
                 end if;
         end;
 
