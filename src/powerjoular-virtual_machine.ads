@@ -23,7 +23,7 @@ package PowerJoular.Virtual_Machine is
     function Format_Of (Name : in String; Format : out File_Format) return Boolean;
 
     -- Read the power, in watts, from the file
-    -- Returns False if the file can't be opened, or doesn't hold a power value (a negative value counts as none)
+    -- Returns False if the file can't be opened, or doesn't hold a number (Power keeps a negative one out)
     function Read (File_Name : in String; Format : in File_Format; Power : out Long_Float) return Boolean;
 
     -- The power read from the file

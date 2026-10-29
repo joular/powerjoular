@@ -10,6 +10,7 @@
 --
 
 with Ada.Environment_Variables;
+with Ada.Strings.UTF_Encoding.Wide_Strings;
 with Interfaces.C; use Interfaces.C;
 with System.Storage_Elements; use System.Storage_Elements;
 
@@ -57,26 +58,36 @@ package body PowerJoular.Platform is
     -- Code page of the console before the switch to UTF-8, 0 if not switched
     Previous_Code_Page : unsigned := 0;
 
-    function GetFileAttributesA (lpFileName : char_array) return unsigned;
-    pragma Import (Stdcall, GetFileAttributesA, "GetFileAttributesA");
+    -- GNAT hands the command line over as UTF-8 and decodes it itself in GNAT.OS_Lib, so the W entry points get the same name in UTF-16
+    -- A name that is not UTF-8 becomes empty, which every call below refuses
+    function Wide (Path : in String) return wchar_array is
+    begin
+        return To_C (Ada.Strings.UTF_Encoding.Wide_Strings.Decode (Path));
+    exception
+        when Ada.Strings.UTF_Encoding.Encoding_Error =>
+            return To_C ("");
+    end Wide;
 
-    function DeleteFileA (lpFileName : char_array) return int;
-    pragma Import (Stdcall, DeleteFileA, "DeleteFileA");
+    function GetFileAttributesW (lpFileName : wchar_array) return unsigned;
+    pragma Import (Stdcall, GetFileAttributesW, "GetFileAttributesW");
+
+    function DeleteFileW (lpFileName : wchar_array) return int;
+    pragma Import (Stdcall, DeleteFileW, "DeleteFileW");
 
     MOVEFILE_REPLACE_EXISTING : constant unsigned := 1;
 
-    function MoveFileExA (lpExistingFileName : char_array; lpNewFileName : char_array; dwFlags : unsigned) return int;
-    pragma Import (Stdcall, MoveFileExA, "MoveFileExA");
+    function MoveFileExW (lpExistingFileName : wchar_array; lpNewFileName : wchar_array; dwFlags : unsigned) return int;
+    pragma Import (Stdcall, MoveFileExW, "MoveFileExW");
 
-    function CreateFileA
-       (lpFileName : char_array;
+    function CreateFileW
+       (lpFileName : wchar_array;
         dwDesiredAccess : unsigned;
         dwShareMode : unsigned;
         lpSecurityAttributes : System.Address;
         dwCreationDisposition : unsigned;
         dwFlagsAndAttributes : unsigned;
         hTemplateFile : HANDLE) return HANDLE;
-    pragma Import (Stdcall, CreateFileA, "CreateFileA");
+    pragma Import (Stdcall, CreateFileW, "CreateFileW");
 
     function CreateFileMappingA
        (hFile : HANDLE;
@@ -155,7 +166,7 @@ package body PowerJoular.Platform is
 
     -- Symbolic links and junctions are both reparse points
     function Is_Symbolic_Link (Path : in String) return Boolean is
-        Attributes : constant unsigned := GetFileAttributesA (To_C (Path));
+        Attributes : constant unsigned := GetFileAttributesW (Wide (Path));
     begin
         return Attributes /= INVALID_FILE_ATTRIBUTES
                and then (Attributes and FILE_ATTRIBUTE_REPARSE_POINT) /= 0;
@@ -184,7 +195,7 @@ package body PowerJoular.Platform is
 
     function Replace_File (From : in String; To : in String) return Boolean is
     begin
-        return MoveFileExA (To_C (From), To_C (To), MOVEFILE_REPLACE_EXISTING) /= 0;
+        return MoveFileExW (Wide (From), Wide (To), MOVEFILE_REPLACE_EXISTING) /= 0;
     end Replace_File;
 
     --------------------------------------------------
@@ -206,16 +217,16 @@ package body PowerJoular.Platform is
     --------------------------------------------------
 
     function Create_Shared_File (Path : in String; Size : in Positive) return System.Address is
-        Name : constant char_array := To_C (Path);
+        Name : constant wchar_array := Wide (Path);
         Mapped : System.Address;
         Ignored : int;
     begin
         -- Any user can create files in ProgramData, so a file left there could be a link
         -- CREATE_NEW makes sure the file is a new one and ours
-        Ignored := DeleteFileA (Name);
+        Ignored := DeleteFileW (Name);
 
         Shared_File :=
-            CreateFileA
+            CreateFileW
                 (lpFileName => Name,
                  dwDesiredAccess => GENERIC_READ or GENERIC_WRITE,
                  dwShareMode => FILE_SHARE_READ or FILE_SHARE_WRITE,

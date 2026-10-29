@@ -50,6 +50,11 @@ package body PowerJoular.Stop is
 
     --------------------------------------------------
 
+    procedure Ask is
+    begin
+        Flag := True;
+    end Ask;
+
     function Asked return Boolean is (Flag);
 
 end PowerJoular.Stop;

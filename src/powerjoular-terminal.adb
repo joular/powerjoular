@@ -11,6 +11,7 @@
 
 with Ada.Characters.Latin_1; use Ada.Characters.Latin_1;
 with Ada.Environment_Variables;
+with Ada.IO_Exceptions;
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Text_IO; use Ada.Text_IO;
@@ -19,6 +20,7 @@ with CPU_Load;
 
 with PowerJoular.Formatting; use PowerJoular.Formatting;
 with PowerJoular.Platform;
+with PowerJoular.Stop;
 
 package body PowerJoular.Terminal is
 
@@ -136,8 +138,9 @@ package body PowerJoular.Terminal is
     function Percent (Fraction : in Long_Float; Width : in Natural) return String is
         (Align (Trim (Natural'Image (Natural (100.0 * Long_Float'Max (0.0, Fraction))), Ada.Strings.Left), Width) & " %");
 
-    -- Power that follows "of", padded on the right so it sits next to the word, such as "12.50 W"
-    function Watts_After (Value : in Long_Float) return String is (Head (Image (Value, Decimals) & " W", 7));
+    -- Power that follows "of", padded on the right so it sits next to the word, such as "12.50 W" (100 W and more take a column)
+    function Watts_After (Value : in Long_Float) return String is
+        (Image (Value, Decimals) & " W" & (if Value < 10.0 then " " else ""));
 
     --------------------------------------------------
 
@@ -212,6 +215,10 @@ package body PowerJoular.Terminal is
 
         -- A pipe or a file is block buffered, so flush every reading
         Flush;
+    exception
+        -- The reader of the pipe is gone: stop, as the SIGPIPE of POSIX does (Windows has none)
+        when Ada.IO_Exceptions.Device_Error =>
+            PowerJoular.Stop.Ask;
     end Show;
 
     --------------------------------------------------

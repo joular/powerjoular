@@ -25,6 +25,7 @@ with PowerJoular.Terminal;
 
 package body PowerJoular.CSV is
 
+    use type Ada.Directories.File_Kind;
     use type Ada.Directories.File_Size;
     use type GNAT.OS_Lib.File_Descriptor;
 
@@ -127,9 +128,14 @@ package body PowerJoular.CSV is
         Appending : Boolean := False;
         Output : GNAT.OS_Lib.File_Descriptor;
         Written : Boolean := False;
+        Ignored : Boolean;
     begin
-        -- PowerJoular often runs as root, so the file is never opened through a symbolic link (see Platform.Open_Output)
-        if Overwrite then
+        -- PowerJoular often runs as root, so the file is never opened through a symbolic link (see Platform.Open_Output) and only a plain file is replaced: a device such as /dev/null would become one otherwise
+        if Overwrite and then Ada.Directories.Exists (Name)
+           and then Ada.Directories.Kind (Name) /= Ada.Directories.Ordinary_File
+        then
+            Output := GNAT.OS_Lib.Invalid_FD;
+        elsif Overwrite then
             Output := Platform.Open_Output (Temporary, Append => False);
         else
             Appending := Ada.Directories.Exists (Name) and then Ada.Directories.Size (Name) > 0;
@@ -147,6 +153,11 @@ package body PowerJoular.CSV is
         end if;
 
         if not Written then
+            -- Left beside the file, the temporary would be rewritten every second
+            if Overwrite then
+                GNAT.OS_Lib.Delete_File (Temporary, Ignored);
+            end if;
+
             Report (File, "cannot write to " & Name);
         end if;
     exception

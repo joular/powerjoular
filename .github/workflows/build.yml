@@ -72,6 +72,18 @@ jobs:
           exit 1
         fi
 
+        # -f never writes through a symbolic link: O_NOFOLLOW is numbered differently on ARM, so check it on each architecture
+        # VM mode needs no hardware; the file behind the link has to stay as it was
+        echo 12.5 > watts.txt
+        echo keep > target.csv
+        ln -s target.csv link.csv
+        timeout 3 ./bin/powerjoular -m watts.txt -s watts -f link.csv 2> errors.txt || true
+        if ! grep -q "cannot write to" errors.txt || [ "$(cat target.csv)" != "keep" ]; then
+          cat errors.txt target.csv >&2
+          echo "-f wrote through a symbolic link" >&2
+          exit 1
+        fi
+
     # Read from the binary rather than assumed from the image, so the name stays right if the image changes
     - name: Name the binary after the C library it needs
       id: naming
@@ -210,7 +222,7 @@ jobs:
         for RPM in packages/*.rpm; do
           echo "== $RPM"
           rpm -qip "$RPM" | sed 's/^/    /'
-          rpm -qlp "$RPM" | sed 's/^/    /'
+          rpm -qlpv "$RPM" | sed 's/^/    /'
         done
 
     - name: Upload the packages

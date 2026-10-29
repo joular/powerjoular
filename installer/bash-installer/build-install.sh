@@ -13,7 +13,8 @@ else
     gprbuild -P powerjoular.gpr -aP../joularcore -aP../cpuload -p
 fi
 
-sudo cp ./bin/powerjoular /usr/bin/
+# install replaces the file rather than writing into it, which Linux refuses while the program runs
+sudo install -Dm755 ./bin/powerjoular /usr/bin/powerjoular
 
 sudo install -Dm644 ./systemd/powerjoular.service /usr/lib/systemd/system/powerjoular.service
 

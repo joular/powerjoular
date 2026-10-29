@@ -107,10 +107,19 @@ begin
     Deadline := Clock + Interval;
 
     if Config.Write_Ring_Buffer and then not Ring_Buffer.Open then
+        Config.Write_Ring_Buffer := False;
+
+        -- With nothing else to write to, going on would measure for no one
+        if not Config.Show_Terminal and then not Config.Write_CSV then
+            Put_Line (Standard_Error, "powerjoular: cannot open the ring buffer at " & Ring_Buffer.Path & ".");
+            Shut_Down;
+            Set_Exit_Status (Failure);
+            return;
+        end if;
+
         Put_Line (Standard_Error,
                   "powerjoular: cannot open the ring buffer at " & Ring_Buffer.Path
                   & ", the monitoring goes on without it.");
-        Config.Write_Ring_Buffer := False;
     end if;
 
     if Config.Write_CSV then
@@ -119,6 +128,12 @@ begin
 
     if Config.Show_Debug then
         Help.Show_System_Info (Config, Monitor.CPU_Available, Monitor.GPU_Available);
+    end if;
+
+    -- Ctrl+C while the sources were starting (it reaches powermetrics too): nothing to report
+    if Stop.Asked then
+        Shut_Down;
+        return;
     end if;
 
     if not Config.Read_VM and then not Monitor.CPU_Available and then not Monitor.GPU_Available then

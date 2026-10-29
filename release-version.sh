@@ -21,8 +21,8 @@ BINARIES_DIR="${1:-artifacts}"
 
 # Check what is needed is here
 
-# objdump comes with binutils
-for TOOL in dpkg-deb rpmbuild objdump; do
+# readelf comes with binutils, and unlike objdump reads the ELF files of every architecture
+for TOOL in dpkg-deb rpmbuild readelf; do
     if ! command -v "$TOOL" > /dev/null 2>&1; then
         echo "ERROR: $TOOL is not installed." >&2
         echo "On Debian and Ubuntu: sudo apt install dpkg-dev rpm binutils" >&2
@@ -80,11 +80,10 @@ done
 # What each binary is
 
 # The architecture the binary was built for, in the names rpm uses
-# GNU and LLVM objdump word it differently, hence two spellings
 architecture_of () {
-    case "$(objdump -f "$1" 2> /dev/null | sed -n 's/.*architecture: *\([^,]*\).*/\1/p')" in
-        i386:x86-64 | x86_64) echo "x86_64" ;;
-        aarch64*) echo "aarch64" ;;
+    case "$(readelf -h "$1" 2> /dev/null | sed -n 's/.*Machine: *//p')" in
+        "Advanced Micro Devices X86-64") echo "x86_64" ;;
+        AArch64) echo "aarch64" ;;
         *) echo "" ;;
     esac
 }
@@ -92,7 +91,7 @@ architecture_of () {
 # The oldest glibc the binary runs on: the newest version any of its symbols asks for, none when fully static
 c_library_of () {
     local FOUND
-    FOUND=$(objdump -T "$1" 2> /dev/null | grep -o 'GLIBC_[0-9][0-9.]*' | sed 's/GLIBC_//' | sort -V | tail -1)
+    FOUND=$(readelf -V "$1" 2> /dev/null | grep -o 'GLIBC_[0-9][0-9.]*' | sed 's/GLIBC_//' | sort -V | tail -1)
 
     if [[ -z "$FOUND" ]]; then
         echo "static"
@@ -187,11 +186,20 @@ while read -r GLIBC ARCH; do
         LIBC_DEPENDS="Depends: libc6 (>= $GLIBC)"$'\n'
     fi
 
-    # systemd learns about the unit on install and forgets it on removal
+    # systemd learns about the unit on install and forgets it on removal; a running service is restarted on upgrade and stopped on removal
     cat << 'EOL' > "$STAGE/powerjoular/DEBIAN/postinst"
 #!/bin/sh
 set -e
-if [ -d /run/systemd/system ]; then systemctl daemon-reload || true; fi
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload || true
+    if [ -n "$2" ]; then systemctl try-restart powerjoular.service || true; fi
+fi
+EOL
+
+    cat << 'EOL' > "$STAGE/powerjoular/DEBIAN/prerm"
+#!/bin/sh
+set -e
+if [ "$1" = remove ] && [ -d /run/systemd/system ]; then systemctl disable --now powerjoular.service || true; fi
 EOL
 
     cat << 'EOL' > "$STAGE/powerjoular/DEBIAN/postrm"
@@ -200,7 +208,7 @@ set -e
 if [ "$1" = remove ] && [ -d /run/systemd/system ]; then systemctl daemon-reload || true; fi
 EOL
 
-    chmod 755 "$STAGE/powerjoular/DEBIAN/postinst" "$STAGE/powerjoular/DEBIAN/postrm"
+    chmod 755 "$STAGE/powerjoular/DEBIAN/postinst" "$STAGE/powerjoular/DEBIAN/prerm" "$STAGE/powerjoular/DEBIAN/postrm"
 
     # Same package name for every build, so they replace each other on upgrade
     cat << EOL > "$STAGE/powerjoular/DEBIAN/control"
@@ -220,7 +228,8 @@ Description: Monitor the power consumption of hardware components, processes and
  This build runs against glibc $GLIBC and newer.
 EOL
 
-    ( cd "$STAGE" && dpkg-deb --build powerjoular > /dev/null )
+    # The files belong to root on the machine they are installed on, not to whoever ran this script
+    ( cd "$STAGE" && dpkg-deb --root-owner-group --build powerjoular > /dev/null )
     mv "$STAGE/powerjoular.deb" "packages/${LABEL}_${VERSION}_${DEB_ARCH}.deb"
 
 

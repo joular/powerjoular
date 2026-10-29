@@ -50,7 +50,7 @@ PowerJoular does the energy and CPU usage measuring through two Ada libraries we
 
 - **Linux, PC or server**: reading RAPL files needs elevated privileges on the recent kernels (5.10 and newer), so run `sudo powerjoular`, or give read rights to the files. See [this issue](https://github.com/joular/powerjoular/issues/1).
 - **Windows**: if using [Energy Meter Interface](https://learn.microsoft.com/en-us/windows-hardware/drivers/powermeter/energy-meter-interface) (EMI), then there is no special privileges or driver needed. Otherwise, we need specific RAPL driver, such as [PawnIO](https://pawnio.eu) or [Hubblo's RAPL driver](https://github.com/hubblo-org/windows-rapl-driver). The easiest way to get a signed version installed is through the [PawnIO](https://pawnio.eu) or the [Scaphandre installer](https://github.com/hubblo-org/scaphandre/releases) for Hubblo's driver.
-- **macOS**: `powermetrics` only runs as the superuser, so run `sudo powerjoular`. Without it, the sources are simply reported as not available. Reading the CPU time of a process belonging to another user also needs root, so `-p` and `-a` on someone else's process need `sudo` too.
+- **macOS**: `powermetrics` only runs as the superuser, so run `sudo powerjoular`. Without it, PowerJoular finds no power source and stops. Reading the CPU time of a process belonging to another user also needs root, so `-p` and `-a` on someone else's process need `sudo` too.
 - **FreeBSD**: the RAPL registers are read through the `cpuctl(4)` driver, a module not in the GENERIC kernel: load it with `kldload cpuctl` (or `cpuctl_load="YES"` in `/boot/loader.conf`), then run `sudo powerjoular`, or run it as a member of the `kmem` group.
 - **Raspberry Pi and GPU readings**: no special privileges needed.
 
@@ -146,8 +146,8 @@ The area is 288 bytes, in the byte order of the machine: a counter of 8 bytes, t
 
 A measurement goes in the entry the counter points at (`counter mod 5`), and the counter is raised afterwards. A reader follows the counter to know when a new measurement has landed, and the timestamps to know how old each entry is.
 
-Only one PowerJoular should write to the ring buffer at the same time. A second run using `-r` replaces the file, so readers that open it after that, only see that run, while the first one goes on writing to a file no one can open any more. On Windows, the second run cannot replace the file while the first one has it open, and continues without the ring buffer.
-The ring buffer is created every time PowerJoular starts: a file left at that path, by an earlier run or by anyone else, is deleted first, so PowerJoular never writes into a file it did not create. It is readable by everyone and writable only by the user running PowerJoular. A reader that mapped the file has to map it again when PowerJoular restarts. When the file cannot be created, PowerJoular carries on without the ring buffer.
+Only one PowerJoular should write to the ring buffer at the same time. A second run using `-r` replaces the file, so readers that open it after that, only see that run, while the first one goes on writing to a file no one can open any more. On Windows, the second run cannot replace the file while the first one, or a reader, has it open, and continues without the ring buffer.
+The ring buffer is created every time PowerJoular starts: a file left at that path, by an earlier run or by anyone else, is deleted first, so PowerJoular never writes into a file it did not create. It is readable by everyone and writable only by the user running PowerJoular. The file is left in place when PowerJoular stops, so the last entries can still be read, and a reader that mapped it has to map it again when PowerJoular restarts. When the file cannot be created, PowerJoular carries on without the ring buffer.
 
 ### Monitoring inside a virtual machine
 
@@ -210,7 +210,7 @@ Take the `2.34` build if you are unsure, or if the other version gives you a `ve
 
 ## :floppy_disk: Compilation
 
-PowerJoular is written in Ada and needs a modern Ada compiler such as GNAT, together with the [Joular Core](https://github.com/joular/joularcore) and [CPU Load](https://github.com/joular/cpuload) libraries.
+PowerJoular is written in Ada and needs GNAT 11 or newer, together with the [Joular Core](https://github.com/joular/joularcore) and [CPU Load](https://github.com/joular/cpuload) libraries.
 
 ### With Alire
 
@@ -275,7 +275,7 @@ Other main differences:
 - The CSV files hold four digits after the dot instead of the fourteen. The columns and the header have been renamed, with Timestamp and CPU Usage.
 - The CSV file of a monitored process or application is named `power-144.csv` for `power.csv`, instead of `power.csv-144.csv`.
 - The energy a RAPL processor reports is divided by how long the cycle actually took, rather than assumed to be exactly one second. On a machine running late, the watts reported are now the watts drawn.
-- A file that cannot be written to, a power source that stops answering, or a ring buffer that cannot be opened is reported once and the monitoring continues.
+- A file that cannot be written to, or a ring buffer that cannot be opened, is reported once and the monitoring continues.
 
 ## :bookmark_tabs: Cite this work
 

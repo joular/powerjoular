@@ -15,6 +15,9 @@ package PowerJoular.Stop is
     -- Replace the default behaviour of these signals, so the program can close its files and sources before exiting
     procedure Install;
 
+    -- Ask for a stop from the program itself (the output is gone)
+    procedure Ask;
+
     -- Whether a stop was asked
     function Asked return Boolean;
 

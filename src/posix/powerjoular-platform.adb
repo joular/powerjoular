@@ -28,11 +28,19 @@ package body PowerJoular.Platform is
     O_EXCL : constant := 8#200#;
     O_APPEND : constant := 8#2000#;
     O_NONBLOCK : constant := 8#4000#;
+
+    -- ARM, 32 and 64 bits, numbers O_NOFOLLOW differently (the kernel's asm/fcntl.h)
+    -- PJ_ARM comes from the target names powerjoular.gpr knows; the compiler's own name covers the others (Fedora, Alpine...)
 #if PJ_ARM then
-    O_NOFOLLOW : constant := 8#100000#;
+    Arm_Target : constant Boolean := True;
 #else
-    O_NOFOLLOW : constant := 8#400000#;
+    Arm_Target : constant Boolean := False;
 #end if;
+    Target : constant String := Standard'Target_Name;
+    Arm : constant Boolean :=
+        Arm_Target or else Ada.Strings.Fixed.Index (Target, "arm") = Target'First
+        or else Ada.Strings.Fixed.Index (Target, "aarch64") = Target'First;
+    O_NOFOLLOW : constant int := (if Arm then 8#100000# else 8#400000#);
 #else
     O_CREAT : constant := 16#0200#;
     O_EXCL : constant := 16#0800#;
@@ -81,23 +89,31 @@ package body PowerJoular.Platform is
 
     --------------------------------------------------
 
+    function geteuid return unsigned;
+    pragma Import (C, geteuid, "geteuid");
+
+    -- Root already, so privileges are not what is missing
+    No_Sensor : constant String :=
+        "No supported sensor was found on this machine. Inside a virtual machine, read the power from the host with -m.";
+
 #if PJ_LINUX then
     -- /dev/shm is kept in memory and never written to a disk
     function Ring_Buffer_Path return String is ("/dev/shm/powerjoular");
 
     function No_Power_Source_Hint return String is
-        ("On a PC or a server, reading RAPL needs root: try 'sudo powerjoular'.");
+        (if geteuid = 0 then No_Sensor else "On a PC or a server, reading RAPL needs root: try 'sudo powerjoular'.");
 #elsif PJ_MACOS then
     function Ring_Buffer_Path return String is ("/tmp/powerjoular");
 
     function No_Power_Source_Hint return String is
-        ("On a Mac, reading powermetrics needs root: try 'sudo powerjoular'.");
+        (if geteuid = 0 then No_Sensor else "On a Mac, reading powermetrics needs root: try 'sudo powerjoular'.");
 #else
     -- FreeBSD has no /dev/shm
     function Ring_Buffer_Path return String is ("/tmp/powerjoular");
 
     function No_Power_Source_Hint return String is
-        ("On FreeBSD, reading RAPL needs the cpuctl module and root: try 'sudo kldload cpuctl' and 'sudo powerjoular'.");
+        (if geteuid = 0 then "Reading RAPL needs the cpuctl module: try 'kldload cpuctl'. " & No_Sensor
+         else "On FreeBSD, reading RAPL needs the cpuctl module and root: try 'sudo kldload cpuctl' and 'sudo powerjoular'.");
 #end if;
 
     --------------------------------------------------

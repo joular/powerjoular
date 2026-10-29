@@ -21,12 +21,18 @@ mkdir -p $RPM_BUILD_ROOT/%{_unitdir}
 install -m 755 %{SOURCE0} $RPM_BUILD_ROOT/%{_bindir}/%{name}
 install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/%{_unitdir}/%{name}.service
 
-# systemd learns about the unit on install and forgets it on removal
+# systemd learns about the unit on install and forgets it on removal; a running service is stopped on removal and restarted on upgrade
 %post
 if [ -d /run/systemd/system ]; then systemctl daemon-reload > /dev/null 2>&1 || :; fi
 
+%preun
+if [ $1 -eq 0 ] && [ -d /run/systemd/system ]; then systemctl --no-reload disable --now powerjoular.service > /dev/null 2>&1 || :; fi
+
 %postun
-if [ -d /run/systemd/system ]; then systemctl daemon-reload > /dev/null 2>&1 || :; fi
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload > /dev/null 2>&1 || :
+    if [ $1 -ge 1 ]; then systemctl try-restart powerjoular.service > /dev/null 2>&1 || :; fi
+fi
 
 %files
 %{_bindir}/%{name}
@@ -50,11 +56,11 @@ if [ -d /run/systemd/system ]; then systemctl daemon-reload > /dev/null 2>&1 || 
 - Better way to handle mixed OS line ending (LF and CRLF)
 * Tue Nov 19 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.0.5-1
 - Hotfix: don't exit when DRAM energy can't be read
-* Wed Jul 11 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.0.4-1
+* Thu Jul 11 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.0.4-1
 - Hotfix for error in updating PID list for monitoring an application by name
-* Thu Jul 08 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.0.3-1
+* Mon Jul 08 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.0.3-1
 - Hotfix for handle exceptions for invalid command line arguments
-* Thu Jul 08 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.0.2-1
+* Mon Jul 08 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.0.2-1
 - Handle exceptions for invalid command line arguments
 - Add doc for VM in -h command
 * Thu Jul 04 2024 Adel Noureddine <adel.noureddine@univ-pau.fr> - 1.0.1-1
