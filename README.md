@@ -20,6 +20,21 @@ Detailed documentation (including user and reference guides) is available at: [h
 - Ships with a systemd service (daemon) to monitor the machine continuously
 - Low overhead: written in Ada, compiled to native code, one binary with nothing to install alongside it
 
+## Screenshots
+
+#### Visual TUI (with `-i` argument):
+
+![PowerJoular TUI windows](screenshots/windows-TUI-app.png)
+![PowerJoular TUI macOS](screenshots/macos-TUI-app.png)
+![PowerJoular TUI windows](screenshots/windows-TUI-noapp.png)
+
+#### Default terminal view:
+
+![PowerJoular CMD windows](screenshots/windows-cmd-app.png)
+![PowerJoular CMD windows](screenshots/windows-cmd-noapp.png)
+![PowerJoular CMD macOS](screenshots/macos-cmd-app.png)
+![PowerJoular CMD macOS](screenshots/macos-cmd-noapp.png)
+
 ## :satellite: Supported platforms
 
 PowerJoular runs on **Linux, macOS, Windows and FreeBSD**, on PCs, servers, Macs, and single-board computers.
