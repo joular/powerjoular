@@ -206,7 +206,7 @@ package body PowerJoular.Terminal is
             when One_Process | One_Application =>
                 -- The process, then "of" the whole machine: its CPU power of the CPU power, its CPU usage of the CPU load
                 return Colour (To_String (Name), Flame) & Separator & Colour ("CPU ", Blue) & Meter (Share, Flame)
-                       & (if Is_Unreadable (Data.Target_Power) then Align ("n/a", 5) else Percent (Share, 3))
+                       & (if Is_Unreadable (Data.Target_Power) then Align ("n/a", 6) else Percent (Share, 4))
                        & Separator & Colour (Number (Data.Target_Power, 5, Decimals), Bold) & Colour (" of ", Dim)
                        & Watts_After (Data.CPU_Power)
                        & Separator & Colour ("usage", Dim) & Number (Data.Target_Usage, 5, 1, Scale => 100.0)
