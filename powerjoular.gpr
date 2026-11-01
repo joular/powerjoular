@@ -17,7 +17,7 @@ project Powerjoular is
     end case;
 
     -- default: Ada runtime and libgcc static, libc shared (what the released packages use)
-    -- full: fully static; on Linux and FreeBSD the Nvidia readings are lost (no dlopen)
+    -- full: fully static; the Nvidia readings (dlopen of NVML) then work only with the glibc it was built with, if at all
     -- macOS has no static libc, so full does nothing there
     type Linking_Kind is ("default", "full");
     Linking : Linking_Kind := external ("POWERJOULAR_LINKING", "default");

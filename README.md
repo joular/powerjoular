@@ -266,7 +266,7 @@ By default the Ada runtime and libgcc are carried inside the binary, which is en
 gprbuild -P powerjoular.gpr -aP../joularcore -aP../cpuload -XPOWERJOULAR_LINKING=full -p
 ```
 
-On Linux and FreeBSD, a fully static binary cannot load a library while it runs, so the Nvidia graphic card readings, which do exactly that, are lost with this option. The processor readings are not affected, and PowerJoular carries on without the GPU rather than failing.
+On Linux and FreeBSD, a fully static binary can't be counted on to load a library while it runs, which the Nvidia graphic card readings do (NVML). On Linux it works only with the version of the C library (glibc) the binary was built with, so on another system the Nvidia readings may be lost. The processor readings are not affected, and PowerJoular carries on without the GPU rather than failing.
 
 On macOS, Apple ships no static C library, so this option does nothing: the binary is built the same way it is by default, which already carries the Ada runtime and libgcc inside it.
 
