@@ -167,6 +167,12 @@ package body PowerJoular.Options is
             end if;
         end;
 
+        -- Not refused, as the application may be started later; said once, as a wrong name would read 0 for ever
+        if Config.Target = One_Application and then CPU_Load.Take (To_String (Config.App)).Used = 0 then
+            Put_Line (Standard_Error, "powerjoular: no process of " & To_String (Config.App) & " is running yet. "
+                      & "It reads 0 until one starts; the name to give is the one of its program file.");
+        end if;
+
         -- With no output asked for, print on the terminal
         if not Config.Write_CSV and then not Config.Write_Ring_Buffer then
             Config.Show_Terminal := True;

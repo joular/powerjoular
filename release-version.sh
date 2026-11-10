@@ -14,6 +14,9 @@
 # Stop at the first thing that goes wrong, so a missing binary never becomes an empty package
 set -euo pipefail
 
+# The folders and files of the packages get 755 and 644, whatever the umask of who runs this
+umask 022
+
 cd "$(dirname "$0")"
 
 BINARIES_DIR="${1:-artifacts}"

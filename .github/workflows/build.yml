@@ -254,7 +254,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v7
 
-    # Alire picks PJ_OS=macos on its own
+    # The project files pick PJ_OS=macos on their own, from the target
     - name: Set up Alire
       uses: alire-project/setup-alire@v6
 

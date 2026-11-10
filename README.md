@@ -103,7 +103,9 @@ Options can be mixed, except `-f` with `-o` and `-p` with `-a`, i.e., `powerjoul
 
 Monitoring a process or an application writes **two** CSV files: the given filename for the entire system, and a second one for the monitored process or application, i.e., `-p 144 -f power.csv` writes `power.csv` and `power-144.csv`.
 
-`-p` checks that the process can be read when PowerJoular starts, and refuses to start otherwise.
+`-p` checks that the process can be read when PowerJoular starts, and refuses to start otherwise. Once that process has ended, its values read `n/a` (`-1` in the files) until PowerJoular is stopped, even if the system gives its number to a new process.
+
+`-a` starts even when no process of the application is running, as it may be started later, and says so once. The name to give is the one of the program file itself: where `python3` is a link to `python3.12`, ask for `python3.12`.
 
 `-i` shows the visual TUI: the power in large digits, a bar for the CPU and the GPU when there is a GPU (with `-p` or `-a`, the process's share of the CPU), a bar for the load, and a chart with one bar a second. A side panel lists what was found (CPU, GPU) and what is being written (`-f`, `-o`, `-r`). It works with every option, and stops with Ctrl+C. Messages that come while it is shown are printed when it closes. A window smaller than 50 by 16 gets the `-t` line instead, and a pipe or a file gets exactly what `-t` prints.
 

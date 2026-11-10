@@ -6,6 +6,8 @@ Documentation=https://github.com/joular/powerjoular
 Type=simple
 Restart=always
 RestartSec=30
+# Exit 1 is PowerJoular giving up on its own (no power source on this machine): starting it again would end the same way
+RestartPreventExitStatus=1
 
 # Reading the energy counters of the hardware needs root
 User=root

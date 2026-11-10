@@ -9,6 +9,8 @@ fi
 # Requires sudo or root access
 sudo rm -f /usr/bin/powerjoular
 sudo rm -f /usr/lib/systemd/system/powerjoular.service
+# Where PowerJoular 1.x put it
+sudo rm -f /etc/systemd/system/powerjoular.service
 
 if command -v systemctl > /dev/null 2>&1; then
     sudo systemctl daemon-reload

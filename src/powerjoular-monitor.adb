@@ -13,6 +13,7 @@ with Ada.Calendar;
 with Ada.Calendar.Formatting;
 with Ada.Real_Time; use Ada.Real_Time;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with Interfaces;
 
 with CPU_Load;
 with Joular_Core;
@@ -20,6 +21,8 @@ with Joular_Core;
 with PowerJoular.Virtual_Machine;
 
 package body PowerJoular.Monitor is
+
+    use type Interfaces.Integer_64;
 
     -- The command line, kept from Start
     Settings : Options.Settings;
@@ -30,6 +33,9 @@ package body PowerJoular.Monitor is
     -- CPU load sample and time at the start of the current cycle
     Previous_Sample : CPU_Load.Sample;
     Previous_Time : Time;
+
+    -- The process asked for with -p has ended: its number may go to another process, which is not the one to follow
+    Target_Gone : Boolean := False;
 
     Unix_Epoch : constant Ada.Calendar.Time := Ada.Calendar.Formatting.Time_Of (1970, 1, 1, 0.0, Time_Zone => 0);
 
@@ -121,7 +127,12 @@ package body PowerJoular.Monitor is
             -- CPU Load gives a negative load when the process or application could not be read
             Data.Target_Usage := CPU_Load.Process_Usage (Before, Sample);
 
-            if Data.Target_Usage < 0.0 then
+            -- A CPU time that went down belongs to another process with the same number
+            if Settings.Target = One_Process and then (Data.Target_Usage < 0.0 or else Sample.Used < Before.Used) then
+                Target_Gone := True;
+            end if;
+
+            if Target_Gone or else Data.Target_Usage < 0.0 then
                 Data.Target_Usage := Unreadable;
             end if;
         end if;

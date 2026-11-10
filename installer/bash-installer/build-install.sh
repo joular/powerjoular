@@ -21,3 +21,9 @@ sudo install -Dm644 ./systemd/powerjoular.service /usr/lib/systemd/system/powerj
 if command -v systemctl > /dev/null 2>&1; then
     sudo systemctl daemon-reload
 fi
+
+# PowerJoular 1.x put its unit in /etc, where systemd prefers it to the one just installed
+if [ -e /etc/systemd/system/powerjoular.service ]; then
+    echo "WARNING: /etc/systemd/system/powerjoular.service takes over the new unit." >&2
+    echo "Unless you wrote it yourself, remove it, then run: sudo systemctl daemon-reload" >&2
+fi
