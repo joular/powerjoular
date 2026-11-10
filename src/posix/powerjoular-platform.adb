@@ -158,7 +158,8 @@ package body PowerJoular.Platform is
 #end if;
 
     -- The size is a variadic argument of ioctl, as the mode of open
-    function ioctl (fd : int; request : unsigned_long; size : access Window_Size) return int;
+    -- An address, as GNAT 11 and 12 crash on an access parameter here
+    function ioctl (fd : int; request : unsigned_long; size : System.Address) return int;
     pragma Import (C_Variadic_2, ioctl, "ioctl");
 
     procedure Terminal_Size (Columns, Rows : out Positive) is
@@ -168,7 +169,7 @@ package body PowerJoular.Platform is
         Rows := 24;
 
         -- A serial console may answer 0 by 0
-        if ioctl (Standard_Output, TIOCGWINSZ, Size'Access) = 0 and then Size.Columns > 0 and then Size.Rows > 0 then
+        if ioctl (Standard_Output, TIOCGWINSZ, Size'Address) = 0 and then Size.Columns > 0 and then Size.Rows > 0 then
             Columns := Positive (Size.Columns);
             Rows := Positive (Size.Rows);
         end if;
@@ -277,5 +278,19 @@ package body PowerJoular.Platform is
             end if;
         end loop;
     end Install_Stop_Handler;
+
+    --------------------------------------------------
+
+#if PJ_LINUX then
+    SIGTSTP : constant := 20;
+#else
+    SIGTSTP : constant := 18;
+#end if;
+
+    procedure Ignore_Suspend is
+        Ignored : System.Address;
+    begin
+        Ignored := signal (SIGTSTP, SIG_IGN);
+    end Ignore_Suspend;
 
 end PowerJoular.Platform;

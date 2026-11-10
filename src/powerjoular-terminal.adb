@@ -104,6 +104,11 @@ package body PowerJoular.Terminal is
 
         Unicode := Platform.Enable_Unicode_Output;
         Screen_Asked := Config.Show_Screen;
+
+        if Screen_Asked then
+            Platform.Ignore_Suspend;
+        end if;
+
         Name :=
             To_Unbounded_String
                 (case Config.Target is

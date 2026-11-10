@@ -327,4 +327,7 @@ package body PowerJoular.Platform is
         null;
     end Install_Stop_Handler;
 
+    -- Ctrl+Z suspends nothing in a Windows console
+    procedure Ignore_Suspend is null;
+
 end PowerJoular.Platform;

@@ -60,4 +60,7 @@ package PowerJoular.Platform is
     -- A signal nohup or the shell set to be ignored stays ignored, so a run in the background outlives its terminal
     procedure Install_Stop_Handler (Handler : in Signal_Handler);
 
+    -- Ignore Ctrl+Z (SIGTSTP on POSIX, nothing on Windows): suspended on the whole screen, the program would leave the shell on it, with no cursor
+    procedure Ignore_Suspend;
+
 end PowerJoular.Platform;
